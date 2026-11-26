@@ -126,6 +126,17 @@ body[data-tpi="3"]{--tpo:52%}
 .hz .inl{display:flex;align-items:center;gap:6px}.hz small{color:var(--muted);font-size:12px}
 .hz select:disabled,.hz input:disabled{opacity:.45}
 #hz-est{flex:1;align-self:center}
+#report{z-index:6;width:min(520px,calc(100% - 24px))}
+#report [hidden]{display:none}
+#report dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:14px}
+#report dt{color:var(--muted)}#report dd{margin:0}
+#report textarea,#report input,#report select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:14px;width:100%}
+#report textarea{min-height:110px;resize:vertical}
+#report label{font-size:13px;color:var(--muted)}
+#report .row{display:flex;gap:8px;align-items:center}#report .row input{flex:1;min-width:0}
+#report fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
+#report legend{font-size:13px;font-weight:600;padding:0 6px}
+#rp-msg.bad{color:#b3261e}
 .btn.main{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:600}
 .btn:disabled{opacity:.45;cursor:default}
 #player{flex:none;border-top:1px solid var(--line);background:var(--panel);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
@@ -378,7 +389,26 @@ body[data-tpi="3"]{--tpo:52%}
   <div class="tabs" id="tabs" role="tablist"></div>
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
-  <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="nav-next">التالي</button></div>
+  <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>الإبلاغ عن خطأ</button><button type="button" id="nav-next">التالي</button></div>
+</section>
+
+<section id="report" class="modal" role="dialog" aria-label="الإبلاغ عن خطأ في المحتوى" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">الإبلاغ عن خطأ</p><p class="sub">يُرسل البلاغ إلى نظام فنار مقرونًا بالمشروع والموضع.</p></div>
+    <button class="sh-close" id="rp-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <dl><dt>المشروع</dt><dd id="rp-proj"></dd><dt>الموضع</dt><dd id="rp-where"></dd></dl>
+    <div id="rp-word-box" hidden><label for="rp-word">الكلمة المقصودة (اختياري)</label><select id="rp-word"></select></div>
+    <div><label for="rp-text">وصف الخطأ</label><textarea id="rp-text" placeholder="اكتب الخطأ الذي وجدته، والصواب إن عرفته…"></textarea></div>
+    <fieldset id="rp-login" hidden><legend>الدخول إلى حسابك في فنار</legend>
+      <p class="note" style="margin:0">يحتاج فنار إلى معرفة صاحب البلاغ. اكتب بريدك المسجّل فيه، فيصلك رمز دخول. مرة واحدة على هذا الجهاز.</p>
+      <div class="row"><input id="rp-email" type="email" dir="ltr" autocomplete="email" placeholder="name@example.com" aria-label="البريد الإلكتروني"><button type="button" class="btn" id="rp-send-code">أرسل الرمز</button></div>
+      <div class="row" id="rp-code-row" hidden><input id="rp-code" dir="ltr" inputmode="text" autocomplete="one-time-code" placeholder="الرمز الذي وصلك" aria-label="رمز الدخول"><button type="button" class="btn" id="rp-confirm">تأكيد</button></div>
+    </fieldset>
+    <p class="note" id="rp-msg" role="status" style="margin:0"></p>
+  </div>
+  <div class="sh-nav"><button type="button" class="btn" id="rp-copy">نسخ نص البلاغ</button><button type="button" class="btn" id="rp-logout" hidden>الخروج من فنار</button><button type="button" class="btn main" id="rp-submit">إرسال البلاغ</button></div>
 </section>
 
 <script>
@@ -650,18 +680,19 @@ spread.addEventListener("click", (e) => {
   close();
 });
 
-const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index");
+const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index"), reportBox = $("#report");
+let shown = null;   // the project whose content the window is showing
 function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
   if (e.key === " " && S && !e.target.matches("input,select,button,textarea")) { e.preventDefault(); togglePlay(); }
-  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } close(); }
-  if (e.target.matches("input,select")) return;
+  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } if (reportBox.classList.contains("open")) return show(reportBox, false); close(); }
+  if (e.target.matches("input,select,textarea")) return;
   const inSheet = sheet.classList.contains("open");
   if (e.key === "ArrowLeft") inSheet ? step(1) : go(1);
   if (e.key === "ArrowRight") inSheet ? step(-1) : go(-1);
@@ -715,7 +746,7 @@ async function paintSheet() {
   const quote = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
   $("#nav-prev").textContent = LEVELS[level] + " السابقة"; $("#nav-next").textContent = LEVELS[level] + " التالية";
   if (!list.length) {
-    tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true;
+    tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true; shown = null; $("#sh-report").hidden = true;
     body.replaceChildren(...(quote ? [quote] : []), para("لا توجد مشروعات معروضة لهذا المستوى. يمكنك إظهارها من الإعدادات."));
     return;
   }
@@ -740,6 +771,7 @@ async function paintSheet() {
   } else subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => choose(p.id)))));
   const on = tabs.querySelector('[aria-selected="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+  shown = active; $("#sh-report").hidden = !(active.asset || active.player);
   const el = active.level === "word" && level === "ayah" ? await wordsCard(active, quote) : await card(active, key);
   if (paintSheet.token !== token) return;
   el.classList.add("solo");
@@ -1291,6 +1323,87 @@ let toastTimer;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4200); }
 
 // Entry points from the content window: listen once, or start memorising from here.
+/* ---------- reporting a mistake in Fanar content: goes to Fanar's issue reports with the asset and the place ---------- */
+const AUTH = API + "/cms-api/auth/app/v1", R = (id) => $("#rp-" + id);
+let rp = null, pendingToken = "";
+function rpMsg(t, bad) { R("msg").textContent = t || ""; R("msg").classList.toggle("bad", !!bad); }
+function rpAuth() { const t = store.get("fanar-token", ""); R("login").hidden = !!t; R("logout").hidden = !t; }
+async function openReport() {
+  if (!ctx || !shown) return;
+  const p = shown, s = ctx.surah, name = surahName(s);
+  let asset = p.asset, title = p.name, ayah = ctx.ayah ? +ctx.ayah.split(":")[1] : 0, where, wordKey = level === "word" ? ctx.word : "";
+  if (p.player) {
+    const rec = (await loadReciters().catch(() => [])).find((r) => r.id === hz.reciter);
+    if (!rec) return toast("تعذّر تحديد التلاوة. اختر القارئ أولًا.");
+    asset = +rec.id; title = "تلاوة " + rec.name;
+  }
+  if (level === "page" && !p.player) {
+    const w = spread.querySelector(`.page[data-page="${ctx.page}"] g.word`), k = w ? w.dataset.wordKey.split(":") : [s, 1];
+    rp = { surah: +k[0], ayah: +k[1] }; where = `الصفحة ${ctx.page} (تبدأ بـ ${surahName(+k[0])} ${k[0]}:${k[1]})`;
+  } else if (!ayah) { rp = { surah: s, ayah: 1 }; where = `${name} (${s}) كاملة`; }
+  else { rp = { surah: s, ayah }; where = `${name} ${s}:${ayah} · الصفحة ${ctx.page}`; }
+  Object.assign(rp, { asset, title, where, level: LEVELS[p.level] || "" });
+  R("proj").textContent = title; R("where").textContent = where;
+  const sel = R("word"), words = p.level === "word" && ayah ? [...new Map([...spread.querySelectorAll(`g.word[data-word-key^="${s}:${ayah}:"]`)].map((g) => [g.dataset.wordKey, g.dataset.rasmUthmani])).entries()] : [];
+  R("word-box").hidden = !words.length;
+  sel.replaceChildren(...[["", "الآية كلها"], ...words.map(([k, t]) => [k, `${k.split(":")[2]} · ${t}`])].map(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; o.selected = v === wordKey; return o; }));
+  R("text").value = ""; R("code-row").hidden = true; R("code").value = ""; pendingToken = ""; rpMsg(""); rpAuth();
+  show(reportBox, true); R("text").focus();
+}
+function reportText() {
+  const opt = R("word").selectedOptions[0], w = !R("word-box").hidden && opt && opt.value ? ` · الكلمة ${opt.textContent}` : "";
+  return `[بلاغ من تطبيق اقرأ القرآن الكريم]\nالمشروع: ${rp.title} (الأصل ${rp.asset})\nالمستوى: ${rp.level}\nالموضع: ${rp.where}${w}\n\n${R("text").value.trim()}`;
+}
+async function fanar(method, url, body, token) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json", ...(token ? { "X-Session-Token": token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  let j = null; try { j = await r.json(); } catch (e) {}
+  return { status: r.status, j };
+}
+const authErr = (x, d) => (x.j && x.j.errors && x.j.errors[0] && x.j.errors[0].message) || d;
+R("send-code").addEventListener("click", async () => {
+  const email = R("email").value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return rpMsg("اكتب بريدك الإلكتروني المسجّل في فنار.", true);
+  rpMsg("جارٍ طلب الرمز…");
+  try {
+    const x = await fanar("POST", AUTH + "/auth/code/request", { email });
+    const t = x.j && x.j.meta && x.j.meta.session_token;
+    if (!t || (x.status !== 401 && x.status !== 200)) return rpMsg(authErr(x, "تعذّر طلب الرمز. تحقق من البريد."), true);
+    pendingToken = t; R("code-row").hidden = false; R("code").focus(); rpMsg("أُرسل الرمز إلى بريدك. اكتبه ثم اضغط «تأكيد».");
+  } catch (e) { rpMsg("تعذّر الاتصال بفنار. تحقق من الاتصال.", true); }
+});
+R("confirm").addEventListener("click", async () => {
+  const code = R("code").value.trim();
+  if (!code || !pendingToken) return rpMsg("اكتب الرمز الذي وصلك.", true);
+  rpMsg("جارٍ التحقق…");
+  try {
+    const x = await fanar("POST", AUTH + "/auth/code/confirm", { code }, pendingToken);
+    if (x.status !== 200 || !(x.j && x.j.meta && x.j.meta.is_authenticated)) return rpMsg(authErr(x, "الرمز غير صحيح أو انتهت مدته."), true);
+    store.set("fanar-token", x.j.meta.session_token || pendingToken); pendingToken = ""; rpAuth(); rpMsg("تم الدخول. يمكنك إرسال البلاغ الآن.");
+  } catch (e) { rpMsg("تعذّر الاتصال بفنار. تحقق من الاتصال.", true); }
+});
+R("logout").addEventListener("click", async () => {
+  const t = store.get("fanar-token", ""); store.set("fanar-token", ""); rpAuth(); rpMsg("تم الخروج من حساب فنار على هذا الجهاز.");
+  if (t) fanar("DELETE", AUTH + "/auth/session", null, t).catch(() => {});
+});
+R("copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText(reportText()); rpMsg("نُسخ نص البلاغ."); } catch (e) { rpMsg("تعذّر النسخ.", true); } });
+R("submit").addEventListener("click", async () => {
+  if (!rp) return;
+  if (R("text").value.trim().length < 5) { R("text").focus(); return rpMsg("اكتب وصف الخطأ أولًا.", true); }
+  const token = store.get("fanar-token", "");
+  if (!token) { rpAuth(); R("email").focus(); return rpMsg("ادخل إلى حسابك في فنار أولًا، ثم أرسل البلاغ.", true); }
+  R("submit").disabled = true; rpMsg("جارٍ إرسال البلاغ…");
+  try {
+    const x = await fanar("POST", API + "/portal/issue-reports/", { asset_id: rp.asset, description: reportText(), context: { surah: rp.surah, ayah: rp.ayah } }, token);
+    if (x.status === 200 || x.status === 201) { show(reportBox, false); toast("وصل بلاغك إلى فنار. جزاك الله خيرًا."); }
+    else if (x.status === 401) { store.set("fanar-token", ""); rpAuth(); rpMsg("انتهت جلسة فنار. ادخل من جديد ثم أرسل؛ نص بلاغك باقٍ.", true); }
+    else if (x.status === 403) rpMsg("حسابك في فنار لا يملك صلاحية إرسال البلاغات. انسخ نص البلاغ وأرسله إلى فريق فنار.", true);
+    else rpMsg("لم يقبل فنار البلاغ (" + x.status + ")" + (x.j && x.j.message ? ": " + x.j.message : "") + ". يمكنك نسخ نصه.", true);
+  } catch (e) { rpMsg("تعذّر الاتصال بفنار. بلاغك لم يُرسل؛ حاول ثانية أو انسخ نصه.", true); }
+  R("submit").disabled = false;
+});
+R("close").addEventListener("click", () => show(reportBox, false));
+$("#sh-report").addEventListener("click", openReport);
+
 async function recitationCard(p) {
   const el = document.createElement("div"), row = document.createElement("div"), pick = document.createElement("div");
   el.className = "proj solo"; row.className = "pl-entry"; pick.className = "opt";

@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "17 1 * * *"   # daily 04:17 Riyadh: pick up text corrections made in Fanar
 concurrency:
   group: pages
   cancel-in-progress: true
