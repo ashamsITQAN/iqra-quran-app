@@ -493,7 +493,8 @@ function measure() {
   const w = stage.clientWidth - 32, h = stage.clientHeight - 20;
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
   const fitTwo = ((w - 6) / 2 - 14) / RATIO;
-  if (mode === "2") return { cols: 2, artH: h - FURN >= 460 ? Math.min(fitTwo, h - FURN) : fitTwo };
+  // "Two pages" holds while two fit sensibly; a narrow window, or a wide and short one (a zoomed-in browser, a phone held sideways), drops to one.
+  if (mode === "2" && w >= 700 && !matchMedia("(orientation:landscape) and (max-height:520px)").matches) return { cols: 2, artH: h - FURN >= 460 ? Math.min(fitTwo, h - FURN) : fitTwo };
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
