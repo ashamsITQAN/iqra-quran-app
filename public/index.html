@@ -49,6 +49,23 @@ button{cursor:pointer}
 #spread{display:flex;gap:6px;align-items:flex-start;justify-content:center;margin:auto}
 .page{background:var(--paper);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;flex:none;box-shadow:0 1px 6px rgba(0,0,0,.08)}
 .page.blank{visibility:hidden}
+/* turning the page: the new spread comes in from the side it lies on (later pages are to the left) */
+@keyframes turnNext{from{opacity:.15;transform:translateX(-42px)}to{opacity:1;transform:none}}
+@keyframes turnPrev{from{opacity:.15;transform:translateX(42px)}to{opacity:1;transform:none}}
+#spread.turn-next{animation:turnNext .32s ease-out}#spread.turn-prev{animation:turnPrev .32s ease-out}
+@keyframes turnFade{from{opacity:.15}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#spread.turn-next,#spread.turn-prev{animation:turnFade .25s linear}}
+/* full screen: only the mushaf, with small floating controls */
+body.full>.bar,body.full>.pager{display:none}
+body.full #stage{padding:4px 6px}
+.fs{position:fixed;z-index:4;background:var(--panel);border:1px solid var(--line);border-radius:999px;color:var(--ink);opacity:.5;display:none;place-items:center;font-size:18px;line-height:1;width:38px;height:38px;padding:0}
+.fs:hover,.fs:focus-visible{opacity:1}
+body.full .fs{display:grid}
+#full-exit{top:8px;left:8px}
+@media (pointer:coarse){body.full #full-prev,body.full #full-next{display:none}}   /* touch screens turn pages by swiping */
+#full-prev{top:50%;right:6px;transform:translateY(-50%)}#full-next{top:50%;left:6px;transform:translateY(-50%)}
+#full-where{position:fixed;z-index:4;bottom:10px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);border-radius:999px;padding:4px 14px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+#full-where.on{opacity:.85}
 /* paper thickness on the outer side of each page: a few sheet edges, then a soft grey shadow */
 .page.rt{box-shadow:1px 0 0 var(--line),3px 0 0 var(--paper),4px 0 0 var(--line),6px 0 0 var(--paper),7px 0 0 var(--line),13px 3px 14px rgba(0,0,0,.22)}
 .page.lt{box-shadow:-1px 0 0 var(--line),-3px 0 0 var(--paper),-4px 0 0 var(--line),-6px 0 0 var(--paper),-7px 0 0 var(--line),-13px 3px 14px rgba(0,0,0,.22)}
@@ -336,6 +353,7 @@ body[data-tpi="3"]{--tpo:52%}
   <span class="chip">نسخة تجريبية</span>
   <span class="grow"></span>
   <button type="button" id="sync-chip" class="btn" hidden title="المزامنة مع Google Drive تحتاج ضغطة">مزامنة</button>
+  <button type="button" id="full-open" class="btn" aria-label="ملء الشاشة" title="ملء الشاشة">⛶</button>
   <button type="button" id="find-open" class="btn">بحث</button>
   <button type="button" id="set-open" class="btn">الإعدادات</button>
   <button type="button" id="hifz-open" class="btn">الحفظ</button>
@@ -343,6 +361,10 @@ body[data-tpi="3"]{--tpo:52%}
 </header>
 
 <main id="stage"><div id="spread"></div></main>
+<button type="button" class="fs" id="full-exit" aria-label="الخروج من ملء الشاشة" title="الخروج من ملء الشاشة">×</button>
+<button type="button" class="fs" id="full-prev" aria-label="الصفحة السابقة">›</button>
+<button type="button" class="fs" id="full-next" aria-label="الصفحة التالية">‹</button>
+<div id="full-where" aria-hidden="true"></div>
 
 <div id="player" hidden>
   <div class="pl-info"><strong id="pl-step"></strong><span id="pl-rep"></span><span id="pl-phase"></span></div>
@@ -563,7 +585,7 @@ const surahName = (s) => "سورة " + meta.surahs[s].name;
 
 /* ---------- layout: one page on a phone, two on a tablet or desktop ---------- */
 function measure() {
-  const w = stage.clientWidth - 32, h = stage.clientHeight - 20;
+  const full = document.body.classList.contains("full"), w = stage.clientWidth - (full ? 18 : 32), h = stage.clientHeight - (full ? 14 : 20);
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
   const fitTwo = ((w - 6) / 2 - 14) / RATIO;
   // "Two pages" holds only while both fit on screen in full; once a page would run off the screen, show one.
@@ -582,6 +604,11 @@ async function render() {
   const start = firstOfSpread(cur);
   const want = cols === 2 ? [start, start + 1] : [cur];
   spread.replaceChildren(...want.map((n) => pageShell(n, m.artH)));
+  if (render.last != null && render.last !== start) {   // a visible cue that the page has turned
+    spread.classList.remove("turn-next", "turn-prev"); void spread.offsetWidth; spread.classList.add(start > render.last ? "turn-next" : "turn-prev");
+    const fw = $("#full-where"); fw.textContent = cols === 2 && start + 1 <= meta.last ? `${ar(start)}–${ar(start + 1)}` : ar(cur); fw.classList.add("on"); clearTimeout(render.fw); render.fw = setTimeout(() => fw.classList.remove("on"), 1300);
+  }
+  render.last = start;
   $("#slider").value = cur;
   $("#where").textContent = cols === 2 && start + 1 <= meta.last ? `${ar(start)}–${ar(start + 1)} من ${ar(meta.last)}` : `${ar(cur)} من ${ar(meta.last)}`;
   $("#prev").disabled = start <= meta.first;
@@ -831,7 +858,7 @@ $("#nav-next").addEventListener("click", () => step(1));
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
   if (e.key === " " && S && !e.target.matches("input,select,button,textarea")) { e.preventDefault(); togglePlay(); }
-  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } if (reportBox.classList.contains("open")) return show(reportBox, false); if (shareBox.classList.contains("open")) return show(shareBox, false); close(); }
+  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } if (reportBox.classList.contains("open")) return show(reportBox, false); if (shareBox.classList.contains("open")) return show(shareBox, false); if (!document.querySelector(".modal.open") && document.body.classList.contains("full")) return setFull(false); close(); }
   if (e.target.matches("input,select,textarea")) return;
   const inSheet = sheet.classList.contains("open");
   if (e.key === "ArrowLeft") inSheet ? step(1) : go(1);
@@ -1144,6 +1171,17 @@ function go(dir) {
   close(); render();
 }
 $("#next").addEventListener("click", () => go(1));
+/* Full screen: hides the bars; uses the browser's own full screen where it is offered (not on iPhone). */
+function setFull(on) {
+  document.body.classList.toggle("full", on);
+  try { if (on && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+  window.dispatchEvent(new Event("resize"));
+}
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("full")) setFull(false); else window.dispatchEvent(new Event("resize")); });
+$("#full-open").addEventListener("click", () => setFull(true));
+$("#full-exit").addEventListener("click", () => setFull(false));
+$("#full-next").addEventListener("click", () => go(1));
+$("#full-prev").addEventListener("click", () => go(-1));
 $("#prev").addEventListener("click", () => go(-1));
 $("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
 
