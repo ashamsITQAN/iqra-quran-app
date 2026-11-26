@@ -29,7 +29,7 @@
  {"id":"al-jami-al-wajeez","level":"ayah","group":"tafsir","groupName":"التفسير","short":"الوجيز","name":"الجامع الوجيز في تفسير آي الكتاب العزيز","kind":"نصي","source":"فنار","credit":"موقع مقرأ","file":"content/al-jami-al-wajeez-tafsir/{page}.json"},
  {"id":"tajweed","level":"ayah","groupName":"التجويد","name":"أحكام التجويد في كلمات العزيز الحميد (أحمد الطويل)","kind":"نصي","source":"فنار","credit":"أحمد الطويل · دار القبلتين للنشر والتوزيع","file":"content/tafsir-ahkam-tajweed-kalimat-aziz/{page}.json"},
  {"id":"ghareeb","level":"ayah","marksWords":true,"group":"ghareeb","groupName":"الغريب","short":"الميسر","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
- {"id":"ayah-recitation","level":"ayah","groupName":"التلاوة","name":"التلاوات المزمّنة","kind":"تلاوة","source":"فنار","file":null},
+ {"id":"ayah-recitation","level":"ayah","groupName":"التلاوة","name":"التلاوة والحفظ","kind":"تلاوة","source":"فنار","file":null,"player":true},
  {"id":"page-benefits","level":"page","groupName":"فوائد الصفحة","name":"فوائد الصفحات من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/benefits-of-the-verses-from-al-mukhtasar/{page}.json","family":"mokhtasar"},
  {"id":"surah-objectives","level":"surah","groupName":"مقاصد السورة","name":"مقاصد السور من المختصر (العربية)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-al-mukhtasar.json","group":"objectives","short":"العربية","lang":"ar","family":"mokhtasar"},
  {"id":"surah-objectives-as","level":"surah","group":"objectives","groupName":"مقاصد السورة","short":"অসমীয়া","lang":"as","name":"مقاصد السور من المختصر (অসমীয়া)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-as.json","family":"mokhtasar"},
@@ -53,5 +53,5 @@
  {"id":"surah-objectives-yo","level":"surah","group":"objectives","groupName":"مقاصد السورة","short":"Yorùbá","lang":"yo","name":"مقاصد السور من المختصر (Yorùbá)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-yo.json","family":"mokhtasar"},
  {"id":"surah-objectives-zh","level":"surah","group":"objectives","groupName":"مقاصد السورة","short":"中文","lang":"zh","name":"مقاصد السور من المختصر (中文)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-zh.json","family":"mokhtasar"},
  {"id":"surah-sciences","level":"surah","groupName":"علوم السورة","name":"علوم السور من الجامع الوجيز في تفسير آي الكتاب العزيز","kind":"نصي","source":"فنار","credit":"موقع مقرأ","file":"content/surah-sciences-al-jami-al-wajeez.json"},
- {"id":"surah-recitation","level":"surah","groupName":"التلاوة","name":"تلاوة السورة كاملة","kind":"تلاوة","source":"فنار","file":null}
+ {"id":"surah-recitation","level":"surah","groupName":"التلاوة","name":"التلاوة والحفظ","kind":"تلاوة","source":"فنار","file":null,"player":true}
 ]

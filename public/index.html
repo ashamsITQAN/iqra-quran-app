@@ -39,6 +39,7 @@ button{cursor:pointer}
 .bar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .bar{min-width:0}
 .bar h1{font-size:17px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:520px){.bar h1{display:none}.bar .grow{display:none}.bar{justify-content:space-between}}
 @media (max-width:640px){.bar .chip{display:none}.bar h1{font-size:15px}.bar select{max-width:34vw}.bar{gap:6px;padding-inline:10px}}
 .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
 .bar .grow{flex:1}
@@ -101,6 +102,35 @@ button{cursor:pointer}
 .notes li{padding-inline-start:4px;border-radius:4px;transition:background .3s}
 .notes li.hot{background:var(--tint-strong);color:var(--ink)}
 .more{background:none;border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:12px;margin-top:6px;color:var(--accent)}
+#hifz{width:min(560px,calc(100% - 24px))}
+.hz fieldset{border:1px solid var(--line);border-radius:10px;margin:0;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.hz legend{font-size:12px;color:var(--muted);padding:0 6px}
+.hz label{font-size:14px}
+.hz select,.hz input[type=number]{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:210px}
+.hz input[type=number]{width:76px;text-align:center}
+.hz input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);justify-self:end}
+.hz .inl{display:flex;align-items:center;gap:6px}.hz small{color:var(--muted);font-size:12px}
+.hz select:disabled,.hz input:disabled{opacity:.45}
+#hz-est{flex:1;align-self:center}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+#player{flex:none;border-top:1px solid var(--line);background:var(--panel);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+#player[hidden],.pager[hidden],#toast[hidden]{display:none}
+.pl-info{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:14px}
+.pl-info span{color:var(--muted);font-size:13px}
+#pl-phase{margin-inline-start:auto;font-weight:600;color:var(--accent)}
+#pl-phase.say{color:var(--gharib)}
+.pl-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+#pl-fill{height:100%;width:0;background:var(--accent)}
+#pl-fill.gap{background:var(--gharib)}
+.pl-ctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.pl-ctl .btn{padding:6px 12px}.pl-ctl .main{min-width:110px}
+#pl-left{text-align:center}
+.pl-entry{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+#toast{position:fixed;z-index:9;bottom:150px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
+.art svg g.ayah-fragment.seg g.word .hit{fill:var(--tint)}
+.art svg g.ayah-fragment.now g.word .hit{fill:var(--tint-strong)}
+.art svg g.ayah-fragment.hideme g.word path{opacity:.06}
 .pager{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:1px solid var(--line);background:var(--panel);flex:none}
 .pager button{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 14px;white-space:nowrap}
 .pager button:disabled{opacity:.4;cursor:default}
@@ -188,10 +218,25 @@ button{cursor:pointer}
   <span class="grow"></span>
   <button type="button" id="find-open" class="btn">بحث</button>
   <button type="button" id="set-open" class="btn">الإعدادات</button>
+  <button type="button" id="hifz-open" class="btn">الحفظ</button>
   <button type="button" id="idx-open" class="btn">الفهرس</button>
 </header>
 
 <main id="stage"><div id="spread"></div></main>
+
+<div id="player" hidden>
+  <div class="pl-info"><strong id="pl-step"></strong><span id="pl-rep"></span><span id="pl-phase"></span></div>
+  <div class="pl-bar"><div id="pl-fill"></div></div>
+  <div class="pl-ctl">
+    <button type="button" id="pl-prev" class="btn">السابقة</button>
+    <button type="button" id="pl-again" class="btn">إعادة</button>
+    <button type="button" id="pl-toggle" class="btn main">إيقاف مؤقت</button>
+    <button type="button" id="pl-next" class="btn">التالية</button>
+    <button type="button" id="pl-stop" class="btn">إنهاء</button>
+  </div>
+  <div class="note" id="pl-left"></div>
+</div>
+<div id="toast" role="status" hidden></div>
 
 <nav class="pager" aria-label="تقليب الصفحات">
   <button id="prev" type="button">السابقة</button>
@@ -236,6 +281,35 @@ button{cursor:pointer}
     <div class="opt" id="set-rabt-row" hidden><h3><label for="set-rabt">إظهار الربط بين الآيات</label></h3><input id="set-rabt" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div id="set-projects"></div>
   </div>
+</section>
+
+<section id="hifz" class="modal" role="dialog" aria-label="جلسة الحفظ" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">الحفظ بالتكرار المتقاطع</p><p class="sub">تلقين كل مقطع منفردًا، ثم وصله بما قبله، ثم سرد الكل.</p></div>
+    <button class="sh-close" id="hz-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body hz">
+    <fieldset><legend>المقطع</legend>
+      <label for="hz-surah">السورة</label><select id="hz-surah"></select>
+      <label for="hz-from">من الآية</label><input id="hz-from" type="number" inputmode="numeric" min="1">
+      <label for="hz-to">إلى الآية</label><span class="inl"><input id="hz-to" type="number" inputmode="numeric" min="1"><small id="hz-max"></small></span>
+      <label for="hz-unit">مقدار ما يُلقَّن كل مرة</label><select id="hz-unit"><option value="1">آية</option><option value="2">آيتان</option><option value="3">ثلاث آيات</option><option value="5">خمس آيات</option></select>
+      <label for="hz-reciter">القارئ</label><select id="hz-reciter"><option value="">…</option></select>
+    </fieldset>
+    <fieldset><legend>عدد المرات</legend>
+      <label for="hz-r1">تلقين المقطع منفردًا</label><input id="hz-r1" type="number" inputmode="numeric" min="0" max="50">
+      <label for="hz-r2">وصله بما قبله</label><input id="hz-r2" type="number" inputmode="numeric" min="0" max="50">
+      <label for="hz-r3">سرد الكل في الختام</label><input id="hz-r3" type="number" inputmode="numeric" min="0" max="50">
+      <label for="hz-link">طريقة الوصل</label><select id="hz-link"><option value="cum">تراكمي: من أول المقطع إلى الجديد</option><option value="prev">بالمقطع السابق فقط</option></select>
+    </fieldset>
+    <fieldset><legend>الترديد</legend>
+      <label for="hz-mode">الطريقة</label><select id="hz-mode"><option value="repeat">أستمع ثم أردّد</option><option value="listen">أستمع فقط</option></select>
+      <label for="hz-gap">مهلة الترديد بعد كل مرة</label><select id="hz-gap"><option value="0.5">نصف طول المقطع</option><option value="1">بطول المقطع</option><option value="1.5">مرة ونصف</option><option value="2">ضعف طول المقطع</option><option value="manual">يدوية: أضغط «التالي»</option></select>
+      <label for="hz-hide">إخفاء الآيات وقت الترديد</label><input id="hz-hide" type="checkbox">
+      <label for="hz-speed">سرعة التلاوة</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
+    </fieldset>
+  </div>
+  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-start" class="btn main" disabled>ابدأ</button></div>
 </section>
 
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
@@ -325,6 +399,7 @@ async function render() {
   try { history.replaceState(null, "", "#p" + cur); } catch (e) {}
   await Promise.all(want.filter((n) => n <= meta.last).map(fillPage));
   applySelection();
+  paintNow();
   [start - 1, start - 2, start + cols, start + cols + 1].forEach((n) => { if (n >= meta.first && n <= meta.last) getSVG(n).catch(() => {}); });
 }
 
@@ -429,12 +504,13 @@ spread.addEventListener("click", (e) => {
 const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index");
 function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
+  if (e.key === " " && S && !e.target.matches("input,select,button,textarea")) { e.preventDefault(); togglePlay(); }
   if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } close(); }
   if (e.target.matches("input,select")) return;
   const inSheet = sheet.classList.contains("open");
@@ -601,6 +677,7 @@ async function card(p, key) {
   h.append(tag(p.kind), tag(p.source, "src"));
   el.append(h);
   if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
+  if (p.player) return recitationCard(p);
   if (!p.file) {
     el.classList.add("empty");
     el.append(para("لم يُربط بعد. يُضاف هذا المشروع من فنار."));
@@ -684,6 +761,277 @@ $("#next").addEventListener("click", () => go(1));
 $("#prev").addEventListener("click", () => go(-1));
 $("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
 
+/* ---------- memorisation player: cumulative "circular" repetition ----------
+   The method (Ahmad Shams, community.itqan.dev/d/432): recite each new unit alone, then join it to what
+   came before, then recite the whole passage. Audio and ayah timings come from Fanar's public API. */
+const API = store.get("api", "https://api.cms.itqan.dev");
+const HZ_DEFAULT = { surah: 1, from: 1, to: 7, reciter: "", unit: 1, r1: 5, r2: 5, r3: 3, link: "cum", mode: "repeat", gap: "1", speed: "1", hide: false };
+let hz = { ...HZ_DEFAULT };
+try { hz = { ...HZ_DEFAULT, ...JSON.parse(store.get("hifz", "{}")) }; } catch (e) {}
+const saveHz = () => store.set("hifz", JSON.stringify(hz));
+const hifzBox = $("#hifz"), playerBar = $("#player"), audio = new Audio();
+audio.preload = "auto";
+const api = (path, lang) => fetch(API + path, lang ? { headers: { "Accept-Language": "ar" } } : undefined).then((r) => { if (!r.ok) throw new Error(path); return r.json(); });
+
+// Hafs recitations that carry ayah timings. Checked once, then remembered for a week.
+let recitersP = null;
+function loadReciters() {
+  if (recitersP) return recitersP;
+  try { const c = JSON.parse(store.get("timed", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
+  recitersP = (async () => {
+    const all = (await api("/recitations/?page_size=200", true)).results.filter((x) => x.riwayah && /حفص/.test(x.riwayah.name) && x.surahs_count === 114);
+    const checked = await Promise.all(all.map(async (x) => {
+      try { const t = (await api(`/recitations/${x.id}/?page_size=1`)).results[0]; return t && t.ayahs_timings && t.ayahs_timings.length ? { id: String(x.id), name: x.reciter.name, publisher: x.publisher ? x.publisher.name : "" } : null; }
+      catch (e) { return null; }
+    }));
+    const list = checked.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    if (!list.length) throw new Error("no timed recitations");
+    store.set("timed", JSON.stringify({ t: Date.now(), list }));
+    return list;
+  })();
+  recitersP.catch(() => { recitersP = null; });
+  return recitersP;
+}
+const trackCache = new Map();
+function loadTrack(reciter, surah) {
+  const k = reciter + ":" + surah;
+  if (!trackCache.has(k)) {
+    const p = (async () => {
+      let t = (await api(`/recitations/${reciter}/?page=${surah}&page_size=1`)).results[0];
+      if (!t || t.surah_number !== surah) t = (await api(`/recitations/${reciter}/?page_size=114`)).results.find((x) => x.surah_number === surah);
+      if (!t || !t.ayahs_timings || !t.ayahs_timings.length) throw new Error("untimed");
+      const at = {};
+      t.ayahs_timings.forEach((x) => { at[+x.ayah_key.split(":")[1]] = [x.start_ms, x.end_ms]; });
+      return { url: t.audio_url, at };
+    })();
+    p.catch(() => trackCache.delete(k));
+    trackCache.set(k, p);
+  }
+  return trackCache.get(k);
+}
+
+/* The plan: a list of steps, each a run of ayahs repeated some number of times. */
+const KIND = { talqin: "تلقين", wasl: "وصل", sard: "سرد", listen: "استماع" };
+function buildPlan(c) {
+  const units = [];
+  for (let a = c.from; a <= c.to; a += c.unit) units.push([a, Math.min(c.to, a + c.unit - 1)]);
+  const steps = [];
+  units.forEach((u, i) => {
+    if (c.r1 > 0) steps.push({ kind: "talqin", a: u[0], b: u[1], reps: c.r1 });
+    if (i > 0 && c.r2 > 0) steps.push({ kind: "wasl", a: c.link === "cum" ? units[0][0] : units[i - 1][0], b: u[1], reps: c.r2 });
+  });
+  if (units.length > 1 && c.r3 > 0) steps.push({ kind: "sard", a: c.from, b: c.to, reps: c.r3 });
+  return steps;
+}
+const segMs = (t, s) => t.at[s.b][1] - t.at[s.a][0];
+const gapMs = (c, heard) => (c.mode !== "repeat" || c.gap === "manual" ? 0 : heard * +c.gap);
+function planMs(c, t, steps, fromStep = 0, fromRep = 0) {
+  let ms = 0;
+  steps.forEach((s, i) => { if (i < fromStep) return; const heard = segMs(t, s) / +c.speed; ms += (s.reps - (i === fromStep ? fromRep : 0)) * (heard + gapMs(c, heard)); });
+  return ms;
+}
+const clock = (ms) => { const m = Math.round(ms / 60000); return m < 1 ? "أقل من دقيقة" : m < 60 ? `${ar(m)} دقيقة` : `${ar(Math.floor(m / 60))} س ${ar(m % 60)} د`; };
+const rangeLabel = (a, b) => (a === b ? `الآية ${ar(a)}` : `الآيات ${ar(a)}–${ar(b)}`);
+
+/* ----- setup window ----- */
+const F = (id) => $("#hz-" + id);
+function readForm() {
+  const max = meta.surahs[F("surah").value].ayahs, n = (id, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+F(id).value) || lo));
+  hz.surah = +F("surah").value; hz.from = n("from", 1, max); hz.to = Math.max(hz.from, n("to", 1, max));
+  hz.reciter = F("reciter").value; hz.unit = +F("unit").value; hz.r1 = n("r1", 0, 50); hz.r2 = n("r2", 0, 50); hz.r3 = n("r3", 0, 50);
+  hz.link = F("link").value; hz.mode = F("mode").value; hz.gap = F("gap").value; hz.speed = F("speed").value; hz.hide = F("hide").checked;
+  saveHz();
+}
+function writeForm() {
+  const max = meta.surahs[hz.surah].ayahs;
+  hz.from = Math.min(hz.from, max); hz.to = Math.max(hz.from, Math.min(hz.to, max));
+  F("surah").value = hz.surah; F("from").value = hz.from; F("to").value = hz.to; F("from").max = F("to").max = max;
+  if (hz.reciter) F("reciter").value = hz.reciter;
+  F("unit").value = hz.unit; F("r1").value = hz.r1; F("r2").value = hz.r2; F("r3").value = hz.r3;
+  F("link").value = hz.link; F("mode").value = hz.mode; F("gap").value = hz.gap; F("speed").value = hz.speed; F("hide").checked = hz.hide;
+  F("gap").disabled = F("hide").disabled = hz.mode !== "repeat";
+  $("#hz-max").textContent = `من ${ar(max)}`;
+}
+let estToken;
+async function estimate() {
+  const out = F("est"), go = F("start"), token = (estToken = {});
+  go.disabled = true;
+  if (!hz.reciter) { out.textContent = "اختر القارئ."; return; }
+  out.textContent = "جارٍ حساب مدة الجلسة…";
+  let t;
+  try { t = await loadTrack(hz.reciter, hz.surah); } catch (e) { if (token === estToken) out.textContent = "تعذّر جلب توقيت هذه التلاوة. تحقق من الاتصال أو اختر قارئًا آخر."; return; }
+  if (token !== estToken) return;
+  const steps = buildPlan(hz);
+  if (!steps.length) { out.textContent = "اجعل أحد أعداد التكرار أكبر من صفر."; return; }
+  const reps = steps.reduce((n, s) => n + s.reps, 0), manual = hz.mode === "repeat" && hz.gap === "manual";
+  out.textContent = `${ar(steps.length)} خطوة · ${ar(reps)} مرة · نحو ${clock(planMs(hz, t, steps))}${manual ? " غير زمن ترديدك" : ""}`;
+  go.disabled = false;
+}
+async function openHifz(preset) {
+  if (preset) Object.assign(hz, preset);
+  ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); applySelection();
+  show(hifzBox, true);
+  const sel = F("reciter");
+  if (!F("surah").options.length) F("surah").replaceChildren(...Object.entries(meta.surahs).map(([n, s]) => { const o = document.createElement("option"); o.value = n; o.textContent = `${ar(n)}. ${s.name}`; return o; }));
+  writeForm();
+  if (sel.options.length < 2) {
+    F("est").textContent = "جارٍ جلب قائمة القرّاء من فنار…"; F("start").disabled = true;
+    try {
+      const list = await loadReciters();
+      sel.replaceChildren(...list.map((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name; return o; }));
+      if (!list.some((r) => r.id === hz.reciter)) hz.reciter = list[0].id;
+      sel.value = hz.reciter; saveHz();
+    } catch (e) { F("est").textContent = "تعذّر الاتصال بفنار لجلب القرّاء. تحقق من الاتصال ثم أعد فتح النافذة."; return; }
+  }
+  estimate();
+}
+hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.startsWith("hz-")) return; if (e.target.id === "hz-surah") { hz.surah = +e.target.value; hz.from = 1; hz.to = meta.surahs[hz.surah].ayahs; F("from").value = 1; F("to").value = hz.to; } readForm(); writeForm(); estimate(); });
+$("#hifz-open").addEventListener("click", () => openHifz());
+$("#hz-close").addEventListener("click", close);
+F("start").addEventListener("click", async () => { readForm(); const c = { ...hz }; show(hifzBox, false); startSession(c, buildPlan(c)); });
+
+/* ----- the session ----- */
+let S = null, ticker = null, wake = null, ayahPage = null;
+async function startSession(c, steps) {
+  stopSession();
+  let t;
+  try { t = await loadTrack(c.reciter, c.surah); if (!ayahPage) { ayahPage = {}; (await loadCorpus()).forEach((r) => { ayahPage[r.s + ":" + r.a] = r.page; }); } }
+  catch (e) { toast("تعذّر بدء التلاوة. تحقق من الاتصال."); return; }
+  if (steps.some((s) => !t.at[s.a] || !t.at[s.b])) { toast("توقيت بعض هذه الآيات غير متوفر لهذا القارئ."); return; }
+  S = { c, t, steps, i: 0, rep: 0, phase: "play", paused: false, gapLeft: 0, gapAll: 0, last: 0, now: 0 };
+  playerBar.hidden = false; $(".pager").hidden = true;
+  try { wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+  window.dispatchEvent(new Event("resize"));
+  playSeg();
+}
+function stopSession() {
+  clearInterval(ticker); ticker = null;
+  audio.pause();
+  if (wake) { try { wake.release(); } catch (e) {} wake = null; }
+  if (!S) return;
+  S = null; playerBar.hidden = true; $(".pager").hidden = false;
+  paintNow(); window.dispatchEvent(new Event("resize"));
+}
+const once = (el, ev) => new Promise((res, rej) => { const ok = () => { off(); res(); }, bad = () => { off(); rej(new Error("audio")); }, off = () => { el.removeEventListener(ev, ok); el.removeEventListener("error", bad); }; el.addEventListener(ev, ok); el.addEventListener("error", bad); });
+async function playSeg() {
+  const me = S, s = S.steps[S.i];
+  clearInterval(ticker);
+  S.phase = "play"; S.paused = false; S.now = 0;
+  paintPlayer();
+  try {
+    if (audio.dataset.url !== S.t.url) { audio.src = S.t.url; audio.dataset.url = S.t.url; await once(audio, "loadedmetadata"); }
+    if (S !== me) return;
+    audio.playbackRate = +S.c.speed;
+    audio.currentTime = S.t.at[s.a][0] / 1000;
+    await audio.play();
+  } catch (e) {
+    if (S !== me) return;
+    if (e && e.name === "NotAllowedError") { S.paused = true; paintPlayer(); toast("اضغط «متابعة» لبدء التلاوة."); return; }
+    toast("تعذّر تشغيل ملف التلاوة."); stopSession(); return;
+  }
+  if (S !== me) return;
+  ticker = setInterval(tick, 40);
+}
+function tick() {
+  if (!S || S.paused) return;
+  const s = S.steps[S.i];
+  if (S.phase === "play") {
+    const ms = audio.currentTime * 1000, st = S.t.at[s.a][0], en = S.t.at[s.b][1];
+    let now = s.a;
+    for (let a = s.a; a <= s.b; a++) if (ms >= S.t.at[a][0]) now = a;
+    if (now !== S.now) { S.now = now; followAyah(now); }
+    $("#pl-fill").style.width = Math.max(0, Math.min(100, ((ms - st) / (en - st)) * 100)) + "%";
+    if (ms >= en - 30 || audio.ended) { audio.pause(); afterSeg(); }
+  } else if (S.phase === "gap") {
+    const t = performance.now(); S.gapLeft -= t - S.last; S.last = t;
+    $("#pl-fill").style.width = Math.max(0, (S.gapLeft / S.gapAll) * 100) + "%";
+    if (S.gapLeft <= 0) advance();
+  }
+}
+function afterSeg() {
+  const s = S.steps[S.i], c = S.c;
+  if (c.mode !== "repeat") return advance();
+  if (c.gap === "manual") { S.phase = "wait"; clearInterval(ticker); }
+  else { S.phase = "gap"; S.gapAll = S.gapLeft = gapMs(c, segMs(S.t, s) / +c.speed); S.last = performance.now(); }
+  S.now = 0; paintPlayer(); paintNow();
+}
+function advance() {
+  S.rep += 1;
+  if (S.rep >= S.steps[S.i].reps) { S.i += 1; S.rep = 0; }
+  if (S.i >= S.steps.length) { const listen = S.steps[0].kind === "listen"; stopSession(); toast(listen ? "انتهت التلاوة." : "تمّت الجلسة. بارك الله في حفظك."); return; }
+  playSeg();
+}
+function jumpStep(d) { if (!S) return; S.i = Math.max(0, Math.min(S.steps.length - 1, S.i + d)); S.rep = 0; audio.pause(); playSeg(); }
+function togglePlay() {
+  if (!S) return;
+  if (S.phase === "wait") return advance();
+  S.paused = !S.paused;
+  if (S.phase === "play") { if (S.paused) audio.pause(); else audio.play().then(() => { if (!ticker) ticker = setInterval(tick, 40); }).catch(() => { S.paused = true; paintPlayer(); }); }
+  else S.last = performance.now();
+  paintPlayer();
+}
+function paintPlayer() {
+  if (!S) return;
+  const s = S.steps[S.i], reciting = S.phase !== "play";
+  $("#pl-step").textContent = `${KIND[s.kind]} · ${rangeLabel(s.a, s.b)}`;
+  $("#pl-rep").textContent = s.reps > 1 ? `المرة ${ar(S.rep + 1)} من ${ar(s.reps)}` : "";
+  $("#pl-phase").textContent = S.paused ? "متوقف مؤقتًا" : S.phase === "play" ? "استمع" : S.phase === "gap" ? "ردّد الآن" : "ردّد ثم اضغط «التالي»";
+  $("#pl-phase").classList.toggle("say", reciting && !S.paused);
+  $("#pl-left").textContent = `الخطوة ${ar(S.i + 1)} من ${ar(S.steps.length)} · الباقي ${clock(planMs(S.c, S.t, S.steps, S.i, S.rep))}`;
+  $("#pl-toggle").textContent = S.phase === "wait" ? "التالي" : S.paused ? "متابعة" : "إيقاف مؤقت";
+  $("#pl-fill").classList.toggle("gap", reciting);
+  if (S.phase === "wait") $("#pl-fill").style.width = "100%";
+  $("#pl-prev").disabled = S.i === 0; $("#pl-next").disabled = S.i >= S.steps.length - 1;
+}
+// Colour the passage being worked on and, more strongly, the ayah being recited; turn the page to follow it.
+function paintNow() {
+  spread.querySelectorAll(".now,.seg,.hideme").forEach((n) => n.classList.remove("now", "seg", "hideme"));
+  if (!S) return;
+  const s = S.steps[S.i], hide = S.c.hide && S.phase !== "play";
+  for (let a = s.a; a <= s.b; a++) spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${S.c.surah}:${a}"]`).forEach((n) => n.classList.add(a === S.now ? "now" : "seg", ...(hide ? ["hideme"] : [])));
+}
+async function followAyah(a) {
+  const me = S, page = ayahPage[S.c.surah + ":" + a];
+  if (page && !spread.querySelector(`.page[data-page="${page}"]`)) { cur = page; await render(); }
+  if (S !== me) return;
+  paintNow();
+  const el = spread.querySelector("g.ayah-fragment.now");
+  if (el && stage.scrollHeight > stage.clientHeight) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+$("#pl-toggle").addEventListener("click", togglePlay);
+$("#pl-prev").addEventListener("click", () => jumpStep(-1));
+$("#pl-next").addEventListener("click", () => jumpStep(1));
+$("#pl-again").addEventListener("click", () => jumpStep(0));
+$("#pl-stop").addEventListener("click", stopSession);
+audio.addEventListener("error", () => { if (S && S.phase === "play") { toast("انقطع تحميل التلاوة."); stopSession(); } });
+let toastTimer;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4200); }
+
+// Entry points from the content window: listen once, or start memorising from here.
+function recitationCard(p) {
+  const el = document.createElement("div"), row = document.createElement("div");
+  el.className = "proj"; row.className = "pl-entry";
+  const btn = (label, fn, main) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (main ? " main" : ""); b.textContent = label; b.addEventListener("click", fn); row.append(b); };
+  const s = ctx.surah, n = meta.surahs[s].ayahs;
+  const listen = async (from, to) => {
+    close();
+    let rec = hz.reciter;
+    if (!rec) { try { rec = (await loadReciters())[0].id; hz.reciter = rec; saveHz(); } catch (e) { toast("تعذّر الاتصال بفنار لجلب القرّاء."); return; } }
+    startSession({ ...hz, surah: s, from, to, reciter: rec, mode: "listen", hide: false }, [{ kind: "listen", a: from, b: to, reps: 1 }]);
+  };
+  if (p.level === "ayah") {
+    const a = +ctx.ayah.split(":")[1];
+    btn("استمع إلى الآية", () => listen(a, a), true);
+    btn("استمع من هنا إلى آخر السورة", () => listen(a, n));
+    btn("احفظ ابتداءً من هذه الآية", () => openHifz({ surah: s, from: a, to: Math.min(n, a + 4) }));
+  } else {
+    btn("استمع إلى السورة", () => listen(1, n), true);
+    btn("احفظ من هذه السورة", () => openHifz({ surah: s, from: 1, to: Math.min(n, 5) }));
+  }
+  el.append(row, para("التلاوات من فنار. القارئ يُختار من نافذة «الحفظ»."));
+  return el;
+}
+
 /* ---------- index: surahs, ajza' and ahzab ---------- */
 let idxTab = "surah";
 async function jump(page, ayah) {
@@ -742,7 +1090,7 @@ function paintSettings() {
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
-    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
     if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {
