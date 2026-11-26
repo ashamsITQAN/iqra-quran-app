@@ -19,8 +19,8 @@ os.makedirs(os.path.join(dst, "pages"), exist_ok=True)
 for p in pages:
     n = p["page"]
     shutil.copy(os.path.join(src, f"pages/{n:03d}.svg"), os.path.join(dst, f"pages/{n:03d}.svg"))
-    juz = div_at(dv["juz"], "juz", n); hizb = div_at(dv["hizb"], "hizb", n)
-    meta["pages"].append({"page": n, "surahs": p["surahs"], "first": p["first_ayah"], "last": p["last_ayah"], "juz": juz, "hizb": hizb})
+    juz = div_at(dv["juz"], "juz", n); hizb = div_at(dv["hizb"], "hizb", n); rub = div_at(dv["rubu_al_hizb"], "rubu_al_hizb_in_hizb", n)
+    meta["pages"].append({"page": n, "surahs": p["surahs"], "first": p["first_ayah"], "last": p["last_ayah"], "juz": juz, "hizb": hizb, "rub": rub})
     forms, ay = {}, {}
     for x in J(f"index/by-page/{n:03d}.json")["words"]:
         forms[x["word_key"]] = {"إملائي": x["rasm_imlai"], "مجرّد من الضبط": x["rasm"], "صيغة البحث": x["search"], "السطر": x["line"]}

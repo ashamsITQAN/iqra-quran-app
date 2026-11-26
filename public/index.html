@@ -627,7 +627,7 @@ function pageShell(n, artH) {
   if (n > meta.last) { el.classList.add("blank"); el.style.height = Math.round(artH + FURN) + "px"; return el; }
   const pm = pageMeta(n), s = pm.surahs[0];
   el.dataset.page = n; el.classList.add(n % 2 ? "rt" : "lt");   // odd pages sit on the right of the open mushaf
-  el.innerHTML = `<div class="head"><button type="button" data-surah="${s}" title="مشروعات السورة">${surahName(s)}</button><span>الجزء ${ar(pm.juz)}</span></div>
+  el.innerHTML = `<div class="head"><button type="button" data-surah="${s}" title="مشروعات السورة">${surahName(s)}</button><span>${pm.rub ? "ربع الحزب " + ar(pm.rub) + " · " : ""}الحزب ${ar(pm.hizb)} · الجزء ${ar(pm.juz)}</span></div>
     <div class="art" style="height:${Math.round(artH)}px"><div class="wait">جارٍ تحميل الصفحة…</div></div>
     <div class="foot"><button type="button" data-pnum="${n}" title="مشروعات الصفحة" aria-label="الصفحة ${n}">${ar(n)}</button></div>`;
   return el;
@@ -900,7 +900,7 @@ async function paintSheet() {
     }).catch(() => {});
   }
   if (level === "surah") { big.textContent = surahName(ctx.surah); sub.textContent = `${ar(meta.surahs[ctx.surah].ayahs)} آية`; }
-  if (level === "page") { big.textContent = `الصفحة ${ar(ctx.page)}`; sub.textContent = `الجزء ${ar(pageMeta(ctx.page).juz)} · الحزب ${ar(pageMeta(ctx.page).hizb)}`; }
+  if (level === "page") { big.textContent = `الصفحة ${ar(ctx.page)}`; { const pm = pageMeta(ctx.page); sub.textContent = `${pm.rub ? "ربع الحزب " + ar(pm.rub) + " · " : ""}الحزب ${ar(pm.hizb)} · الجزء ${ar(pm.juz)}`; } }
 
   const body = $("#sh-body"), key = keyFor(level), token = {};
   paintSheet.token = token;
