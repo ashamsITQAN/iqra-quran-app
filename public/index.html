@@ -131,7 +131,7 @@ button{cursor:pointer}
 .pl-ctl .btn{padding:6px 12px}.pl-ctl .main{min-width:110px}
 #pl-left{text-align:center}
 .pl-entry{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
-#card-reciter{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:70%}
+#card-reciter,#card-speed{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:70%}
 .proj p.warn{color:var(--gharib);border:1px solid var(--gharib);border-radius:8px;padding:8px 10px;font-size:13px}
 #toast{position:fixed;z-index:9;bottom:150px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 /* Recitation layers, weakest to strongest: the passage, the ayah, the breath group, the word. */
@@ -316,7 +316,7 @@ button{cursor:pointer}
       <label for="hz-mode">الطريقة</label><select id="hz-mode"><option value="repeat">أستمع ثم أردّد</option><option value="listen">أستمع فقط</option></select>
       <label for="hz-gap">مهلة الترديد بعد كل مرة</label><select id="hz-gap"><option value="0.5">نصف طول المقطع</option><option value="1">بطول المقطع</option><option value="1.5">مرة ونصف</option><option value="2">ضعف طول المقطع</option><option value="manual">يدوية: أضغط «التالي»</option></select>
       <label for="hz-hide">إخفاء الآيات وقت الترديد</label><input id="hz-hide" type="checkbox">
-      <label for="hz-speed">سرعة التلاوة</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
+      <label for="hz-speed">سرعة التلاوة في الحفظ</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
     </fieldset>
   </div>
   <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
@@ -978,7 +978,7 @@ F("listen").addEventListener("click", () => { readForm(); show(hifzBox, false); 
 let S = null, ticker = null, wake = null, ayahPage = null;
 async function startSession(c) {
   stopSession();
-  if (c.listen) c = { ...c, speed: "1" };   // the speed chosen for memorising is not carried into plain listening
+  if (c.listen) c = { ...c, speed: store.get("lspeed", "1") };   // listening keeps its own speed, apart from memorising
   let t, fine, steps;
   try { [t, fine] = await Promise.all([loadTrack(c.reciter, c.surah), loadFine(c.reciter, c.surah)]); if (!ayahPage) { ayahPage = {}; (await loadCorpus()).forEach((r) => { ayahPage[r.s + ":" + r.a] = r.page; }); } }
   catch (e) { toast("تعذّر بدء التلاوة. تحقق من الاتصال."); return; }
@@ -1144,6 +1144,11 @@ async function recitationCard(p) {
   list.forEach((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name + (r.timed ? "" : " (غير مزمّنة)"); o.selected = r === rec; sel.append(o); });
   sel.addEventListener("change", () => { hz.reciter = sel.value; saveHz(); const opt = F("reciter").querySelector(`option[value="${sel.value}"]`); if (opt) F("reciter").value = sel.value; paintSheet(); });
   pick.append(lab, sel);
+  const pace = document.createElement("div"), plab = document.createElement("label"), psel = document.createElement("select");
+  pace.className = "opt"; psel.id = "card-speed"; plab.htmlFor = psel.id; plab.textContent = "سرعة الاستماع";
+  [["0.75", "أبطأ ٠٫٧٥"], ["1", "عادية"], ["1.25", "أسرع ١٫٢٥"], ["1.5", "أسرع ١٫٥"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; o.selected = v === store.get("lspeed", "1"); psel.append(o); });
+  psel.addEventListener("change", () => store.set("lspeed", psel.value));
+  pace.append(plab, psel);
   const btn = (label, fn, main, off) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (main ? " main" : ""); b.textContent = label; b.disabled = !!off; b.addEventListener("click", fn); row.append(b); };
   const s = ctx.surah, n = meta.surahs[s].ayahs, off = !rec.timed;
   const listen = (from, to) => { close(); startSession({ ...hz, surah: s, from, to, mode: "listen", hide: false, listen: true }); };
@@ -1157,7 +1162,7 @@ async function recitationCard(p) {
     btn("استمع إلى السورة", () => listen(1, n), true);
     btn("احفظ من هذه السورة", () => openHifz({ surah: s, from: 1, to: Math.min(n, 5) }), false, off);
   }
-  el.append(pick, row);
+  el.append(pick, pace, row);
   if (off) { const w = para(UNTIMED); w.className = "warn"; el.append(w); }
   else el.append(para("التلاوات من فنار برواية حفص عن عاصم."));
   return el;
