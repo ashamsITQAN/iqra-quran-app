@@ -488,6 +488,7 @@ body[data-tpi="3"]{--tpo:52%}
     <button class="sh-close" id="shr-close" type="button" aria-label="إغلاق">×</button>
   </div>
   <div class="sh-body">
+    <div class="opt" id="shr-count-row" hidden><h3>عدد الآيات المتتالية</h3><div class="seg" id="shr-count" role="group" aria-label="عدد الآيات المتتالية"><button type="button" data-v="1">١</button><button type="button" data-v="2">٢</button><button type="button" data-v="3">٣</button><button type="button" data-v="4">٤</button><button type="button" data-v="5">٥</button></div></div>
     <div class="shr-opts">
       <button type="button" class="btn" id="shr-png"><strong>صورة PNG</strong><small>بطاقة مصمّمة، تناسب واتساب وفيسبوك</small></button>
       <button type="button" class="btn" id="shr-pdf"><strong>ملف PDF</strong><small>بالتصميم نفسه في صفحات، للمحتوى الطويل</small></button>
@@ -953,8 +954,8 @@ async function step(dir) {
 
 /* The ayah exactly as printed: its ink is copied from the page, line by line. Each line keeps the size
    it has in the mushaf and is centred in the block. */
-function ayahBlock(key, activeWord) {
-  const frags = [...spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"]`)].sort((a, b) => a.dataset.fragment - b.dataset.fragment);
+function ayahBlock(key, activeWord, root) {
+  const frags = [...(root || spread).querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"]`)].sort((a, b) => a.dataset.fragment - b.dataset.fragment);
   if (!frags.length) return null;
   const box = document.createElement("div");
   box.className = "ayah-block";
@@ -1765,27 +1766,44 @@ function docShown() {   // the content the window is showing now
   const title = level === "page" ? "الصفحة " + ar(ctx.page) : level === "surah" ? surahName(ctx.surah) : `${surahName(ctx.surah)} · الآية ${ar(ctx.ayah.split(":")[1])}` + (level === "word" ? " · «" + ctx.text + "»" : "");
   return { name: `iqra-${shown.id}-${String(key).replace(/:/g, "-")}`, title, source: shown.name, body: parts.join("\n"), foot: credit, page: ctx.page, ayah: level === "ayah" || level === "word" ? ctx.ayah : "" };
 }
-async function docText(d) { const t = d.ayah ? await ayahPlain(d.page, d.ayah) : ""; return (t ? `﴿${t}﴾\n` : "") + `[${d.title}]` + (d.source ? `\n${d.source}` : "") + `\n\n${d.body}\n\n— ${[d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ")}`; }
+async function docText(d) {
+  if (d.sections) {
+    const out = [`[${d.title}]`, d.source, ""];
+    for (const sec of d.sections) { const t = await ayahPlain(sec.page, sec.key); out.push((t ? `﴿${t}﴾ ` : "") + `(${sec.key.split(":")[1]})`, sec.body, ...(sec.rabt ? ["◂ " + sec.rabt] : []), ""); }
+    return out.join("\n") + `— ${[d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ")}`;
+  }
+  const t = d.ayah ? await ayahPlain(d.page, d.ayah) : ""; return (t ? `﴿${t}﴾\n` : "") + `[${d.title}]` + (d.source ? `\n${d.source}` : "") + `\n\n${d.body}\n\n— ${[d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ")}`; }
 // Lays the document out as a flow of items and paints it: one canvas of its own height (pageH = 0), or pages of a fixed height.
 async function paintDoc(d, pageH) {
   const W = 1080, P = 64, inner = W - 2 * P, LH = 68, FONT = '36px "Amiri","Noto Naskh Arabic",serif', UI = '"IBM Plex Sans Arabic","Amiri",sans-serif';
-  const block = $("#sh-body .ayah-block"), svgs = block ? [...block.querySelectorAll("svg")] : [], f = block ? (inner - 80) / Math.max(1, block.clientWidth - 28) : 1, imgs = [];
-  for (const sv of svgs) imgs.push(await svgImage(sv, f));
   await document.fonts.ready;
   const probe = document.createElement("canvas").getContext("2d"); probe.font = FONT; probe.direction = "rtl";
-  const lines = [];
-  d.body.split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).filter(Boolean).forEach((w) => { const t = line ? line + " " + w : w; if (probe.measureText(t).width > inner - 50 && line) { lines.push(line); line = w; } else line = t; }); lines.push(line); });
+  const wrap = (text) => { const out = []; String(text || "").split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).filter(Boolean).forEach((w) => { const t = line ? line + " " + w : w; if (probe.measureText(t).width > inner - 50 && line) { out.push(line); line = w; } else line = t; }); out.push(line); }); return out; };
   const items = [{ h: 64, draw: (g, y) => { g.fillStyle = "#1b2421"; g.font = "600 40px " + UI; g.fillText(d.title, W - P, y + 44); } }];
   if (d.source) items.push({ h: 52, draw: (g, y) => { g.fillStyle = "#0f6e56"; g.font = "500 28px " + UI; g.fillText(d.source, W - P, y + 34); } });
-  if (imgs.length) {
-    const qH = imgs.reduce((n, x) => n + x.h + 18, 0) + 42;
-    items.push({ h: qH + 34, draw: (g, y) => {
-      g.fillStyle = "#faf9f3"; g.strokeStyle = "#d9ddd6"; g.lineWidth = 2; g.beginPath(); g.roundRect(P, y + 6, inner, qH, 20); g.fill(); g.stroke();
-      g.fillStyle = "#a67c2e"; g.fillRect(W - P - 6, y + 20, 6, qH - 28);
-      let yy = y + 32; imgs.forEach((x) => { g.drawImage(x.im, (W - x.w) / 2, yy, x.w, x.h); yy += x.h + 18; });
-    } });
+  let count = 0;
+  // One section per ayah: the ayah as printed, its text, then the link to what follows (set apart on a tinted band).
+  for (const sec of d.sections || [{ block: $("#sh-body .ayah-block"), body: d.body }]) {
+    const block = sec.block, svgs = block ? [...block.querySelectorAll("svg")] : [], f = block ? (inner - 80) / Math.max(1, block.clientWidth - 28) : 1, imgs = [];
+    for (const sv of svgs) imgs.push(await svgImage(sv, f));
+    if (imgs.length) {
+      const qH = imgs.reduce((n, x) => n + x.h + 18, 0) + 42;
+      items.push({ h: qH + 34, draw: (g, y) => {
+        g.fillStyle = "#faf9f3"; g.strokeStyle = "#d9ddd6"; g.lineWidth = 2; g.beginPath(); g.roundRect(P, y + 6, inner, qH, 20); g.fill(); g.stroke();
+        g.fillStyle = "#a67c2e"; g.fillRect(W - P - 6, y + 20, 6, qH - 28);
+        let yy = y + 32; imgs.forEach((x) => { g.drawImage(x.im, (W - x.w) / 2, yy, x.w, x.h); yy += x.h + 18; });
+      } });
+    }
+    const lines = wrap(sec.body); count += lines.length;
+    lines.forEach((l) => items.push({ h: l ? LH : LH / 2, draw: (g, y) => { g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 4, l ? LH : LH / 2); g.fillStyle = "#1b2421"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+    if (sec.rabt) {
+      const rl = wrap(sec.rabt); count += rl.length + 1;
+      items.push({ h: 18, draw: () => {} });
+      rl.forEach((l) => items.push({ h: LH, draw: (g, y) => { g.fillStyle = "#f5eeda"; g.fillRect(P, y, inner, LH); g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 8, LH); g.fillStyle = "#4a3a12"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+    }
+    if (d.sections) items.push({ h: 30, draw: () => {} });
   }
-  lines.forEach((l) => items.push({ h: l ? LH : LH / 2, draw: (g, y) => { g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 4, l ? LH : LH / 2); g.fillStyle = "#1b2421"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+  const lines = { length: count };
   const foot = [d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ");
   items.push({ h: 84, draw: (g, y) => { g.fillStyle = "#6b7773"; g.font = "24px " + UI; g.fillText(foot.length > 78 ? foot.slice(0, 77) + "…" : foot, W - P, y + 62); } });
   const total = items.reduce((n, x) => n + x.h, 0), room = pageH ? pageH - 2 * P : total, pages = [[]];
@@ -1830,13 +1848,60 @@ async function deliver(blob, name, type, text) {
   if (type === "image/png" && navigator.clipboard && window.ClipboardItem) { try { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); return "saved+copied"; } catch (e) {} }
   return "saved";
 }
+/* Several consecutive ayahs in one share (ayah, its text, the link, the next ayah, its text…), for short per-ayah content. */
+const stageBox = document.createElement("div");
+stageBox.style.cssText = "position:absolute;left:-99999px;top:0;width:520px;visibility:hidden;pointer-events:none"; stageBox.setAttribute("aria-hidden", "true"); document.body.append(stageBox);
+async function rootOfPage(n) {   // the page as shown, or an unseen copy of it laid out off screen
+  if (spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
+  const box = document.createElement("div"), doc = new DOMParser().parseFromString(await getSVG(n), "image/svg+xml"), svg = document.importNode(doc.documentElement, true);
+  svg.removeAttribute("width"); svg.removeAttribute("height"); svg.style.cssText = "display:block;width:100%;height:100%";
+  box.style.cssText = "width:420px;height:" + 420 / RATIO + "px"; box.append(svg); stageBox.append(box);
+  return box;
+}
+function plainEntry(entry) {   // the text of an entry with its footnotes numbered and listed beneath
+  const notesOut = []; let n = 0;
+  const body = String(entry["النص"] || "").replace(/¬([^¥]*)¥?/g, (m, t) => { t = t.trim(); if (!t || /^ج\s*\d+\s*ص\s*\d+$/.test(t)) return ""; n += 1; notesOut.push(`(${ar(n)}) ${t}`); return `(${ar(n)})`; }).trim();
+  const extra = entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : [];
+  return { body: [body, ...notesOut, ...extra].join("\n"), rabt: showRabt && entry["الربط"] ? String(entry["الربط"]).trim() : "" };
+}
+async function docMulti(n) {
+  const p = shown, [su, first] = ctx.ayah.split(":").map(Number), last = Math.min(first + n - 1, meta.surahs[su].ayahs), sections = [];
+  stageBox.replaceChildren();
+  let page = ctx.page;
+  for (let a = first; a <= last; a++) {
+    const key = su + ":" + a;
+    let onPage = null;
+    for (const pg of [page, page + 1]) { if (pg > meta.last) break; try { if ((await getJSON(`content/ayah-text/${pad(pg)}.json`))[key]) { onPage = pg; break; } } catch (e) {} }
+    if (!onPage) break;
+    page = onPage;
+    let entry = null; try { entry = (await getJSON(p.file.replace("{page}", pad(page))))[key]; } catch (e) {}
+    const holder = document.createElement("div"), ink = ayahBlock(key, null, await rootOfPage(page));
+    if (ink) { holder.append(ink); stageBox.append(holder); }
+    sections.push({ key, page, block: ink, ...(entry ? plainEntry(entry) : { body: "لا يوجد محتوى لهذه الآية.", rabt: "" }) });
+  }
+  const to = +sections[sections.length - 1].key.split(":")[1], credit = ($("#sh-body .proj p.note") || {}).innerText || "";
+  return { name: `iqra-${p.id}-${su}-${first}-${to}`, title: `${surahName(su)} · ` + (to > first ? `الآيات ${ar(first)}–${ar(to)}` : `الآية ${ar(first)}`), source: p.name, sections, foot: /^المصدر:/.test(credit) ? credit : "" };
+}
+const canMulti = () => !!(ctx && shown && level === "ayah" && shown.level === "ayah" && shown.file && shown.file.includes("{page}") && !shown.notes);
+let shareCount = 1;
+async function setShareCount(n) {
+  shareCount = n;
+  document.querySelectorAll("#shr-count button").forEach((b) => b.setAttribute("aria-pressed", +b.dataset.v === n));
+  $("#shr-msg").textContent = "";
+  $("#shr-png").disabled = false;
+  shareDoc = n > 1 ? await docMulti(n) : docShown();
+  $("#shr-what").textContent = [shareDoc.source, shareDoc.title].filter(Boolean).join(" · ");
+}
 let shareDoc = null;
 const PNG_MAX = 60;   // lines of text beyond which a single picture is too tall to read on a phone
 function openShare(d) {
   if (!d) return toast("لا يوجد محتوى للمشاركة هنا.");
   shareDoc = d; $("#shr-what").textContent = [d.source, d.title].filter(Boolean).join(" · "); $("#shr-msg").textContent = ""; $("#shr-png").disabled = false;
+  $("#shr-count-row").hidden = !(canMulti() && !KINDS.some((x) => d.name === "iqra-mark-" + x[0]));
+  shareCount = 1; document.querySelectorAll("#shr-count button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === "1"));
   show(shareBox, true);
 }
+$("#shr-count").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (b) setShareCount(+b.dataset.v); });
 async function shareAs(kind) {
   const d = shareDoc, msg = $("#shr-msg"); if (!d) return;
   const done = (r, what) => { msg.textContent = r === "saved+copied" ? `نُزّلت ${what} في مجلد التنزيلات، ونُسخت أيضًا: الصقها مباشرة (Ctrl+V) في واتساب أو فيسبوك.` : r === "saved" ? `نُزّل ${what} في مجلد التنزيلات؛ أرفقه من هناك في واتساب أو فيسبوك أو البريد.` : r === "shared" ? "تمت المشاركة." : ""; };
