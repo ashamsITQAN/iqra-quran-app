@@ -98,7 +98,11 @@ button{cursor:pointer}
 .seg button{padding:7px 14px}
 .pm{color:var(--muted);font-size:.62em;font-family:var(--ui);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
 .ref{background:none;border:0;padding:0 1px;color:var(--accent);font-family:var(--ui);font-size:.62em;vertical-align:super;line-height:1}
-.notes{margin:10px 0 4px;padding:8px 22px 0 0;border-top:1px solid var(--line);font-family:var(--naskh);font-size:14px;line-height:1.9;color:var(--muted);list-style:arabic-indic}
+.notes{margin:10px 0 4px;padding:8px 0 0 0;border-top:1px solid var(--line);font-family:var(--naskh);font-size:14px;line-height:1.9;color:var(--muted);list-style:none}
+.ref{cursor:pointer;border-radius:4px;transition:background .3s,box-shadow .3s}
+.ref.back{vertical-align:baseline;font-size:.95em;font-weight:600;padding:0 3px}
+.ref.hot{background:var(--tint-strong);box-shadow:0 0 0 2px var(--accent)}
+@media (prefers-reduced-motion:reduce){.ref,.notes li{transition:none}}
 .notes li{padding-inline-start:4px;border-radius:4px;transition:background .3s}
 .notes li.hot{background:var(--tint-strong);color:var(--ink)}
 .more{background:none;border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:12px;margin-top:6px;color:var(--accent)}
@@ -724,10 +728,15 @@ function richText(v, extraNotes, quoted) {
       if (!body) return;
       if (PAGE_MARK.test(body)) { const m = document.createElement("span"); m.className = "pm"; m.textContent = ar(body); p.append(" ", m, " "); return; }
       n += 1;
-      const li = document.createElement("li"), ref = document.createElement("button");
-      li.textContent = body;
-      ref.type = "button"; ref.className = "ref"; ref.textContent = "(" + ar(n) + ")"; ref.setAttribute("aria-label", "الهامش " + n);
-      ref.addEventListener("click", () => { li.scrollIntoView({ block: "nearest" }); li.classList.add("hot"); setTimeout(() => li.classList.remove("hot"), 1500); });
+      // The number in the text jumps to its note; the number on the note jumps back and lights up the place for 3 seconds.
+      const li = document.createElement("li"), ref = document.createElement("button"), back = document.createElement("button"), txt = document.createElement("span");
+      const flash = (el) => { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("hot"); clearTimeout(el.hotTimer); el.hotTimer = setTimeout(() => el.classList.remove("hot"), 3000); };
+      ref.type = back.type = "button"; ref.className = "ref"; back.className = "ref back";
+      ref.textContent = back.textContent = "(" + ar(n) + ")";
+      ref.setAttribute("aria-label", "الذهاب إلى الهامش " + n); back.setAttribute("aria-label", "العودة إلى موضع الهامش " + n + " في النص");
+      txt.textContent = body;
+      ref.addEventListener("click", () => flash(li)); back.addEventListener("click", () => flash(ref));
+      li.append(back, " ", txt);
       p.append(ref); notes.append(li);
     });
     (extraNotes || []).forEach((t) => { const li = document.createElement("li"); li.textContent = t; notes.append(li); });
