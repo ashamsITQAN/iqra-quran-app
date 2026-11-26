@@ -12,7 +12,7 @@
 :root{
   --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
   --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.26); --tint-soft:rgba(13,104,88,.06);
-  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b;
+  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --tpA:rgba(190,140,30,.16); --tpB:rgba(40,110,170,.11);
   --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
   --naskh:"Noto Naskh Arabic","Traditional Arabic",serif;
   --quran:"Amiri Quran","Noto Naskh Arabic",serif;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
     --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; color-scheme:dark;
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:rgba(211,176,103,.17); --tpB:rgba(110,170,230,.14); color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
   --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; color-scheme:dark;
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:rgba(211,176,103,.17); --tpB:rgba(110,170,230,.14); color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
@@ -70,6 +70,9 @@ button{cursor:pointer}
   .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
   .art svg .banner:hover{fill:var(--tint)}
 }
+/* Thematic division: neighbouring subjects alternate between two quiet tints. */
+.art svg g.word.tpA .hit,.art svg g.ayah-mark.tpA .hit{fill:var(--tpA)}
+.art svg g.word.tpB .hit,.art svg g.ayah-mark.tpB .hit{fill:var(--tpB)}
 .art svg g.word.gh path{fill:var(--gharib)}
 .art svg g.ayah-fragment.sel g.word .hit{fill:var(--tint)}
 .art svg g.ayah-mark.sel .hit{fill:var(--tint-strong)}
@@ -296,6 +299,7 @@ button{cursor:pointer}
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
+    <div class="opt"><h3><label for="set-topics">التفصيل الموضوعي: تظليل الآيات التي تتناول موضوعًا واحدًا</label></h3><input id="set-topics" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -375,6 +379,7 @@ const activeTab = {}, activeSub = {};
 let touch = store.get("touch", "ayah");
 function applyTouch() { document.body.classList.toggle("by-ayah", touch === "ayah"); }
 applyTouch();
+let showTopics = store.get("topics", "0") === "1";
 let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
@@ -457,7 +462,24 @@ async function fillPage(n) {
   svg.setAttribute("aria-label", "صفحة المصحف " + n);
   art.replaceChildren(svg);
   decorate(svg);
+  markTopics(svg);
   markGharib(n, svg);
+}
+
+/* Thematic division (data/topics.json): each surah is a list of [first ayah, last ayah, title]. */
+const topicOf = (topics, s, a) => { const list = topics[s] || [], i = list.findIndex((t) => a >= t[0] && a <= t[1]); return i < 0 ? null : { i, from: list[i][0], to: list[i][1], title: list[i][2] }; };
+async function markTopics(svg) {
+  svg.querySelectorAll(".tpA,.tpB").forEach((n) => n.classList.remove("tpA", "tpB"));
+  if (!showTopics) return;
+  let topics;
+  try { topics = await getJSON("data/topics.json"); } catch (e) { return; }
+  if (!svg.isConnected || !showTopics) return;
+  svg.querySelectorAll("g.ayah-fragment, g.ayah-mark").forEach((el) => {
+    const [s, a] = el.dataset.ayahKey.split(":").map(Number), t = topicOf(topics, s, a);
+    if (!t) return;
+    const cls = t.i % 2 ? "tpB" : "tpA";
+    if (el.classList.contains("ayah-mark")) el.classList.add(cls); else el.querySelectorAll("g.word").forEach((w) => w.classList.add(cls));
+  });
 }
 
 /* Colour the words explained in the gharib project. Its "الكلمات" field lists, one line per entry,
@@ -598,7 +620,13 @@ async function paintSheet() {
   const big = $("#sh-big"), sub = $("#sh-sub"), an = ctx.ayah ? ar(ctx.ayah.split(":")[1]) : "";
   big.classList.toggle("plain", level !== "word");
   if (level === "word") { big.textContent = ctx.text; sub.textContent = `${surahName(ctx.surah)} · الآية ${an} · الكلمة ${ar(ctx.word.split(":")[2])}`; }
-  if (level === "ayah") { big.textContent = `${surahName(ctx.surah)} · الآية ${an}`; sub.textContent = `الصفحة ${ar(ctx.page)}`; }
+  if (level === "ayah") {
+    big.textContent = `${surahName(ctx.surah)} · الآية ${an}`; sub.textContent = `الصفحة ${ar(ctx.page)}`;
+    if (showTopics) getJSON("data/topics.json").then((topics) => {
+      const [s, a] = (ctx && level === "ayah" ? ctx.ayah : "0:0").split(":").map(Number), t = topicOf(topics, s, a);
+      if (t) sub.textContent = `الصفحة ${ar(ctx.page)} · ${t.title ? "الموضوع: " + t.title : "مقطع موضوعي"} (${t.from === t.to ? "الآية " + ar(t.from) : "الآيات " + ar(t.from) + "–" + ar(t.to)})`;
+    }).catch(() => {});
+  }
   if (level === "surah") { big.textContent = surahName(ctx.surah); sub.textContent = `${ar(meta.surahs[ctx.surah].ayahs)} آية`; }
   if (level === "page") { big.textContent = `الصفحة ${ar(ctx.page)}`; sub.textContent = `الجزء ${ar(pageMeta(ctx.page).juz)} · الحزب ${ar(pageMeta(ctx.page).hizb)}`; }
 
@@ -1263,7 +1291,7 @@ function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
-  $("#set-gharib").checked = showGharib;
+  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
   $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view";
   const box = $("#set-projects"); box.replaceChildren();
@@ -1303,6 +1331,7 @@ $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("b
 $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
 $("#seg-touch").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; touch = b.dataset.v; store.set("touch", touch); applyTouch(); paintSettings(); });
+$("#set-topics").addEventListener("change", (e) => { showTopics = e.target.checked; store.set("topics", showTopics ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(markTopics); });
 $("#set-gharib").addEventListener("change", (e) => { showGharib = e.target.checked; store.set("gharib", showGharib ? "1" : "0"); remarkGharib(); });
 
 /* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
