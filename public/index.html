@@ -1778,7 +1778,28 @@ async function paintDoc(d, pageH) {
   const W = 1080, P = 64, inner = W - 2 * P, LH = 68, FONT = '36px "Amiri","Noto Naskh Arabic",serif', UI = '"IBM Plex Sans Arabic","Amiri",sans-serif';
   await document.fonts.ready;
   const probe = document.createElement("canvas").getContext("2d"); probe.font = FONT; probe.direction = "rtl";
-  const wrap = (text) => { const out = []; String(text || "").split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).filter(Boolean).forEach((w) => { const t = line ? line + " " + w : w; if (probe.measureText(t).width > inner - 50 && line) { out.push(line); line = w; } else line = t; }); out.push(line); }); return out; };
+  // Text is set word by word: lines are justified (but for the last of a paragraph), and Quranic quotations keep their colour.
+  const TW = inner - 50, SP = probe.measureText(" ").width;
+  const wrap = (text) => {
+    const out = [];
+    String(text || "").split(/\n/).forEach((par) => {
+      const words = []; let cur = null;
+      par.split(AYAT).forEach((seg, i) => seg.split(/(\s+)/).forEach((tok) => { if (!tok) return; if (/^\s+$/.test(tok)) { cur = null; return; } if (!cur) { cur = { runs: [], w: 0 }; words.push(cur); } const w = probe.measureText(tok).width; cur.runs.push({ t: tok, q: i % 2 === 1 && showAyat, w }); cur.w += w; }));
+      const ltr = !/[؀-ۿ]/.test(par);
+      let line = [], used = 0;
+      const flush = (last) => { out.push({ words: line, used, last, ltr }); line = []; used = 0; };
+      words.forEach((wd) => { const need = (line.length ? SP : 0) + wd.w; if (used + need > TW && line.length) flush(false); used += (line.length ? SP : 0) + wd.w; line.push(wd); });
+      flush(true);
+    });
+    return out;
+  };
+  const drawLine = (g, ln, y, ink) => {
+    const gaps = ln.words.length - 1, extra = !ln.last && gaps > 0 ? Math.min((TW - ln.used) / gaps, 26) : 0, edge = W - P - 28;
+    g.font = FONT; g.direction = ln.ltr ? "ltr" : "rtl"; g.textAlign = ln.ltr ? "left" : "right";
+    let x = ln.ltr ? edge - TW : edge;
+    ln.words.forEach((wd) => { wd.runs.forEach((r) => { g.fillStyle = r.q ? "#0f6e56" : ink; g.fillText(r.t, x, y + 46); x += ln.ltr ? r.w : -r.w; }); x += (ln.ltr ? 1 : -1) * (SP + extra); });
+    g.direction = "rtl"; g.textAlign = "right";
+  };
   const items = [{ h: 64, draw: (g, y) => { g.fillStyle = "#1b2421"; g.font = "600 40px " + UI; g.fillText(d.title, W - P, y + 44); } }];
   if (d.source) items.push({ h: 52, draw: (g, y) => { g.fillStyle = "#0f6e56"; g.font = "500 28px " + UI; g.fillText(d.source, W - P, y + 34); } });
   let count = 0;
@@ -1795,11 +1816,11 @@ async function paintDoc(d, pageH) {
       } });
     }
     const lines = wrap(sec.body); count += lines.length;
-    lines.forEach((l) => items.push({ h: l ? LH : LH / 2, draw: (g, y) => { g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 4, l ? LH : LH / 2); g.fillStyle = "#1b2421"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+    lines.forEach((l) => { const h = l.words.length ? LH : LH / 2; items.push({ h, draw: (g, y) => { g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 4, h); drawLine(g, l, y, "#1b2421"); } }); });
     if (sec.rabt) {
       const rl = wrap(sec.rabt); count += rl.length + 1;
       items.push({ h: 18, draw: () => {} });
-      rl.forEach((l) => items.push({ h: LH, draw: (g, y) => { g.fillStyle = "#f5eeda"; g.fillRect(P, y, inner, LH); g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 8, LH); g.fillStyle = "#4a3a12"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+      rl.forEach((l) => items.push({ h: LH, draw: (g, y) => { g.fillStyle = "#f5eeda"; g.fillRect(P, y, inner, LH); g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 8, LH); drawLine(g, l, y, "#4a3a12"); } }));
     }
     if (d.sections) items.push({ h: 30, draw: () => {} });
   }
