@@ -69,8 +69,8 @@ button{cursor:pointer}
 .art svg .banner{fill:var(--banner);stroke:var(--mark);stroke-width:.5;pointer-events:all;cursor:pointer}
 .art svg g.surah-name{cursor:pointer}
 @media (hover:hover){
-  body.by-ayah .art svg g.ayah-fragment:hover g.word .hit{fill:var(--tint)}
-  .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
+  body.by-ayah .art svg g.ayah-fragment.hov g.word .hit,body.by-ayah .art svg g.ayah-mark.hov .hit{fill:var(--tint)}
+  body:not(.by-ayah) .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
   .art svg .banner:hover{fill:var(--tint)}
 }
 /* Thematic division: neighbouring subjects alternate between two quiet tints. */
@@ -219,6 +219,18 @@ body[data-tpi="3"]{--tpo:52%}
 .rabt p.text{margin:0}
 .subtabs select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:180px}
 .aq{color:var(--accent);font-family:var(--quran);font-size:1.08em}   /* a Quranic quotation inside content text: its own colour and the mushaf typeface */
+.bm{position:absolute;transform:translate(-50%,-100%);min-width:17px;height:17px;border-radius:9px 9px 9px 0;font:600 11px/17px var(--ui);text-align:center;color:#fff;pointer-events:none;padding:0 3px;box-shadow:0 0 0 1.5px var(--paper)}
+.bm-hifz,.bmk[data-k="hifz"] i{background:#0f6e56}.bm-read,.bmk[data-k="read"] i{background:#185fa5}.bm-rev,.bmk[data-k="rev"] i{background:#993c1d}
+.qcol{display:flex;flex-direction:column;gap:8px;align-items:center;flex:none;min-width:0}
+.bmrow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;font-size:12.5px;color:var(--muted)}
+.bmk{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;font-size:12.5px}
+.bmk i{font-style:normal;display:inline-block;min-width:17px;height:17px;border-radius:9px 9px 9px 0;font:600 11px/17px var(--ui);text-align:center;color:#fff}
+.bmk[aria-pressed="true"]{border-color:var(--accent);background:var(--tint-strong);font-weight:600}
+.mynote textarea{width:100%;min-height:150px;resize:vertical;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--naskh);font-size:17px;line-height:1.9;color:var(--ink)}
+.mynote .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
+#idx-backup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-top:1px solid var(--line);flex:none}
+#idx-backup[hidden]{display:none}
+.idx-list li.empty{color:var(--muted);padding:14px 8px;font-size:14px}
 .gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
 .ayah-block .hit{fill:transparent;pointer-events:none}
 .ayah-block.pick .hit{pointer-events:all;cursor:pointer}
@@ -291,7 +303,7 @@ body[data-tpi="3"]{--tpo:52%}
   #sheet .sh-body{grid-column:1/-1;grid-row:2;align-self:stretch;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:12px;overflow:hidden;padding:8px 12px}
   #sheet .sh-body>*{overflow:auto;max-height:100%;min-height:0;align-self:start}
   #sheet .sh-body>:only-child{grid-column:1/-1}
-  #sheet .sh-body>.ayah-block{max-width:none}
+  #sheet .sh-body>.qcol{align-items:stretch}#sheet .sh-body .ayah-block{max-width:none;max-height:none}
   #sheet .sh-nav{grid-column:1/-1;grid-row:3;padding:4px 12px}
   #sheet .sh-nav button{padding:3px 12px}
 }
@@ -416,9 +428,10 @@ body[data-tpi="3"]{--tpo:52%}
     <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
   </div>
   <div class="tabs" id="idx-tabs" role="tablist">
-    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button>
+    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button><button type="button" role="tab" data-v="marks">علاماتي</button><button type="button" role="tab" data-v="notes">تعليقاتي</button>
   </div>
   <ol class="sh-body idx-list" id="idx-list"></ol>
+  <div id="idx-backup" hidden><button type="button" class="btn" id="bk-save">حفظ نسخة احتياطية</button><button type="button" class="btn" id="bk-load">استرجاع من ملف</button><input type="file" id="bk-file" accept="application/json,.json" hidden><span class="note" id="bk-note">علاماتك وتعليقاتك محفوظة على هذا الجهاز فقط.</span></div>
 </section>
 
 <section id="sheet" class="modal" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
@@ -555,6 +568,7 @@ async function fillPage(n) {
   decorate(svg);
   markTopics(svg);
   markGharib(n, svg);
+  paintMarks();
 }
 
 /* Thematic division (data/topics.json): each surah is a list of [first ayah, last ayah, title]. */
@@ -733,6 +747,20 @@ if (shortWide.matches) placePager();
 const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index"), reportBox = $("#report");
 let shown = null;   // the project whose content the window is showing
 function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
+// In ayah mode, pointing at any word lights the whole ayah: every line of it, and its number.
+let hovKey = "";
+function hoverAyah(k) {
+  if (k === hovKey) return;
+  spread.querySelectorAll(".hov").forEach((n) => n.classList.remove("hov"));
+  hovKey = k;
+  if (k) spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${k}"], g.ayah-mark[data-ayah-key="${k}"]`).forEach((n) => n.classList.add("hov"));
+}
+spread.addEventListener("pointerover", (e) => {
+  if (touch !== "ayah" || e.pointerType === "touch") return;
+  const g = e.target.closest("g.ayah-fragment, g.ayah-mark");
+  hoverAyah(g ? g.dataset.ayahKey : "");
+});
+spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
 function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); applySelection(); }
 veil.addEventListener("click", close);
@@ -789,11 +817,13 @@ async function paintSheet() {
   paintSheet.token = token;
   let list = projects.filter((p) => p.level === level && !hidden.has(p.id));
   if (touch === "ayah" && level === "ayah") {   // word projects appear here, one row per word of the ayah
-    const words = projects.filter((p) => p.level === "word" && !hidden.has(p.id));
+    const words = projects.filter((p) => p.level === "word" && !p.notes && !hidden.has(p.id));
     list = [...list.filter((p) => !p.player), ...words, ...list.filter((p) => p.player)];
   }
   const tabs = $("#tabs"), subs = $("#subtabs");
-  const quote = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
+  const ink = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
+  let quote = ink;
+  if (level === "ayah") { quote = document.createElement("div"); quote.className = "qcol"; if (ink) quote.append(ink); quote.append(marksRow(ctx.ayah)); }
   $("#nav-prev").textContent = LEVELS[level] + " السابقة"; $("#nav-next").textContent = LEVELS[level] + " التالية";
   if (!list.length) {
     tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true; shown = null; $("#sh-report").hidden = true;
@@ -810,7 +840,7 @@ async function paintSheet() {
   const choose = (id) => { const p = group.items.find((x) => x.id === id); if (p.lang) store.set("lang", p.lang); else { activeSub[group.id] = id; store.set("sub-" + group.id, id); } paintSheet(); };
   const mk = (label, on, role, fn) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", role); b.textContent = label; b.setAttribute("aria-selected", on); b.addEventListener("click", fn); return b; };
   tabs.hidden = false;
-  tabs.replaceChildren(...groups.map((g) => mk(g.name, g === group, "tab", () => { activeTab[level] = g.id; paintSheet(); })));
+  tabs.replaceChildren(...groups.map((g) => mk(g.name + (g.items[0].notes && notes[level + ":" + key] ? " ●" : ""), g === group, "tab", () => { activeTab[level] = g.id; paintSheet(); })));
   subs.hidden = group.items.length < 2;
   if (group.items.length > 6) {
     const sel = document.createElement("select");
@@ -956,6 +986,7 @@ async function card(p, key) {
   el.append(h);
   if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (p.player) return recitationCard(p);
+  if (p.notes) return notesCard(p.level, key);
   if (p.topics) return topicsCard();
   if (!p.file) {
     el.classList.add("empty");
@@ -1520,6 +1551,21 @@ function paintIndex() {
   };
   const at = (k) => { const [s, a] = k.split(":"); return `${surahName(s)} · الآية ${ar(a)}`; };
   let rows;
+  $("#idx-backup").hidden = idxTab !== "marks" && idxTab !== "notes";
+  const none = (t) => { const li = document.createElement("li"); li.className = "empty"; li.textContent = t; return [li]; };
+  if (idxTab === "marks") {
+    rows = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], li = row(letter, "علامة " + name, at(m.key), m.page, false, () => jump(m.page, m.key)); li.querySelector(".n").className = "n bm bm-" + k; li.querySelector(".n").style.cssText = "position:static;transform:none;justify-self:center"; return li; });
+    if (!rows.length) rows = none("لا علامات بعد. المس رقم آية في المصحف، ثم اختر علامة الحفظ أو القراءة أو المراجعة.");
+  } else if (idxTab === "notes") {
+    const ord = (k) => { const v = notes[k], a = k.split(":"); return [v.surah || 0, a[0] === "surah" ? 0 : +(a[2] || 0), a[0] === "page" ? v.page : 0, +(a[3] || 0)]; };
+    rows = Object.keys(notes).sort((x, y) => { const a = ord(x), b = ord(y); for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; }).map((k) => {
+      const v = notes[k], a = k.split(":"), lv = a[0];
+      const title = lv === "page" ? "الصفحة " + ar(v.page) : lv === "surah" ? surahName(v.surah) : at(a[1] + ":" + a[2]) + (lv === "word" ? " · «" + (v.text || "") + "»" : "");
+      return row(LEVELS[lv], title, v.t.length > 90 ? v.t.slice(0, 90) + "…" : v.t, v.page, false, () => openNote(k));
+    });
+    if (!rows.length) rows = none("لا تعليقات بعد. افتح نافذة أي كلمة أو آية أو صفحة أو سورة، ثم اكتب في تبويب «تعليقاتي».");
+    rows.forEach((li) => { const n = li.querySelector(".n"); if (n) n.style.fontSize = "12px"; });
+  } else
   if (idxTab === "surah") rows = Object.entries(meta.surahs).map(([n, s]) => row(n, "سورة " + s.name, `${s.place} · ${ar(s.ayahs)} آية`, s.page, here.surahs.includes(+n), () => jump(s.page)));
   else rows = meta[idxTab].map((d) => row(d.n, (idxTab === "juz" ? "الجزء " : "الحزب ") + ar(d.n), "يبدأ من " + at(d.ayah), d.page, here[idxTab] === d.n, () => jump(d.page, d.ayah)));
   const list = $("#idx-list");
@@ -1531,6 +1577,84 @@ $("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false);
 $("#idx-close").addEventListener("click", close);
 $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; idxTab = b.dataset.v; paintIndex(); });
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
+
+/* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes; kept on this device ---------- */
+const KINDS = [["hifz", "ح", "الحفظ"], ["read", "ق", "القراءة"], ["rev", "م", "المراجعة"]];
+const readJ = (k) => { try { return JSON.parse(store.get(k, "{}")) || {}; } catch (e) { return {}; } };
+let marks = readJ("marks"), notes = readJ("notes");
+function paintMarks() {
+  spread.querySelectorAll(".bm").forEach((n) => n.remove());
+  const at = {};
+  KINDS.forEach(([k, letter, name]) => {
+    const m = marks[k]; if (!m) return;
+    spread.querySelectorAll(`g.ayah-mark[data-ayah-key="${m.key}"]`).forEach((g) => {
+      const art = g.closest(".art"), a = art.getBoundingClientRect(), r = g.getBoundingClientRect(), b = document.createElement("span");
+      if (!a.width || !r.width) return;
+      const i = (at[m.key] = (at[m.key] || 0) + 1) - 1;   // several kinds on one ayah sit side by side
+      b.className = "bm bm-" + k; b.textContent = letter; b.title = "علامة " + name;
+      b.style.left = ((r.left + r.width / 2 - a.left + i * 19) / a.width) * 100 + "%"; b.style.top = ((r.top - a.top + 3) / a.height) * 100 + "%";
+      art.append(b);
+    });
+  });
+}
+function marksRow(key) {
+  const row = document.createElement("div"), lab = document.createElement("span");
+  row.className = "bmrow"; lab.textContent = "علامتي هنا:"; row.append(lab);
+  KINDS.forEach(([k, letter, name]) => {
+    const b = document.createElement("button"), i = document.createElement("i");
+    b.type = "button"; b.className = "bmk"; b.dataset.k = k; i.textContent = letter; i.setAttribute("aria-hidden", "true");
+    b.append(i, name); b.setAttribute("aria-pressed", !!(marks[k] && marks[k].key === key));
+    b.addEventListener("click", () => {
+      const on = marks[k] && marks[k].key === key, moved = !on && marks[k];
+      if (on) delete marks[k]; else marks[k] = { key, page: ctx.page, t: Date.now() };
+      store.set("marks", JSON.stringify(marks)); paintMarks();
+      row.querySelectorAll(".bmk").forEach((x) => x.setAttribute("aria-pressed", !!(marks[x.dataset.k] && marks[x.dataset.k].key === key)));
+      toast(on ? `أُزيلت علامة ${name}.` : moved ? `نُقلت علامة ${name} إلى هذه الآية.` : `وُضعت علامة ${name} على هذه الآية.`);
+    });
+    row.append(b);
+  });
+  return row;
+}
+function notesCard(lv, key) {
+  const el = document.createElement("div"), h = document.createElement("h3"), ta = document.createElement("textarea"), row = document.createElement("div"), st = document.createElement("span"), del = document.createElement("button");
+  const id = lv + ":" + key, c = { ...ctx };
+  el.className = "proj mynote"; h.append(tag("شخصي"), tag("خاص بك", "src")); row.className = "row"; st.className = "note"; del.type = "button"; del.className = "btn"; del.textContent = "حذف التعليق";
+  ta.dir = "auto"; ta.setAttribute("aria-label", "تعليقي على " + LEVELS[lv]); ta.placeholder = "اكتب تعليقك أو تدبرك هنا…"; ta.value = notes[id] ? notes[id].t : "";
+  const when = () => { st.textContent = notes[id] ? "محفوظ على هذا الجهاز." : "يُحفظ تلقائيًّا أثناء الكتابة، على هذا الجهاز."; del.hidden = !notes[id]; };
+  const save = () => {
+    const t = ta.value.trim();
+    if (t) notes[id] = { t, u: Date.now(), page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) }; else delete notes[id];
+    store.set("notes", JSON.stringify(notes)); when();
+  };
+  let timer; ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", () => { clearTimeout(timer); save(); });
+  del.addEventListener("click", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
+  when(); row.append(st, del); el.append(h, ta, row);
+  return el;
+}
+async function openNote(k) {
+  const v = notes[k], a = k.split(":"), lv = a[0];
+  await jump(v.page);
+  const c = lv === "page" ? { page: v.page, surah: v.surah, only: "page" } : lv === "surah" ? { page: v.page, surah: v.surah, only: "surah" } : { page: v.page, surah: v.surah, ayah: a[1] + ":" + a[2], ...(lv === "word" ? { word: a.slice(1).join(":"), text: v.text } : {}) };
+  activeTab[lv] = "my-notes-" + lv; open(c, lv);
+}
+$("#bk-save").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks, notes }, null, 1)], { type: "application/json" }), a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  $("#bk-note").textContent = "نُزّلت النسخة الاحتياطية.";
+});
+$("#bk-load").addEventListener("click", () => $("#bk-file").click());
+$("#bk-file").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d.app !== "iqra-quran-app" || typeof d.notes !== "object" || typeof d.marks !== "object") throw new Error("shape");
+    let n = 0;   // the newer copy of each note and each bookmark wins; nothing on this device is dropped
+    Object.entries(d.notes).forEach(([k, v]) => { if (v && typeof v.t === "string" && (!notes[k] || (v.u || 0) > (notes[k].u || 0))) { notes[k] = v; n += 1; } });
+    Object.entries(d.marks).forEach(([k, v]) => { if (v && v.key && KINDS.some((x) => x[0] === k) && (!marks[k] || (v.t || 0) > (marks[k].t || 0))) { marks[k] = v; n += 1; } });
+    store.set("notes", JSON.stringify(notes)); store.set("marks", JSON.stringify(marks)); paintMarks(); paintIndex();
+    $("#bk-note").textContent = n ? `استُرجع ${ar(n)} عنصرًا من الملف.` : "الملف لا يحوي شيئًا أحدث مما على هذا الجهاز.";
+  } catch (err) { $("#bk-note").textContent = "تعذّرت قراءة الملف. اختر ملف نسخة احتياطية من هذا التطبيق."; }
+});
 
 /* ---------- settings ---------- */
 let setTab = "view";
@@ -1692,7 +1816,7 @@ window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() =
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
-  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); }
+  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null })); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
   $("#slider").min = meta.first; $("#slider").max = meta.last;
   $("#idx-num").max = meta.last;
