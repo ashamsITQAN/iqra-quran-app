@@ -130,7 +130,9 @@ button{cursor:pointer}
 .pl-ctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .pl-ctl .btn{padding:6px 12px}.pl-ctl .main{min-width:110px}
 #pl-left{text-align:center}
-.pl-entry{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.pl-entry{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
+#card-reciter{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:70%}
+.proj p.warn{color:var(--gharib);border:1px solid var(--gharib);border-radius:8px;padding:8px 10px;font-size:13px}
 #toast{position:fixed;z-index:9;bottom:150px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 /* Recitation layers, weakest to strongest: the passage, the ayah, the breath group, the word. */
 .art svg g.ayah-fragment.seg g.word .hit,.art svg g.ayah-fragment g.word.segw .hit{fill:var(--tint-soft)}
@@ -317,7 +319,7 @@ button{cursor:pointer}
       <label for="hz-speed">سرعة التلاوة</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
     </fieldset>
   </div>
-  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-start" class="btn main" disabled>ابدأ</button></div>
+  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
 </section>
 
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
@@ -811,25 +813,30 @@ const hifzBox = $("#hifz"), playerBar = $("#player"), audio = new Audio();
 audio.preload = "auto";
 const api = (path, lang) => fetch(API + path, lang ? { headers: { "Accept-Language": "ar" } } : undefined).then((r) => { if (!r.ok) throw new Error(path); return r.json(); });
 
-// Hafs recitations that carry ayah timings. Checked once, then remembered for a week.
+// Every complete Hafs recitation in Fanar, each marked as timed (ayah timings present) or not.
+// Checked once, then remembered for a week.
 let recitersP = null;
 function loadReciters() {
   if (recitersP) return recitersP;
-  try { const c = JSON.parse(store.get("timed", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
+  try { const c = JSON.parse(store.get("reciters", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
   recitersP = (async () => {
     const all = (await api("/recitations/?page_size=200", true)).results.filter((x) => x.riwayah && /حفص/.test(x.riwayah.name) && x.surahs_count === 114);
-    const checked = await Promise.all(all.map(async (x) => {
-      try { const t = (await api(`/recitations/${x.id}/?page_size=1`)).results[0]; return t && t.ayahs_timings && t.ayahs_timings.length ? { id: String(x.id), name: x.reciter.name, publisher: x.publisher ? x.publisher.name : "" } : null; }
-      catch (e) { return null; }
+    const seen = {};
+    all.forEach((x) => { seen[x.reciter.name] = (seen[x.reciter.name] || 0) + 1; });
+    const list = await Promise.all(all.map(async (x) => {
+      let timed = false;
+      try { const t = (await api(`/recitations/${x.id}/?page_size=1`)).results[0]; timed = !!(t && t.ayahs_timings && t.ayahs_timings.length); } catch (e) {}
+      return { id: String(x.id), name: x.reciter.name + (seen[x.reciter.name] > 1 && x.name ? " · " + x.name : ""), timed };
     }));
-    const list = checked.filter(Boolean).sort((a, b) => a.name.localeCompare(b.name, "ar"));
-    if (!list.length) throw new Error("no timed recitations");
-    store.set("timed", JSON.stringify({ t: Date.now(), list }));
+    list.sort((a, b) => b.timed - a.timed || a.name.localeCompare(b.name, "ar"));
+    if (!list.length) throw new Error("no recitations");
+    store.set("reciters", JSON.stringify({ t: Date.now(), list }));
     return list;
   })();
   recitersP.catch(() => { recitersP = null; });
   return recitersP;
 }
+const UNTIMED = "هذه التلاوة غير مزمّنة في فنار: يتاح بها الاستماع إلى السورة كاملة فقط، ولا يتاح الحفظ ولا الاستماع إلى آية بعينها.";
 const trackCache = new Map();
 function loadTrack(reciter, surah) {
   const k = reciter + ":" + surah;
@@ -837,10 +844,11 @@ function loadTrack(reciter, surah) {
     const p = (async () => {
       let t = (await api(`/recitations/${reciter}/?page=${surah}&page_size=1`)).results[0];
       if (!t || t.surah_number !== surah) t = (await api(`/recitations/${reciter}/?page_size=114`)).results.find((x) => x.surah_number === surah);
-      if (!t || !t.ayahs_timings || !t.ayahs_timings.length) throw new Error("untimed");
+      if (!t || !t.audio_url) throw new Error("no track");
+      if (!t.ayahs_timings || !t.ayahs_timings.length) return { url: t.audio_url, at: null, dur: t.duration_ms || 0 };   // untimed
       const at = {};
       t.ayahs_timings.forEach((x) => { at[+x.ayah_key.split(":")[1]] = [x.start_ms, x.end_ms]; });
-      return { url: t.audio_url, at };
+      return { url: t.audio_url, at, dur: t.duration_ms || 0 };
     })();
     p.catch(() => trackCache.delete(k));
     trackCache.set(k, p);
@@ -925,12 +933,14 @@ function writeForm() {
 let estToken;
 async function estimate() {
   const out = F("est"), go = F("start"), token = (estToken = {});
-  go.disabled = true;
+  go.disabled = true; F("listen").hidden = true;
   if (!hz.reciter) { out.textContent = "اختر القارئ."; return; }
   out.textContent = "جارٍ حساب مدة الجلسة…";
   let t, fine;
   try { [t, fine] = await Promise.all([loadTrack(hz.reciter, hz.surah), loadFine(hz.reciter, hz.surah)]); } catch (e) { if (token === estToken) out.textContent = "تعذّر جلب توقيت هذه التلاوة. تحقق من الاتصال أو اختر قارئًا آخر."; return; }
   if (token !== estToken) return;
+  F("listen").hidden = !!t.at;
+  if (!t.at) { out.textContent = UNTIMED; return; }
   const optG = F("unit").querySelector('option[value="g"]');
   optG.disabled = !fine; optG.textContent = fine ? "جملة (على وقوف القارئ)" : "جملة (غير متاحة لهذه التلاوة)";
   if (!fine && hz.unit === "g") { hz.unit = 1; F("unit").value = "1"; saveHz(); }
@@ -951,7 +961,7 @@ async function openHifz(preset) {
     F("est").textContent = "جارٍ جلب قائمة القرّاء من فنار…"; F("start").disabled = true;
     try {
       const list = await loadReciters();
-      sel.replaceChildren(...list.map((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name; return o; }));
+      sel.replaceChildren(...list.map((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name + (r.timed ? "" : " (غير مزمّنة)"); return o; }));
       if (!list.some((r) => r.id === hz.reciter)) hz.reciter = list[0].id;
       sel.value = hz.reciter; saveHz();
     } catch (e) { F("est").textContent = "تعذّر الاتصال بفنار لجلب القرّاء. تحقق من الاتصال ثم أعد فتح النافذة."; return; }
@@ -962,6 +972,7 @@ hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.star
 $("#hifz-open").addEventListener("click", () => openHifz());
 $("#hz-close").addEventListener("click", close);
 F("start").addEventListener("click", () => { readForm(); show(hifzBox, false); startSession({ ...hz }); });
+F("listen").addEventListener("click", () => { readForm(); show(hifzBox, false); startSession({ ...hz, from: 1, to: meta.surahs[hz.surah].ayahs, mode: "listen", hide: false, listen: true }); });
 
 /* ----- the session ----- */
 let S = null, ticker = null, wake = null, ayahPage = null;
@@ -970,6 +981,16 @@ async function startSession(c) {
   let t, fine, steps;
   try { [t, fine] = await Promise.all([loadTrack(c.reciter, c.surah), loadFine(c.reciter, c.surah)]); if (!ayahPage) { ayahPage = {}; (await loadCorpus()).forEach((r) => { ayahPage[r.s + ":" + r.a] = r.page; }); } }
   catch (e) { toast("تعذّر بدء التلاوة. تحقق من الاتصال."); return; }
+  if (!t.at) {   // untimed recitation: the whole surah, start to finish, with nothing to follow on the page
+    if (!c.listen) { toast(UNTIMED); return; }
+    steps = [{ kind: "listen", a: 1, b: meta.surahs[c.surah].ayahs, st: 0, en: t.dur || 0, reps: 1, label: surahName(c.surah) + " كاملة" }];
+    S = { c, t, fine: null, steps, ph: [], wd: "", i: 0, rep: 0, phase: "play", paused: false, gapLeft: 0, gapAll: 0, last: 0, now: 0 };
+    playerBar.hidden = false; $(".pager").hidden = true;
+    try { wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+    if (!spread.querySelector(`.page[data-page="${meta.surahs[c.surah].page}"]`)) cur = meta.surahs[c.surah].page;
+    await render(); if (S) { toast("تلاوة غير مزمّنة: لا تتابع الصفحةُ القارئَ."); playSeg(); }
+    return;
+  }
   for (let a = c.from; a <= c.to; a++) if (!t.at[a]) { toast("توقيت بعض هذه الآيات غير متوفر لهذا القارئ."); return; }
   steps = c.listen ? [{ kind: "listen", a: c.from, b: c.to, st: t.at[c.from][0], en: t.at[c.to][1], reps: 1, label: rangeLabel(c.from, c.to) }] : buildPlan(c, t, fine);
   if (!steps.length) { toast("لا توجد خطوات في هذه الجلسة."); return; }
@@ -996,6 +1017,7 @@ async function playSeg() {
   try {
     if (audio.dataset.url !== S.t.url) { audio.src = S.t.url; audio.dataset.url = S.t.url; await once(audio, "loadedmetadata"); }
     if (S !== me) return;
+    if (!s.en && isFinite(audio.duration)) s.en = audio.duration * 1000;
     audio.playbackRate = +S.c.speed;
     audio.currentTime = s.st / 1000;
     await audio.play();
@@ -1011,7 +1033,12 @@ function tick() {
   if (!S || S.paused) return;
   const s = S.steps[S.i];
   if (S.phase === "play") {
-    const ms = audio.currentTime * 1000, st = s.st, en = s.en;
+    const ms = audio.currentTime * 1000, st = s.st, en = s.en || Infinity;
+    if (!S.t.at) {
+      if (s.en) { $("#pl-fill").style.width = Math.min(100, (ms / s.en) * 100) + "%"; const left = Math.ceil((s.en - ms) / 60000); if (left !== S.leftMin) { S.leftMin = left; $("#pl-left").textContent = `تلاوة غير مزمّنة · الباقي ${clock(s.en - ms)}`; } }
+      if (audio.ended || (s.en && ms >= s.en - 30)) { audio.pause(); advance(); }
+      return;
+    }
     let now = s.a;
     for (let a = s.a; a <= s.b; a++) if (ms >= S.t.at[a][0]) now = a;
     if (now !== S.now) { S.now = now; followAyah(now); }
@@ -1062,7 +1089,8 @@ function paintPlayer() {
   $("#pl-rep").textContent = s.reps > 1 ? `المرة ${ar(S.rep + 1)} من ${ar(s.reps)}` : "";
   $("#pl-phase").textContent = S.paused ? "متوقف مؤقتًا" : S.phase === "play" ? "استمع" : S.phase === "gap" ? "ردّد الآن" : "ردّد ثم اضغط «التالي»";
   $("#pl-phase").classList.toggle("say", reciting && !S.paused);
-  $("#pl-left").textContent = `الخطوة ${ar(S.i + 1)} من ${ar(S.steps.length)} · الباقي ${clock(planMs(S.c, S.t, S.steps, S.i, S.rep))}`;
+  $("#pl-left").textContent = !S.t.at ? "تلاوة غير مزمّنة" : S.c.listen ? `الباقي ${clock(planMs(S.c, S.t, S.steps, S.i, S.rep))}` : `الخطوة ${ar(S.i + 1)} من ${ar(S.steps.length)} · الباقي ${clock(planMs(S.c, S.t, S.steps, S.i, S.rep))}`;
+  S.leftMin = null;
   $("#pl-toggle").textContent = S.phase === "wait" ? "التالي" : S.paused ? "متابعة" : "إيقاف مؤقت";
   $("#pl-fill").classList.toggle("gap", reciting);
   if (S.phase === "wait") $("#pl-fill").style.width = "100%";
@@ -1104,27 +1132,33 @@ let toastTimer;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4200); }
 
 // Entry points from the content window: listen once, or start memorising from here.
-function recitationCard(p) {
-  const el = document.createElement("div"), row = document.createElement("div");
-  el.className = "proj"; row.className = "pl-entry";
-  const btn = (label, fn, main) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (main ? " main" : ""); b.textContent = label; b.addEventListener("click", fn); row.append(b); };
-  const s = ctx.surah, n = meta.surahs[s].ayahs;
-  const listen = async (from, to) => {
-    close();
-    let rec = hz.reciter;
-    if (!rec) { try { rec = (await loadReciters())[0].id; hz.reciter = rec; saveHz(); } catch (e) { toast("تعذّر الاتصال بفنار لجلب القرّاء."); return; } }
-    startSession({ ...hz, surah: s, from, to, reciter: rec, mode: "listen", hide: false, listen: true });
-  };
+async function recitationCard(p) {
+  const el = document.createElement("div"), row = document.createElement("div"), pick = document.createElement("div");
+  el.className = "proj solo"; row.className = "pl-entry"; pick.className = "opt";
+  let list;
+  try { list = await loadReciters(); } catch (e) { el.append(para("تعذّر الاتصال بفنار لجلب القرّاء. تحقق من الاتصال ثم أعد فتح النافذة.")); return el; }
+  if (!list.some((r) => r.id === hz.reciter)) { hz.reciter = list[0].id; saveHz(); }
+  const rec = list.find((r) => r.id === hz.reciter), sel = document.createElement("select"), lab = document.createElement("label");
+  sel.id = "card-reciter"; lab.htmlFor = sel.id; lab.textContent = "القارئ";
+  list.forEach((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name + (r.timed ? "" : " (غير مزمّنة)"); o.selected = r === rec; sel.append(o); });
+  sel.addEventListener("change", () => { hz.reciter = sel.value; saveHz(); const opt = F("reciter").querySelector(`option[value="${sel.value}"]`); if (opt) F("reciter").value = sel.value; paintSheet(); });
+  pick.append(lab, sel);
+  const btn = (label, fn, main, off) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (main ? " main" : ""); b.textContent = label; b.disabled = !!off; b.addEventListener("click", fn); row.append(b); };
+  const s = ctx.surah, n = meta.surahs[s].ayahs, off = !rec.timed;
+  const listen = (from, to) => { close(); startSession({ ...hz, surah: s, from, to, mode: "listen", hide: false, listen: true }); };
   if (p.level === "ayah") {
     const a = +ctx.ayah.split(":")[1];
-    btn("استمع إلى الآية", () => listen(a, a), true);
-    btn("استمع من هنا إلى آخر السورة", () => listen(a, n));
-    btn("احفظ ابتداءً من هذه الآية", () => openHifz({ surah: s, from: a, to: Math.min(n, a + 4) }));
+    btn("استمع إلى الآية", () => listen(a, a), !off, off);
+    btn("استمع من هنا إلى آخر السورة", () => listen(a, n), false, off);
+    btn("استمع إلى السورة كاملة", () => listen(1, n), off);
+    btn("احفظ ابتداءً من هذه الآية", () => openHifz({ surah: s, from: a, to: Math.min(n, a + 4) }), false, off);
   } else {
     btn("استمع إلى السورة", () => listen(1, n), true);
-    btn("احفظ من هذه السورة", () => openHifz({ surah: s, from: 1, to: Math.min(n, 5) }));
+    btn("احفظ من هذه السورة", () => openHifz({ surah: s, from: 1, to: Math.min(n, 5) }), false, off);
   }
-  el.append(row, para("التلاوات من فنار. القارئ يُختار من نافذة «الحفظ»."));
+  el.append(pick, row);
+  if (off) { const w = para(UNTIMED); w.className = "warn"; el.append(w); }
+  else el.append(para("التلاوات من فنار برواية حفص عن عاصم."));
   return el;
 }
 
