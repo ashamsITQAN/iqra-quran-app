@@ -112,7 +112,8 @@ button{cursor:pointer}
 .modal{position:fixed;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 24px));max-height:min(84%,780px);
   background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column}
 .modal.open{display:flex}
-#settings{width:min(480px,calc(100% - 24px))}
+#settings{width:min(520px,calc(100% - 24px));height:min(70%,560px)}
+.sh-body[hidden]{display:none}
 .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0}
 .opt.col{flex-direction:column;align-items:stretch}
 .opt h3{margin:0;font-size:14px;font-weight:600}
@@ -131,7 +132,6 @@ button{cursor:pointer}
 .ayah-block svg path{fill:var(--ink)}
 .ayah-block g.word.gh path{fill:var(--gharib)}
 .rabt{margin-top:16px;padding:10px 14px;border:1px solid var(--mark);border-inline-start-width:4px;border-radius:8px;background:var(--banner)}
-.rabt-label{display:inline-block;font-size:12px;font-weight:600;color:var(--mark);margin-bottom:2px}
 .rabt p.text{margin:0}
 .subtabs select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:180px}
 .gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
@@ -215,7 +215,10 @@ button{cursor:pointer}
     <div class="sh-title"><p class="big plain">الإعدادات</p></div>
     <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
   </div>
-  <div class="sh-body">
+  <div class="tabs" id="set-tabs" role="tablist">
+    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button>
+  </div>
+  <div class="sh-body" id="set-view">
     <div class="opt"><h3>عرض الصفحات</h3>
       <div class="seg" id="seg-mode" role="group" aria-label="عدد الصفحات المعروضة">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="1">صفحة</button><button type="button" data-v="2">صفحتان</button>
@@ -225,7 +228,10 @@ button{cursor:pointer}
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
-    <div class="opt col"><h3>المحتوى المعروض</h3><div id="set-projects"></div></div>
+  </div>
+  <div class="sh-body" id="set-content" hidden>
+    <p class="note" id="set-hint"></p>
+    <div id="set-projects"></div>
   </div>
 </section>
 
@@ -605,10 +611,10 @@ async function card(p, key) {
     if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null, p.marksWords)); continue; }
     if (k === "الهامش" || (p.marksWords && k === "الكلمات")) continue;
     if (k === "الربط") {
-      const box = document.createElement("div"), lab = document.createElement("span"), t = document.createElement("p");
-      box.className = "rabt"; lab.className = "rabt-label"; lab.textContent = "الربط بين الآيات";
+      const box = document.createElement("div"), t = document.createElement("p");
+      box.className = "rabt"; box.setAttribute("aria-label", "الربط بين الآيات");
       t.className = "text"; t.dir = "auto"; t.textContent = v;
-      box.append(lab, t); el.append(box); continue;
+      box.append(t); el.append(box); continue;
     }
     const dt = document.createElement("dt"), dd = document.createElement("dd");
     dd.dir = "auto"; dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
@@ -706,15 +712,20 @@ $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("bu
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
 
 /* ---------- settings ---------- */
+let setTab = "view";
+$("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme);
   $("#set-gharib").checked = showGharib;
+  document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
+  $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view";
   const box = $("#set-projects"); box.replaceChildren();
-  ["word", "ayah", "page", "surah"].forEach((lv) => {
+  if (setTab === "view") return;
+  $("#set-hint").textContent = `اختر ما يظهر في النافذة عند لمس ${{ word: "كلمة", ayah: "رأس آية", page: "رقم صفحة", surah: "ترويسة سورة" }[setTab]}.`;
+  [setTab].forEach((lv) => {
     const list = projects.filter((p) => p.level === lv);
-    if (!list.length) return;
-    const h = document.createElement("h4"); h.textContent = "مستوى " + LEVELS[lv]; box.append(h);
+    if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
     list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
