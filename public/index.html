@@ -177,6 +177,14 @@ body[data-tpi="3"]{--tpo:52%}
 .tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font-size:13.5px;color:var(--muted)}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .proj.solo{border:0;background:none;padding:6px 0}
+.trows{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.trow{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 6px;border-radius:6px}
+.trow:hover{background:var(--tint-soft)}
+.trow span:last-child{font-family:var(--naskh);font-size:17px;line-height:1.8}
+.trow small{display:block;font-family:var(--ui);font-size:12px;color:var(--muted)}
+.tsw{width:8px;align-self:stretch;border-radius:4px;border:1px solid var(--tpbar)}
+.tsw.a{background:color-mix(in srgb,var(--tpA) 70%,transparent)}
+.tsw.b{background:color-mix(in srgb,var(--tpB) 60%,transparent)}
 .wrows{display:flex;flex-direction:column}
 .wrow{display:grid;grid-template-columns:minmax(4.5em,auto) 1fr;gap:14px;align-items:baseline;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 6px;border-radius:6px}
 .wrow:hover{background:var(--tint-soft)}
@@ -479,6 +487,37 @@ async function fillPage(n) {
 
 /* Thematic division (data/topics.json): each surah is a list of [first ayah, last ayah, title]. */
 const topicOf = (topics, s, a) => { const list = topics[s] || [], i = list.findIndex((t) => a >= t[0] && a <= t[1]); return i < 0 ? null : { i, from: list[i][0], to: list[i][1], title: list[i][2] }; };
+/* The subjects that fall on a page, as page-level content. Tapping one shows its ayahs on the page. */
+async function topicsCard() {
+  const el = document.createElement("div"), list = document.createElement("div");
+  el.className = "proj"; list.className = "trows";
+  let topics;
+  try { topics = await getJSON("data/topics.json"); } catch (e) { el.append(para("تعذّر تحميل التفصيل الموضوعي.")); return el; }
+  const pm = pageMeta(ctx.page), [fs, fa] = pm.first.split(":").map(Number), [ls, la] = pm.last.split(":").map(Number), page = ctx.page;
+  let any = false, guessed = false;
+  pm.surahs.forEach((s) => {
+    const lo = s === fs ? fa : 1, hi = s === ls ? la : meta.surahs[s].ayahs;
+    (topics[s] || []).forEach((t, i) => {
+      if (t[1] < lo || t[0] > hi) return;
+      any = true; if (t[3]) guessed = true;
+      const b = document.createElement("button"), sw = document.createElement("span"), tx = document.createElement("span"), rg = document.createElement("small");
+      b.type = "button"; b.className = "trow"; sw.className = "tsw " + (i % 2 ? "b" : "a");
+      tx.textContent = t[2] || "مقطع موضوعي";
+      const before = t[0] < lo, after = t[1] > hi;
+      rg.textContent = `${surahName(s)} · ${t[0] === t[1] ? "الآية " + ar(t[0]) : "الآيات " + ar(t[0]) + "–" + ar(t[1])}${before && after ? " · يبدأ قبل هذه الصفحة ويمتد بعدها" : before ? " · يبدأ قبل هذه الصفحة" : after ? " · يمتد بعد هذه الصفحة" : ""}`;
+      tx.append(rg); b.append(sw, tx);
+      b.addEventListener("click", () => {
+        close();
+        for (let a = Math.max(t[0], lo); a <= Math.min(t[1], hi); a++) spread.querySelectorAll(`.page[data-page="${page}"] g.ayah-fragment[data-ayah-key="${s}:${a}"], .page[data-page="${page}"] g.ayah-mark[data-ayah-key="${s}:${a}"]`).forEach((n) => n.classList.add("sel"));
+      });
+      list.append(b);
+    });
+  });
+  if (!any) list.append(para("لا يوجد تفصيل موضوعي لآيات هذه الصفحة."));
+  el.append(list);
+  if (guessed) { const n = para("العناوين مقترحة آليًّا وتنتظر المراجعة العلمية."); n.className = "note"; el.append(n); }
+  return el;
+}
 async function markTopics(svg) {
   svg.querySelectorAll(".tpA,.tpB").forEach((n) => n.classList.remove("tpA", "tpB"));
   svg.querySelectorAll(".tpbar").forEach((n) => n.remove());
@@ -831,6 +870,7 @@ async function card(p, key) {
   el.append(h);
   if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (p.player) return recitationCard(p);
+  if (p.topics) return topicsCard();
   if (!p.file) {
     el.classList.add("empty");
     el.append(para("لم يُربط بعد. يُضاف هذا المشروع من فنار."));
@@ -1345,7 +1385,7 @@ function paintSettings() {
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
-    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
     if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {
