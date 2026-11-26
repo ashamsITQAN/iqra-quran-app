@@ -227,6 +227,21 @@ body[data-tpi="3"]{--tpo:52%}
 .bmk i{font-style:normal;display:inline-block;min-width:17px;height:17px;border-radius:9px 9px 9px 0;font:600 11px/17px var(--ui);text-align:center;color:#fff}
 .bmk[aria-pressed="true"]{border-color:var(--accent);background:var(--tint-strong);font-weight:600}
 .mynote textarea{width:100%;min-height:150px;resize:vertical;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--naskh);font-size:17px;line-height:1.9;color:var(--ink)}
+.mine{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.mine legend{font-size:13px;font-weight:600;padding:0 6px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#dr-status.bad{color:#b3261e}
+#mine-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#mine-list li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+#mine-list li:first-child{border-top:0}
+#mine-list li.empty{display:block;color:var(--muted);font-size:14px}
+#mine-list .bm{position:static;transform:none;margin-top:3px}
+#mine-list .lv{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;white-space:nowrap;margin-top:2px}
+#mine-list strong{display:block;font-family:var(--naskh);font-size:17px;font-weight:700}
+#mine-list small{display:block;font-size:12px;color:var(--muted)}
+#mine-list p{margin:4px 0 0;font-family:var(--naskh);font-size:15.5px;line-height:1.8}
+#mine-list .acts{grid-column:2}
+#mine-list .btn,.mynote .btn{padding:3px 10px;font-size:12.5px}
 .mynote .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
 #idx-backup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-top:1px solid var(--line);flex:none}
 #idx-backup[hidden]{display:none}
@@ -314,6 +329,7 @@ body[data-tpi="3"]{--tpo:52%}
   <h1>اقرأ القرآن الكريم</h1>
   <span class="chip">نسخة تجريبية</span>
   <span class="grow"></span>
+  <button type="button" id="sync-chip" class="btn" hidden title="المزامنة مع Google Drive تحتاج ضغطة">مزامنة</button>
   <button type="button" id="find-open" class="btn">بحث</button>
   <button type="button" id="set-open" class="btn">الإعدادات</button>
   <button type="button" id="hifz-open" class="btn">الحفظ</button>
@@ -360,7 +376,22 @@ body[data-tpi="3"]{--tpo:52%}
     <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
   </div>
   <div class="tabs" id="set-tabs" role="tablist">
-    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="mokhtasar">المختصر</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button>
+    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="mokhtasar">المختصر</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button><button type="button" role="tab" data-v="mine">تعليقاتي وعلاماتي</button>
+  </div>
+  <div class="sh-body" id="set-mine" hidden>
+    <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
+      <p class="note" id="dr-status" role="status"></p>
+      <div class="acts"><button type="button" class="btn main" id="dr-link">ربط Google Drive</button><button type="button" class="btn main" id="dr-sync" hidden>مزامنة الآن</button><button type="button" class="btn" id="dr-unlink" hidden>إلغاء الربط</button></div>
+      <p class="note">تُحفظ علاماتك وتعليقاتك في مجلد خاص بالتطبيق داخل حسابك، ولا يطّلع التطبيق على بقية ملفاتك.</p>
+    </fieldset>
+    <fieldset class="mine"><legend>النسخ الاحتياطي والتصدير</legend>
+      <div class="acts"><button type="button" class="btn" id="mine-save">حفظ نسخة احتياطية</button><button type="button" class="btn" id="mine-load">استرجاع من ملف</button><button type="button" class="btn" id="mine-text">تصدير نصي</button><button type="button" class="btn" id="mine-copy">نسخ الكل</button><input type="file" id="mine-file" accept="application/json,.json" hidden></div>
+      <p class="note" id="mine-note" role="status"></p>
+    </fieldset>
+    <fieldset class="mine"><legend>مواضع علاماتي وتعليقاتي</legend>
+      <p class="note" id="mine-count"></p>
+      <ul id="mine-list"></ul>
+    </fieldset>
   </div>
   <div class="sh-body" id="set-view">
     <div class="opt"><h3>عرض الصفحات</h3>
@@ -1554,15 +1585,10 @@ function paintIndex() {
   $("#idx-backup").hidden = idxTab !== "marks" && idxTab !== "notes";
   const none = (t) => { const li = document.createElement("li"); li.className = "empty"; li.textContent = t; return [li]; };
   if (idxTab === "marks") {
-    rows = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], li = row(letter, "علامة " + name, at(m.key), m.page, false, () => jump(m.page, m.key)); li.querySelector(".n").className = "n bm bm-" + k; li.querySelector(".n").style.cssText = "position:static;transform:none;justify-self:center"; return li; });
+    rows = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], li = row(letter, "علامة " + name, at(m.key) + " · " + fmtDate(m.t), m.page, false, () => jump(m.page, m.key)); li.querySelector(".n").className = "n bm bm-" + k; li.querySelector(".n").style.cssText = "position:static;transform:none;justify-self:center"; return li; });
     if (!rows.length) rows = none("لا علامات بعد. المس رقم آية في المصحف، ثم اختر علامة الحفظ أو القراءة أو المراجعة.");
   } else if (idxTab === "notes") {
-    const ord = (k) => { const v = notes[k], a = k.split(":"); return [v.surah || 0, a[0] === "surah" ? 0 : +(a[2] || 0), a[0] === "page" ? v.page : 0, +(a[3] || 0)]; };
-    rows = Object.keys(notes).sort((x, y) => { const a = ord(x), b = ord(y); for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; }).map((k) => {
-      const v = notes[k], a = k.split(":"), lv = a[0];
-      const title = lv === "page" ? "الصفحة " + ar(v.page) : lv === "surah" ? surahName(v.surah) : at(a[1] + ":" + a[2]) + (lv === "word" ? " · «" + (v.text || "") + "»" : "");
-      return row(LEVELS[lv], title, v.t.length > 90 ? v.t.slice(0, 90) + "…" : v.t, v.page, false, () => openNote(k));
-    });
+    rows = sortedNotes().map((k) => { const v = notes[k]; return row(LEVELS[k.split(":")[0]], noteWhere(k), fmtDate(v.u) + " · " + (v.t.length > 80 ? v.t.slice(0, 80) + "…" : v.t), v.page, false, () => openNote(k)); });
     if (!rows.length) rows = none("لا تعليقات بعد. افتح نافذة أي كلمة أو آية أو صفحة أو سورة، ثم اكتب في تبويب «تعليقاتي».");
     rows.forEach((li) => { const n = li.querySelector(".n"); if (n) n.style.fontSize = "12px"; });
   } else
@@ -1578,10 +1604,38 @@ $("#idx-close").addEventListener("click", close);
 $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; idxTab = b.dataset.v; paintIndex(); });
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
 
-/* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes; kept on this device ---------- */
+/* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes ----------
+   Kept on this device; a removed item stays as a dated tombstone so that syncing does not bring it back. */
 const KINDS = [["hifz", "ح", "الحفظ"], ["read", "ق", "القراءة"], ["rev", "م", "المراجعة"]];
+const GOOGLE_CLIENT_ID = "" || store.get("gcid", "");   // OAuth client id (public, not a secret) of the Google Cloud project that owns the Drive link
 const readJ = (k) => { try { return JSON.parse(store.get(k, "{}")) || {}; } catch (e) { return {}; } };
-let marks = readJ("marks"), notes = readJ("notes");
+const fmtDate = (ms) => { try { return new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric" }).format(ms); } catch (e) { return new Date(ms).toISOString().slice(0, 10); } };
+const rawMarks = readJ("marks"), rawNotes = readJ("notes");
+let marks = {}, notes = {};
+function liveViews() {
+  marks = {}; notes = {};
+  Object.entries(rawMarks).forEach(([k, v]) => { if (v && !v.del && v.key) marks[k] = v; });
+  Object.entries(rawNotes).forEach(([k, v]) => { if (v && !v.del && typeof v.t === "string") notes[k] = v; });
+}
+liveViews();
+function saveMine(fromSync) {
+  store.set("marks", JSON.stringify(rawMarks)); store.set("notes", JSON.stringify(rawNotes));
+  liveViews(); paintMarks();
+  if (!fromSync) queueSync();
+}
+function setMark(k, v) { rawMarks[k] = v ? { ...v, t: Date.now() } : { del: true, t: Date.now() }; saveMine(); }
+function setNote(id, v) { const old = notes[id]; rawNotes[id] = v ? { ...v, u: Date.now(), c: (old && (old.c || old.u)) || Date.now() } : { del: true, u: Date.now() }; saveMine(); }
+// Takes in another copy (a backup file, or the Drive copy): the newer version of each item wins. Returns how many changed here.
+function mergeMine(d) {
+  let n = 0;
+  if (!d || typeof d.notes !== "object" || typeof d.marks !== "object") throw new Error("shape");
+  Object.entries(d.notes || {}).forEach(([k, v]) => { if (v && (v.del || typeof v.t === "string") && (v.u || 0) > ((rawNotes[k] || {}).u || 0)) { rawNotes[k] = v; n += 1; } });
+  Object.entries(d.marks || {}).forEach(([k, v]) => { if (v && (v.del || v.key) && KINDS.some((x) => x[0] === k) && (v.t || 0) > ((rawMarks[k] || {}).t || 0)) { rawMarks[k] = v; n += 1; } });
+  return n;
+}
+const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes });
+function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+
 function paintMarks() {
   spread.querySelectorAll(".bm").forEach((n) => n.remove());
   const at = {};
@@ -1606,8 +1660,7 @@ function marksRow(key) {
     b.append(i, name); b.setAttribute("aria-pressed", !!(marks[k] && marks[k].key === key));
     b.addEventListener("click", () => {
       const on = marks[k] && marks[k].key === key, moved = !on && marks[k];
-      if (on) delete marks[k]; else marks[k] = { key, page: ctx.page, t: Date.now() };
-      store.set("marks", JSON.stringify(marks)); paintMarks();
+      setMark(k, on ? null : { key, page: ctx.page });
       row.querySelectorAll(".bmk").forEach((x) => x.setAttribute("aria-pressed", !!(marks[x.dataset.k] && marks[x.dataset.k].key === key)));
       toast(on ? `أُزيلت علامة ${name}.` : moved ? `نُقلت علامة ${name} إلى هذه الآية.` : `وُضعت علامة ${name} على هذه الآية.`);
     });
@@ -1615,46 +1668,204 @@ function marksRow(key) {
   });
   return row;
 }
+const noteWhere = (k) => { const v = notes[k], a = k.split(":"), lv = a[0]; return lv === "page" ? "الصفحة " + ar(v.page) : lv === "surah" ? surahName(v.surah) : `${surahName(a[1])} · الآية ${ar(a[2])}` + (lv === "word" ? " · «" + (v.text || "") + "»" : ""); };
+const noteDates = (v) => { const c = v.c || v.u; return "كُتب " + fmtDate(c) + (fmtDate(v.u) !== fmtDate(c) ? " · عُدّل " + fmtDate(v.u) : ""); };
 function notesCard(lv, key) {
-  const el = document.createElement("div"), h = document.createElement("h3"), ta = document.createElement("textarea"), row = document.createElement("div"), st = document.createElement("span"), del = document.createElement("button");
+  const el = document.createElement("div"), h = document.createElement("h3"), ta = document.createElement("textarea"), row = document.createElement("div"), st = document.createElement("span"), acts = document.createElement("span");
   const id = lv + ":" + key, c = { ...ctx };
-  el.className = "proj mynote"; h.append(tag("شخصي"), tag("خاص بك", "src")); row.className = "row"; st.className = "note"; del.type = "button"; del.className = "btn"; del.textContent = "حذف التعليق";
+  const btn = (t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = t; b.addEventListener("click", fn); acts.append(b); return b; };
+  el.className = "proj mynote"; h.append(tag("شخصي"), tag("خاص بك", "src")); row.className = "row"; st.className = "note"; acts.className = "acts";
   ta.dir = "auto"; ta.setAttribute("aria-label", "تعليقي على " + LEVELS[lv]); ta.placeholder = "اكتب تعليقك أو تدبرك هنا…"; ta.value = notes[id] ? notes[id].t : "";
-  const when = () => { st.textContent = notes[id] ? "محفوظ على هذا الجهاز." : "يُحفظ تلقائيًّا أثناء الكتابة، على هذا الجهاز."; del.hidden = !notes[id]; };
   const save = () => {
     const t = ta.value.trim();
-    if (t) notes[id] = { t, u: Date.now(), page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) }; else delete notes[id];
-    store.set("notes", JSON.stringify(notes)); when();
+    if (t) { if (!notes[id] || notes[id].t !== t) setNote(id, { t, page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) }); }
+    else if (notes[id]) setNote(id, null);
+    when();
   };
-  let timer; ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", () => { clearTimeout(timer); save(); });
-  del.addEventListener("click", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
-  when(); row.append(st, del); el.append(h, ta, row);
+  let timer; const flush = () => { clearTimeout(timer); save(); };
+  const share = btn("مشاركة صورة", async () => { flush(); if (notes[id]) shareCard(id, el.parentNode); }), copy = btn("نسخ النص", async () => { flush(); if (notes[id]) copyText(await itemText(id)); }), del = btn("حذف", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
+  const when = () => { st.textContent = notes[id] ? noteDates(notes[id]) : "يُحفظ تلقائيًّا أثناء الكتابة."; [share, copy, del].forEach((b) => { b.hidden = !notes[id]; }); };
+  ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", flush);
+  when(); row.append(st, acts); el.append(h, ta, row);
   return el;
 }
+function ctxOf(lv, a, v) { return lv === "page" ? { page: v.page, surah: v.surah, only: "page" } : lv === "surah" ? { page: v.page, surah: v.surah, only: "surah" } : { page: v.page, surah: v.surah || +a[1], ayah: a[1] + ":" + a[2], ...(lv === "word" ? { word: a.slice(1).join(":"), text: v.text } : {}) }; }
 async function openNote(k) {
   const v = notes[k], a = k.split(":"), lv = a[0];
   await jump(v.page);
-  const c = lv === "page" ? { page: v.page, surah: v.surah, only: "page" } : lv === "surah" ? { page: v.page, surah: v.surah, only: "surah" } : { page: v.page, surah: v.surah, ayah: a[1] + ":" + a[2], ...(lv === "word" ? { word: a.slice(1).join(":"), text: v.text } : {}) };
-  activeTab[lv] = "my-notes-" + lv; open(c, lv);
+  activeTab[lv] = "my-notes-" + lv; open(ctxOf(lv, a, v), lv);
+  await new Promise((r) => setTimeout(r, 350));
 }
-$("#bk-save").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks, notes }, null, 1)], { type: "application/json" }), a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  $("#bk-note").textContent = "نُزّلت النسخة الاحتياطية.";
-});
-$("#bk-load").addEventListener("click", () => $("#bk-file").click());
-$("#bk-file").addEventListener("change", async (e) => {
-  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+async function openMark(k) { const m = marks[k], a = m.key.split(":"); await jump(m.page); open({ page: m.page, surah: +a[0], ayah: m.key }, "ayah"); await new Promise((r) => setTimeout(r, 350)); }
+
+/* Sharing: plain text (the ayah, the place, the note, its date), or a picture with the ayah as the mushaf prints it. */
+async function ayahPlain(page, ayahKey) { try { return (await getJSON(`content/ayah-text/${pad(page)}.json`))[ayahKey]["النص"]; } catch (e) { return ""; } }
+async function itemText(k) {
+  if (KINDS.some((x) => x[0] === k)) { const m = marks[k], a = m.key.split(":"), t = await ayahPlain(m.page, m.key); return `علامة ${KINDS.find((x) => x[0] === k)[2]}: ${surahName(a[0])} · الآية ${a[1]} · الصفحة ${m.page}` + (t ? `\n﴿${t}﴾` : "") + `\nوُضعت ${fmtDate(m.t)}`; }
+  const v = notes[k], a = k.split(":"), lv = a[0], t = lv === "ayah" || lv === "word" ? await ayahPlain(v.page, a[1] + ":" + a[2]) : "";
+  const place = lv === "page" ? `الصفحة ${v.page}` : lv === "surah" ? surahName(v.surah) : `${surahName(a[1])}: ${a[2]}` + (lv === "word" ? ` · الكلمة «${v.text || ""}»` : "");
+  return (t ? `﴿${t}﴾ ` : "") + `[${place}]\n\n${v.t}\n\n— ${noteDates(v)}`;
+}
+async function copyText(t) { try { await navigator.clipboard.writeText(t); toast("نُسخ النص."); } catch (e) { toast("تعذّر النسخ."); } }
+async function allText() {
+  const out = ["علاماتي وتعليقاتي · تطبيق اقرأ القرآن الكريم", "صُدّرت " + fmtDate(Date.now()), ""];
+  for (const [k] of KINDS) if (marks[k]) out.push(await itemText(k), "");
+  for (const k of sortedNotes()) out.push("────────", await itemText(k), "");
+  return out.join("\n");
+}
+function sortedNotes() {
+  const ord = (k) => { const v = notes[k], a = k.split(":"); return [v.surah || 0, a[0] === "surah" ? 0 : +(a[2] || 0), a[0] === "page" ? v.page : 0, +(a[3] || 0)]; };
+  return Object.keys(notes).sort((x, y) => { const a = ord(x), b = ord(y); for (let i = 0; i < 4; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; });
+}
+function svgImage(svg, f) {
+  const r = svg.getBoundingClientRect(), c = svg.cloneNode(true);
+  c.querySelectorAll(".hit,.tpbar,.banner").forEach((n) => n.remove());
+  c.querySelectorAll("path").forEach((n) => n.setAttribute("fill", n.dataset.kind === "ayah_mark_ornament" ? "#a67c2e" : "#1b2421"));
+  c.removeAttribute("style"); c.setAttribute("width", r.width * f); c.setAttribute("height", r.height * f);
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res({ im, w: r.width * f, h: r.height * f }); im.onerror = rej; im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(c)); });
+}
+async function makeCard(k, scope) {
+  const isMark = KINDS.some((x) => x[0] === k), v = isMark ? marks[k] : notes[k], W = 1080, P = 64, inner = W - 2 * P;
+  const title = isMark ? `${surahName(v.key.split(":")[0])} · الآية ${ar(v.key.split(":")[1])}` : noteWhere(k), body = isMark ? "علامة " + KINDS.find((x) => x[0] === k)[2] : v.t;
+  const foot = (isMark ? "وُضعت " + fmtDate(v.t) : noteDates(v)) + " · تطبيق اقرأ القرآن الكريم";
+  const block = scope && scope.querySelector(".ayah-block"), svgs = block ? [...block.querySelectorAll("svg")] : [];
+  const f = block ? (inner - 80) / Math.max(1, block.clientWidth - 28) : 1, imgs = [];
+  for (const sv of svgs) imgs.push(await svgImage(sv, f));
+  await document.fonts.ready;
+  const cv = document.createElement("canvas"), g = cv.getContext("2d"), FONT = '38px "Amiri","Noto Naskh Arabic",serif', LH = 70;
+  g.font = FONT; g.direction = "rtl";
+  const lines = [];
+  body.split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).forEach((w) => { const t = line ? line + " " + w : w; if (g.measureText(t).width > inner - 60 && line) { lines.push(line); line = w; } else line = t; }); lines.push(line); });
+  const qH = imgs.length ? imgs.reduce((n, x) => n + x.h + 18, 0) + 50 : 0, H = P + 70 + (qH ? qH + 30 : 0) + lines.length * LH + 60 + 70 + P;
+  cv.width = W; cv.height = H;
+  g.fillStyle = "#eef1ee"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(24, 24, W - 48, H - 48, 28); g.fill();
+  g.direction = "rtl"; g.textAlign = "right"; g.fillStyle = "#1b2421"; g.font = '600 40px "IBM Plex Sans Arabic","Amiri",sans-serif';
+  let y = P + 44; g.fillText(title, W - P, y); y += 40;
+  if (imgs.length) {
+    g.fillStyle = "#faf9f3"; g.strokeStyle = "#d9ddd6"; g.lineWidth = 2; g.beginPath(); g.roundRect(P, y, inner, qH, 20); g.fill(); g.stroke();
+    g.fillStyle = "#a67c2e"; g.fillRect(W - P - 6, y + 14, 6, qH - 28);
+    let yy = y + 30; imgs.forEach((x) => { g.drawImage(x.im, (W - x.w) / 2, yy, x.w, x.h); yy += x.h + 18; });
+    y += qH + 30;
+  }
+  g.fillStyle = "#1b2421"; g.font = FONT; y += 30;
+  lines.forEach((l) => { g.fillText(l, W - P - 30, y); y += LH; });
+  g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y - lines.length * LH - 44, 4, lines.length * LH + 8);
+  g.fillStyle = "#6b7773"; g.font = '26px "IBM Plex Sans Arabic","Amiri",sans-serif'; g.fillText(foot, W - P, H - P - 6);
+  return new Promise((res) => cv.toBlob(res, "image/png"));
+}
+async function shareCard(k, scope) {
   try {
-    const d = JSON.parse(await f.text());
-    if (d.app !== "iqra-quran-app" || typeof d.notes !== "object" || typeof d.marks !== "object") throw new Error("shape");
-    let n = 0;   // the newer copy of each note and each bookmark wins; nothing on this device is dropped
-    Object.entries(d.notes).forEach(([k, v]) => { if (v && typeof v.t === "string" && (!notes[k] || (v.u || 0) > (notes[k].u || 0))) { notes[k] = v; n += 1; } });
-    Object.entries(d.marks).forEach(([k, v]) => { if (v && v.key && KINDS.some((x) => x[0] === k) && (!marks[k] || (v.t || 0) > (marks[k].t || 0))) { marks[k] = v; n += 1; } });
-    store.set("notes", JSON.stringify(notes)); store.set("marks", JSON.stringify(marks)); paintMarks(); paintIndex();
-    $("#bk-note").textContent = n ? `استُرجع ${ar(n)} عنصرًا من الملف.` : "الملف لا يحوي شيئًا أحدث مما على هذا الجهاز.";
-  } catch (err) { $("#bk-note").textContent = "تعذّرت قراءة الملف. اختر ملف نسخة احتياطية من هذا التطبيق."; }
-});
+    const blob = await makeCard(k, scope), file = new File([blob], "iqra-" + k.replace(/:/g, "-") + ".png", { type: "image/png" }), text = await itemText(k);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text }); } catch (e) {} return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast("نُزّلت الصورة. هذا المتصفح لا يدعم المشاركة المباشرة.");
+  } catch (e) { toast("تعذّر إنشاء الصورة."); }
+}
+
+/* Backup file */
+function backupSave(note) { download("iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(exportObj(), null, 1), "application/json"); note.textContent = "نُزّلت النسخة الاحتياطية."; }
+async function backupLoad(file, note) {
+  try {
+    const d = JSON.parse(await file.text());
+    if (d.app !== "iqra-quran-app") throw new Error("shape");
+    const n = mergeMine(d); saveMine();
+    note.textContent = n ? `استُرجع ${ar(n)} عنصرًا من الملف.` : "الملف لا يحوي شيئًا أحدث مما على هذا الجهاز.";
+  } catch (err) { note.textContent = "تعذّرت قراءة الملف. اختر ملف نسخة احتياطية من هذا التطبيق."; }
+}
+$("#bk-save").addEventListener("click", () => backupSave($("#bk-note")));
+$("#bk-load").addEventListener("click", () => $("#bk-file").click());
+$("#bk-file").addEventListener("change", async (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) { await backupLoad(f, $("#bk-note")); paintIndex(); } });
+
+/* Google Drive: one file in the app's own hidden Drive folder, merged both ways (newer item wins). */
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata", DRIVE_NAME = "iqra-quran-data.json", GAPI = "https://www.googleapis.com";
+let gToken = "", gExp = 0, gisP = null, syncTimer = 0, syncing = false, syncMsg = "", syncBad = false, driveFile = store.get("drive-file", "");
+const driveLinked = () => store.get("drive", "") === "1";
+function setSync(t, bad) { syncMsg = t; syncBad = !!bad; const el = $("#dr-status"); if (el) { el.textContent = t; el.classList.toggle("bad", syncBad); } }
+function loadGis() { return gisP || (gisP = new Promise((res, rej) => { if (window.google && google.accounts) return res(); const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.onload = res; sc.onerror = () => { gisP = null; rej(new Error("gis")); }; document.head.append(sc); })); }
+async function driveToken(interactive) {
+  if (gToken && Date.now() < gExp) return gToken;
+  await loadGis();
+  return new Promise((res, rej) => {
+    const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE,
+      callback: (r) => { if (r.error || !r.access_token) return rej(new Error(r.error || "token")); gToken = r.access_token; gExp = Date.now() + ((+r.expires_in || 3600) - 90) * 1000; res(gToken); },
+      error_callback: (e) => rej(new Error((e && e.type) || "popup")) });
+    client.requestAccessToken({ prompt: interactive ? "" : "none" });
+  });
+}
+async function driveCall(method, url, body, headers) {
+  const r = await fetch(url, { method, headers: { Authorization: "Bearer " + gToken, ...(headers || {}) }, body });
+  if (r.status === 401) gToken = "";
+  if (!r.ok) { const e = new Error("drive " + r.status); e.status = r.status; throw e; }
+  return r.json();
+}
+async function syncNow(interactive) {
+  if (!GOOGLE_CLIENT_ID || syncing || (!interactive && !driveLinked())) return;
+  syncing = true; setSync("جارٍ المزامنة…");
+  try {
+    await driveToken(interactive);
+    if (!driveFile) driveFile = ((await driveCall("GET", `${GAPI}/drive/v3/files?spaces=appDataFolder&fields=files(id)&q=${encodeURIComponent(`name='${DRIVE_NAME}'`)}`)).files[0] || {}).id || "";
+    let remote = null;
+    if (driveFile) { try { remote = await driveCall("GET", `${GAPI}/drive/v3/files/${driveFile}?alt=media`); } catch (e) { if (e.status === 404) driveFile = ""; else throw e; } }
+    const got = remote ? mergeMine(remote) : 0;
+    if (got) { saveMine(true); if (settings.classList.contains("open")) paintSettings(); }
+    const same = remote && JSON.stringify([remote.marks, remote.notes]) === JSON.stringify([rawMarks, rawNotes]);
+    if (!same) {
+      const body = JSON.stringify(exportObj());
+      if (driveFile) await driveCall("PATCH", `${GAPI}/upload/drive/v3/files/${driveFile}?uploadType=media`, body, { "Content-Type": "application/json" });
+      else {
+        const b = "iqra" + Date.now(), multi = `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: DRIVE_NAME, parents: ["appDataFolder"] })}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+        driveFile = (await driveCall("POST", `${GAPI}/upload/drive/v3/files?uploadType=multipart&fields=id`, multi, { "Content-Type": "multipart/related; boundary=" + b })).id;
+      }
+    }
+    store.set("drive", "1"); store.set("drive-file", driveFile); store.set("drive-at", String(Date.now()));
+    setSync("آخر مزامنة: الآن" + (got ? ` · وصل ${ar(got)} عنصرًا من أجهزتك الأخرى` : ""));
+  } catch (e) {
+    const quiet = !interactive && /popup|interaction|login|consent|access_denied|token/.test(e.message);
+    setSync(quiet ? "تحتاج المزامنة إلى ضغطة منك: اضغط «مزامنة الآن»." : e.message === "gis" ? "تعذّر الاتصال بـ Google. تحقق من الاتصال." : "لم تتم المزامنة (" + e.message + ").", true);
+    $("#sync-chip").hidden = !(quiet && driveLinked());
+  }
+  syncing = false;
+  if (driveLinked() && gToken) $("#sync-chip").hidden = true;
+  if (settings.classList.contains("open") && setTab === "mine") paintMine();
+}
+function queueSync() { if (!GOOGLE_CLIENT_ID || !driveLinked()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); }
+function driveUnlink() { store.set("drive", ""); store.set("drive-file", ""); driveFile = ""; if (gToken && window.google) { try { google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} } gToken = ""; $("#sync-chip").hidden = true; setSync("أُلغي الربط. بياناتك باقية على هذا الجهاز، ونسختها في Drive لم تُحذف."); paintMine(); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden && driveLinked() && Date.now() - +store.get("drive-at", "0") > 3e5) syncNow(false); });
+$("#sync-chip").addEventListener("click", () => syncNow(true));
+if (GOOGLE_CLIENT_ID && driveLinked()) setTimeout(() => syncNow(false), 1500);
+
+/* The settings tab for all of this: sync, backup, export, and the dated list of every bookmark and note. */
+function paintMine() {
+  const linked = driveLinked(), at = +store.get("drive-at", "0");
+  $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked;
+  $("#dr-link").disabled = !GOOGLE_CLIENT_ID;
+  setSync(syncMsg && (syncing || syncBad || linked) ? syncMsg : !GOOGLE_CLIENT_ID ? "المزامنة غير مفعّلة بعد: ينقص التطبيقَ معرّفُ Google الخاص به." : linked ? (at ? "آخر مزامنة: " + fmtDate(at) : "مربوط.") : "غير مربوط. بياناتك على هذا الجهاز فقط.", syncBad);
+  const list = $("#mine-list"), mk = (badge, cls, title, sub, text, onOpen, onShare, onCopy) => {
+    const li = document.createElement("li"), b = document.createElement("span"), m = document.createElement("div"), t = document.createElement("strong"), d = document.createElement("small"), acts = document.createElement("span");
+    b.className = cls; b.textContent = badge; t.textContent = title; d.textContent = sub; m.append(t, d);
+    if (text) { const p = document.createElement("p"); p.dir = "auto"; p.textContent = text.length > 140 ? text.slice(0, 140) + "…" : text; m.append(p); }
+    acts.className = "acts";
+    [["فتح", onOpen], ["مشاركة", onShare], ["نسخ", onCopy]].forEach(([l, fn]) => { const x = document.createElement("button"); x.type = "button"; x.className = "btn"; x.textContent = l; x.addEventListener("click", fn); acts.append(x); });
+    li.append(b, m, acts); return li;
+  };
+  const rows = [];
+  KINDS.forEach(([k, letter, name]) => { const m = marks[k]; if (!m) return; const a = m.key.split(":");
+    rows.push(mk(letter, "bm bm-" + k, "علامة " + name, `${surahName(a[0])} · الآية ${ar(a[1])} · الصفحة ${ar(m.page)} · وُضعت ${fmtDate(m.t)}`, "", () => jump(m.page, m.key), async () => { await openMark(k); shareCard(k, $("#sh-body")); }, async () => copyText(await itemText(k)))); });
+  sortedNotes().forEach((k) => { const v = notes[k], lv = k.split(":")[0];
+    rows.push(mk(LEVELS[lv], "lv", noteWhere(k), `الصفحة ${ar(v.page)} · ${noteDates(v)}`, v.t, () => openNote(k), async () => { await openNote(k); shareCard(k, $("#sh-body")); }, async () => copyText(await itemText(k)))); });
+  if (!rows.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "لا علامات ولا تعليقات بعد."; rows.push(li); }
+  list.replaceChildren(...rows);
+  $("#mine-count").textContent = `${ar(Object.keys(marks).length)} علامة · ${ar(Object.keys(notes).length)} تعليقًا`;
+}
+$("#dr-link").addEventListener("click", () => syncNow(true));
+$("#dr-sync").addEventListener("click", () => syncNow(true));
+$("#dr-unlink").addEventListener("click", driveUnlink);
+$("#mine-save").addEventListener("click", () => backupSave($("#mine-note")));
+$("#mine-load").addEventListener("click", () => $("#mine-file").click());
+$("#mine-file").addEventListener("change", async (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) { await backupLoad(f, $("#mine-note")); paintMine(); } });
+$("#mine-text").addEventListener("click", async () => { download("iqra-notes-" + new Date().toISOString().slice(0, 10) + ".txt", await allText(), "text/plain;charset=utf-8"); $("#mine-note").textContent = "نُزّل الملف النصي."; });
+$("#mine-copy").addEventListener("click", async () => copyText(await allText()));
 
 /* ---------- settings ---------- */
 let setTab = "view";
@@ -1668,7 +1879,8 @@ function paintSettings() {
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
-  $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view";
+  $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view" || setTab === "mine"; $("#set-mine").hidden = setTab !== "mine";
+  if (setTab === "mine") { paintMine(); return; }
   const box = $("#set-projects"); box.replaceChildren();
   if (setTab === "view") return;
   $("#set-hint").textContent = `اختر ما يظهر في النافذة عند لمس ${{ word: "كلمة", ayah: "رأس آية", page: "رقم صفحة", surah: "ترويسة سورة" }[setTab]}.`;
