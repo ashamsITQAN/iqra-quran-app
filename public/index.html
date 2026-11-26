@@ -79,7 +79,11 @@ button{cursor:pointer}
 .seg button{background:var(--paper);border:0;padding:6px 10px;font-size:13px;white-space:nowrap}
 .seg button+button{border-inline-start:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
-.fn{color:var(--muted);font-size:.78em}
+.pm{color:var(--muted);font-size:.62em;font-family:var(--ui);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
+.ref{background:none;border:0;padding:0 1px;color:var(--accent);font-family:var(--ui);font-size:.62em;vertical-align:super;line-height:1}
+.notes{margin:10px 0 4px;padding:8px 22px 0 0;border-top:1px solid var(--line);font-family:var(--naskh);font-size:14px;line-height:1.9;color:var(--muted);list-style:arabic-indic}
+.notes li{padding-inline-start:4px;border-radius:4px;transition:background .3s}
+.notes li.hot{background:var(--tint-strong);color:var(--ink)}
 .more{background:none;border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:12px;margin-top:6px;color:var(--accent)}
 .pager{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:1px solid var(--line);background:var(--panel);flex:none}
 .pager button{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 14px;white-space:nowrap}
@@ -350,7 +354,8 @@ async function card(p, key) {
   if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
   const dl = document.createElement("dl");
   for (const [k, v] of Object.entries(entry)) {
-    if (k === "النص") { el.append(...richText(v)); continue; }
+    if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null)); continue; }
+    if (k === "الهامش") continue;
     const dt = document.createElement("dt"), dd = document.createElement("dd");
     dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
     dl.append(dt, dd);
@@ -358,26 +363,43 @@ async function card(p, key) {
   if (dl.children.length) el.append(dl);
   return el;
 }
-/* Publisher text is shown unchanged. Editorial notes arrive wrapped in ¬ … ¥ and are only styled smaller. */
-function richText(v) {
-  const LIMIT = 700, p = document.createElement("p");
-  p.className = "text";
+/* Publisher text is shown unchanged. Editorial footnotes arrive wrapped in ¬ … ¥: each becomes a numbered
+   reference in the text and a numbered note under it. Print page markers (ج1 ص109) stay inline as a small tag. */
+function richText(v, extraNotes) {
+  const LIMIT = 700, PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;
+  const p = document.createElement("p"), notes = document.createElement("ol"), wrap = document.createElement("div");
+  p.className = "text"; notes.className = "notes";
   const fill = (str) => {
-    p.replaceChildren();
+    p.replaceChildren(); notes.replaceChildren();
+    let n = 0;
     str.split(/(¬[^¥]*¥?)/).forEach((part) => {
       if (!part) return;
-      if (part[0] === "¬") { const s = document.createElement("span"); s.className = "fn"; s.textContent = " [" + part.replace(/^¬|¥$/g, "").trim() + "] "; p.append(s); }
-      else p.append(part);
+      if (part[0] !== "¬") { p.append(part); return; }
+      const body = part.replace(/^¬|¥$/g, "").trim();
+      if (!body) return;
+      if (PAGE_MARK.test(body)) { const m = document.createElement("span"); m.className = "pm"; m.textContent = ar(body); p.append(" ", m, " "); return; }
+      n += 1;
+      const li = document.createElement("li"), ref = document.createElement("button");
+      li.textContent = body;
+      ref.type = "button"; ref.className = "ref"; ref.textContent = "(" + ar(n) + ")"; ref.setAttribute("aria-label", "الهامش " + n);
+      ref.addEventListener("click", () => { li.scrollIntoView({ block: "nearest" }); li.classList.add("hot"); setTimeout(() => li.classList.remove("hot"), 1500); });
+      p.append(ref); notes.append(li);
     });
+    (extraNotes || []).forEach((t) => { const li = document.createElement("li"); li.textContent = t; notes.append(li); });
+    notes.hidden = !notes.children.length;
   };
-  if (v.length <= LIMIT) { fill(v); return [p]; }
-  let cut = v.lastIndexOf(" ", LIMIT); const open = v.lastIndexOf("¬", cut), shut = v.lastIndexOf("¥", cut);
-  if (open > shut) cut = open;
-  fill(v.slice(0, cut) + " …");
-  const b = document.createElement("button");
-  b.type = "button"; b.className = "more"; b.textContent = "عرض النص كاملًا";
-  b.addEventListener("click", () => { fill(v); b.remove(); });
-  return [p, b];
+  wrap.append(p);
+  if (v.length > LIMIT) {
+    let cut = v.lastIndexOf(" ", LIMIT); const open = v.lastIndexOf("¬", cut), shut = v.lastIndexOf("¥", cut);
+    if (open > shut) cut = open;
+    const short = v.slice(0, cut) + " …", b = document.createElement("button");
+    fill(short);
+    b.type = "button"; b.className = "more"; b.textContent = "عرض النص كاملًا";
+    b.addEventListener("click", () => { fill(v); b.remove(); });
+    wrap.append(b);
+  } else fill(v);
+  wrap.append(notes);
+  return [wrap];
 }
 const tag = (t, c) => { const s = document.createElement("span"); s.className = "tag" + (c ? " " + c : ""); s.textContent = t; return s; };
 const para = (t) => { const p = document.createElement("p"); p.textContent = t; return p; };

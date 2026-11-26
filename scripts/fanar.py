@@ -4,7 +4,7 @@ Run after scripts/build.py: it reads public/content/ayah-text to know which page
 import csv, glob, io, json, os, sys, zipfile
 src, dst = sys.argv[1], sys.argv[2]
 csv.field_size_limit(1 << 30)
-EXTRA = {"volume": "المجلد", "page_start": "من الصفحة", "start_page": "من الصفحة", "page_end": "إلى الصفحة", "end_page": "إلى الصفحة", "rabt": "الربط", "words": "الكلمات"}
+EXTRA = {"volume": "المجلد", "page_start": "من الصفحة", "start_page": "من الصفحة", "page_end": "إلى الصفحة", "end_page": "إلى الصفحة", "rabt": "الربط", "words": "الكلمات", "الهامش": "الهامش"}
 
 ayah_page, ayah_words = {}, {}
 for f in sorted(glob.glob(os.path.join(dst, "content/ayah-text/*.json"))):
