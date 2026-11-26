@@ -37,6 +37,7 @@ for s in surahs:
     meta["surahs"][str(s["number"])] = {"name": s["name_arabic"], "ayahs": s["ayah_count"], "place": place.get(s["revelation_place"], ""), "page": s["pages"][0]}
     surah_info[str(s["number"])] = {"الاسم": s["name_arabic"], "النزول": place.get(s["revelation_place"], s["revelation_place"]), "ترتيب النزول": s["revelation_order"], "عدد الآيات": s["ayah_count"], "الصفحات": f"{s['pages'][0]} – {s['pages'][1]}"}
 meta["juz"] = [{"n": r["juz"], "ayah": r["ayah_key"], "page": r["page"]} for r in dv["juz"]]
+meta["rub"] = [{"n": r["rubu_al_hizb_in_hizb"], "hizb": r["hizb"], "juz": r.get("juz"), "ayah": r["ayah_key"], "page": r["page"]} for r in dv["rubu_al_hizb"]]
 meta["hizb"] = [{"n": r["hizb"], "ayah": r["ayah_key"], "page": r["page"]} for r in dv["hizb"]]
 search.sort(key=lambda r: (r[0], r[1]))
 W("data/search.json", search)

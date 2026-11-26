@@ -49,6 +49,10 @@ button{cursor:pointer}
 #spread{display:flex;gap:6px;align-items:flex-start;justify-content:center;margin:auto}
 .page{background:var(--paper);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;flex:none;box-shadow:0 1px 6px rgba(0,0,0,.08)}
 .page.blank{visibility:hidden}
+/* margin tabs on the outer edge of a page: a new quarter, half, hizb or juz, and a prostration; dressed like the surah banner */
+.mtab{position:absolute;writing-mode:vertical-rl;transform:translateY(-50%);width:19px;padding:5px 0;background:var(--paper);background-image:linear-gradient(var(--banner),var(--banner));border:1px solid var(--mark);border-radius:5px;font-family:var(--naskh);font-size:12px;line-height:17px;color:var(--ink);text-align:center;white-space:nowrap;pointer-events:none;z-index:1}
+.page.rt .mtab{right:-13px}.page.lt .mtab{left:-13px}
+.mtab.sajda{border-style:double;border-width:3px;width:21px;font-weight:700}
 /* turning the page: the new spread comes in from the side it lies on (later pages are to the left) */
 @keyframes turnNext{from{opacity:.15;transform:translateX(-42px)}to{opacity:1;transform:none}}
 @keyframes turnPrev{from{opacity:.15;transform:translateX(42px)}to{opacity:1;transform:none}}
@@ -649,6 +653,7 @@ async function fillPage(n) {
   decorate(svg);
   markTopics(svg);
   markGharib(n, svg);
+  marginTabs(n, svg);
   paintMarks();
 }
 
@@ -794,6 +799,28 @@ function decorate(svg) {
   }
 }
 
+// Tabs in the outer margin, level with the line where a division begins or a prostration falls.
+function marginTabs(n, svg) {
+  const art = svg.closest(".art"), a = art.getBoundingClientRect(), items = [];
+  if (!a.height) return;
+  (meta.rub || []).filter((r) => r.page === n).forEach((r) => {
+    const w = svg.querySelector(`g.word[data-word-key="${r.ayah}:1"]`); if (!w) return;
+    const label = r.n === 1 ? (r.juz ? "الجزء " + ar(r.juz) : "الحزب " + ar(r.hizb)) : ["", "", "ربع الحزب ", "نصف الحزب ", "ثلاثة أرباع الحزب "][r.n] + ar(r.hizb);
+    items.push({ el: w, label, cls: "" });
+  });
+  svg.querySelectorAll("g.sajdah-mark").forEach((g) => items.push({ el: g, label: "سجدة", cls: " sajda" }));
+  const placed = [];
+  items.map((it) => { const r = it.el.getBoundingClientRect(); return { ...it, y: r.top + r.height / 2 - a.top }; }).sort((x, y) => x.y - y.y).forEach((it) => {
+    const t = document.createElement("span");
+    t.className = "mtab" + it.cls; t.textContent = it.label;
+    art.append(t);
+    const h = t.getBoundingClientRect().height;
+    let y = Math.max(h / 2 + 2, Math.min(a.height - h / 2 - 2, it.y));
+    const prev = placed[placed.length - 1]; if (prev && y - h / 2 < prev.bottom + 3) y = prev.bottom + 3 + h / 2;   // two on one page never overlap
+    placed.push({ bottom: y + h / 2 });
+    t.style.top = (y / a.height) * 100 + "%";
+  });
+}
 // The context for a page or a surah opened as a whole: it also carries the first ayah there, so the window can move
 // between the page, the surah and the ayah levels. Falls back to the single level while the page is still loading.
 function ctxAt(page, surah) {
