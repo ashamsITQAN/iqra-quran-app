@@ -16,7 +16,9 @@ if not ayah_page:
 ALIAS = {"sura": "surah", "surah_number": "surah", "sura_no": "surah", "surah_id": "surah", "chapter": "surah",
          "aya": "ayah", "ayah_number": "ayah", "aya_no": "ayah", "ayah_id": "ayah", "verse": "ayah",
          "word_number": "word", "word_no": "word", "word_index": "word", "position": "word",
-         "tafsir": "text", "meaning": "text", "content": "text", "translation": "text"}
+         "tafsir": "text", "meaning": "text", "content": "text", "translation": "text",
+         "رقم السورة": "surah", "رقم الآية": "ayah", "رقم الكلمة": "word", "النص": "text", "التفسير": "text", "نص التفسير": "text"}
+NOT_TEXT = {"surah", "ayah", "word", "word_id", "الآية", "السورة", "المشروع", "نوع المشروع", "مرحلة العمل", "قابل للنشر"}
 POSITIONAL = {2: ["surah", "text"], 3: ["surah", "ayah", "text"], 5: ["word_id", "surah", "ayah", "word", "text"]}
 
 def table(stream):
@@ -28,7 +30,16 @@ def table(stream):
     first = next(rows, None)
     if first is None: return
     names = [ALIAS.get(c.strip().lower(), c.strip().lower()) for c in first]
-    print("  header:", first[:8], "delimiter:", repr(dialect.delimiter))
+    print("  header:", first, "delimiter:", repr(dialect.delimiter))
+    if "surah" in names and "ayah" in names and "text" not in names:
+        # No recognisable text column: take the one holding the most text in the first rows.
+        sample = [r for _, r in zip(range(300), rows)]
+        totals = {i: sum(len(r[i]) for r in sample if i < len(r)) for i, n in enumerate(names) if n not in NOT_TEXT}
+        best = max(totals, key=totals.get)
+        print("  text column guessed:", first[best])
+        names[best] = "text"
+        import itertools
+        rows = itertools.chain(sample, rows)
     if "surah" not in names or "text" not in names:
         guess = POSITIONAL.get(len(first))
         if guess is None: print("  unknown layout, skipped"); return
