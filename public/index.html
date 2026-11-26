@@ -129,6 +129,11 @@ body[data-tpi="3"]{--tpo:52%}
 .hz .inl{display:flex;align-items:center;gap:6px}.hz small{color:var(--muted);font-size:12px}
 .hz select:disabled,.hz input:disabled{opacity:.45}
 #hz-est{flex:1;align-self:center}
+#share{z-index:6;width:min(460px,calc(100% - 24px))}
+.shr-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shr-opts .btn{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:start;padding:10px 12px}
+.shr-opts .btn strong{font-size:14px;font-weight:600}.shr-opts .btn small{font-size:12px;color:var(--muted);white-space:normal}
+@media (max-width:480px){.sh-nav button{padding:6px 9px;font-size:12.5px}}
 #report{z-index:6;width:min(520px,calc(100% - 24px))}
 #report [hidden]{display:none}
 #report dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:14px}
@@ -474,7 +479,23 @@ body[data-tpi="3"]{--tpo:52%}
   <div class="tabs" id="tabs" role="tablist"></div>
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
-  <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>الإبلاغ عن خطأ</button><button type="button" id="nav-next">التالي</button></div>
+  <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
+</section>
+
+<section id="share" class="modal" role="dialog" aria-label="مشاركة المحتوى" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">مشاركة</p><p class="sub" id="shr-what"></p></div>
+    <button class="sh-close" id="shr-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <div class="shr-opts">
+      <button type="button" class="btn" id="shr-png"><strong>صورة PNG</strong><small>بطاقة مصمّمة، تناسب واتساب وفيسبوك</small></button>
+      <button type="button" class="btn" id="shr-pdf"><strong>ملف PDF</strong><small>بالتصميم نفسه في صفحات، للمحتوى الطويل</small></button>
+      <button type="button" class="btn" id="shr-txt"><strong>ملف نصي</strong><small>نص خالص يمكن تعديله</small></button>
+      <button type="button" class="btn" id="shr-copy"><strong>نسخ النص</strong><small>للصقه في أي مكان</small></button>
+    </div>
+    <p class="note" id="shr-msg" role="status" style="margin:0"></p>
+  </div>
 </section>
 
 <section id="report" class="modal" role="dialog" aria-label="الإبلاغ عن خطأ في المحتوى" aria-hidden="true">
@@ -775,7 +796,7 @@ function placePager() {
 }
 shortWide.addEventListener("change", placePager);
 if (shortWide.matches) placePager();
-const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index"), reportBox = $("#report");
+const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index"), reportBox = $("#report"), shareBox = $("#share");
 let shown = null;   // the project whose content the window is showing
 function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
 // In ayah mode, pointing at any word lights the whole ayah: every line of it, and its number.
@@ -793,14 +814,14 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
   if (e.key === " " && S && !e.target.matches("input,select,button,textarea")) { e.preventDefault(); togglePlay(); }
-  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } if (reportBox.classList.contains("open")) return show(reportBox, false); close(); }
+  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } if (reportBox.classList.contains("open")) return show(reportBox, false); if (shareBox.classList.contains("open")) return show(shareBox, false); close(); }
   if (e.target.matches("input,select,textarea")) return;
   const inSheet = sheet.classList.contains("open");
   if (e.key === "ArrowLeft") inSheet ? step(1) : go(1);
@@ -851,13 +872,14 @@ async function paintSheet() {
     const words = projects.filter((p) => p.level === "word" && !p.notes && !hidden.has(p.id));
     list = [...list.filter((p) => !p.player), ...words, ...list.filter((p) => p.player)];
   }
+  list = [...list.filter((p) => !p.notes), ...list.filter((p) => p.notes)];   // my notes close the row of tabs
   const tabs = $("#tabs"), subs = $("#subtabs");
   const ink = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
   let quote = ink;
   if (level === "ayah") { quote = document.createElement("div"); quote.className = "qcol"; if (ink) quote.append(ink); quote.append(marksRow(ctx.ayah)); }
   $("#nav-prev").textContent = LEVELS[level] + " السابقة"; $("#nav-next").textContent = LEVELS[level] + " التالية";
   if (!list.length) {
-    tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true; shown = null; $("#sh-report").hidden = true;
+    tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true; shown = null; $("#sh-report").hidden = true; $("#sh-share").hidden = true;
     body.replaceChildren(...(quote ? [quote] : []), para("لا توجد مشروعات معروضة لهذا المستوى. يمكنك إظهارها من الإعدادات."));
     return;
   }
@@ -882,7 +904,7 @@ async function paintSheet() {
   } else subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => choose(p.id)))));
   const on = tabs.querySelector('[aria-selected="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
-  shown = active; $("#sh-report").hidden = !(active.asset || active.player);
+  shown = active; $("#sh-report").hidden = !(active.asset || active.player); $("#sh-share").hidden = !!active.player || (active.notes && !notes[level + ":" + key]);
   const el = active.level === "word" && level === "ayah" ? await wordsCard(active, quote) : await card(active, key);
   if (paintSheet.token !== token) return;
   el.classList.add("solo");
@@ -1683,8 +1705,8 @@ function notesCard(lv, key) {
     when();
   };
   let timer; const flush = () => { clearTimeout(timer); save(); };
-  const share = btn("مشاركة صورة", async () => { flush(); if (notes[id]) shareCard(id, el.parentNode); }), copy = btn("نسخ النص", async () => { flush(); if (notes[id]) copyText(await itemText(id)); }), del = btn("حذف", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
-  const when = () => { st.textContent = notes[id] ? noteDates(notes[id]) : "يُحفظ تلقائيًّا أثناء الكتابة."; [share, copy, del].forEach((b) => { b.hidden = !notes[id]; }); };
+  const share = btn("مشاركة", () => { flush(); if (notes[id]) openShare(docOf(id)); }), copy = btn("نسخ النص", async () => { flush(); if (notes[id]) copyText(await itemText(id)); }), del = btn("حذف", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
+  const when = () => { st.textContent = notes[id] ? noteDates(notes[id]) : "يُحفظ تلقائيًّا أثناء الكتابة."; [share, copy, del].forEach((b) => { b.hidden = !notes[id]; }); if (shown && shown.notes) $("#sh-share").hidden = !notes[id]; };
   ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", flush);
   when(); row.append(st, acts); el.append(h, ta, row);
   return el;
@@ -1724,44 +1746,114 @@ function svgImage(svg, f) {
   c.removeAttribute("style"); c.setAttribute("width", r.width * f); c.setAttribute("height", r.height * f);
   return new Promise((res, rej) => { const im = new Image(); im.onload = () => res({ im, w: r.width * f, h: r.height * f }); im.onerror = rej; im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(c)); });
 }
-async function makeCard(k, scope) {
-  const isMark = KINDS.some((x) => x[0] === k), v = isMark ? marks[k] : notes[k], W = 1080, P = 64, inner = W - 2 * P;
-  const title = isMark ? `${surahName(v.key.split(":")[0])} · الآية ${ar(v.key.split(":")[1])}` : noteWhere(k), body = isMark ? "علامة " + KINDS.find((x) => x[0] === k)[2] : v.t;
-  const foot = (isMark ? "وُضعت " + fmtDate(v.t) : noteDates(v)) + " · تطبيق اقرأ القرآن الكريم";
-  const block = scope && scope.querySelector(".ayah-block"), svgs = block ? [...block.querySelectorAll("svg")] : [];
-  const f = block ? (inner - 80) / Math.max(1, block.clientWidth - 28) : 1, imgs = [];
+/* What is being shared: a title, where it comes from, the ayah as printed (when the window shows one), the text, a footer. */
+function docOf(k) {   // one of my bookmarks or notes; its place must be open in the window
+  const isMark = KINDS.some((x) => x[0] === k), v = isMark ? marks[k] : notes[k], a = k.split(":");
+  if (isMark) return { name: "iqra-mark-" + k, title: `${surahName(v.key.split(":")[0])} · الآية ${ar(v.key.split(":")[1])}`, source: "", body: "علامة " + KINDS.find((x) => x[0] === k)[2], foot: "وُضعت " + fmtDate(v.t), page: v.page, ayah: v.key };
+  return { name: "iqra-" + k.replace(/:/g, "-"), title: noteWhere(k), source: "تعليقي", body: v.t, foot: noteDates(v), page: v.page, ayah: a[0] === "ayah" || a[0] === "word" ? a[1] + ":" + a[2] : "" };
+}
+function docShown() {   // the content the window is showing now
+  if (!ctx || !shown) return null;
+  const key = keyFor(level);
+  if (shown.notes) return notes[level + ":" + key] ? docOf(level + ":" + key) : null;
+  const el = $("#sh-body .proj"); if (!el) return null;
+  el.querySelectorAll("button.more").forEach((b) => b.click());   // long texts are folded on screen; share them whole
+  const parts = []; let credit = "";
+  [...el.children].forEach((c) => { if (c.tagName === "H3") return;
+    const rows = c.matches(".wrow") ? [c] : [...c.querySelectorAll(".wrow")];   // word rows read "word: meaning" on one line
+    const t = rows.length ? rows.map((r) => `${(r.querySelector(".ww") || {}).innerText || ""}: ${(r.querySelector(".wt") || {}).innerText || ""}`.replace(/\s*\n\s*/g, " ")).join("\n") : c.innerText.trim(); if (!t) return; if (/^المصدر:/.test(t)) credit = t; else parts.push(t); });
+  const title = level === "page" ? "الصفحة " + ar(ctx.page) : level === "surah" ? surahName(ctx.surah) : `${surahName(ctx.surah)} · الآية ${ar(ctx.ayah.split(":")[1])}` + (level === "word" ? " · «" + ctx.text + "»" : "");
+  return { name: `iqra-${shown.id}-${String(key).replace(/:/g, "-")}`, title, source: shown.name, body: parts.join("\n"), foot: credit, page: ctx.page, ayah: level === "ayah" || level === "word" ? ctx.ayah : "" };
+}
+async function docText(d) { const t = d.ayah ? await ayahPlain(d.page, d.ayah) : ""; return (t ? `﴿${t}﴾\n` : "") + `[${d.title}]` + (d.source ? `\n${d.source}` : "") + `\n\n${d.body}\n\n— ${[d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ")}`; }
+// Lays the document out as a flow of items and paints it: one canvas of its own height (pageH = 0), or pages of a fixed height.
+async function paintDoc(d, pageH) {
+  const W = 1080, P = 64, inner = W - 2 * P, LH = 68, FONT = '36px "Amiri","Noto Naskh Arabic",serif', UI = '"IBM Plex Sans Arabic","Amiri",sans-serif';
+  const block = $("#sh-body .ayah-block"), svgs = block ? [...block.querySelectorAll("svg")] : [], f = block ? (inner - 80) / Math.max(1, block.clientWidth - 28) : 1, imgs = [];
   for (const sv of svgs) imgs.push(await svgImage(sv, f));
   await document.fonts.ready;
-  const cv = document.createElement("canvas"), g = cv.getContext("2d"), FONT = '38px "Amiri","Noto Naskh Arabic",serif', LH = 70;
-  g.font = FONT; g.direction = "rtl";
+  const probe = document.createElement("canvas").getContext("2d"); probe.font = FONT; probe.direction = "rtl";
   const lines = [];
-  body.split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).forEach((w) => { const t = line ? line + " " + w : w; if (g.measureText(t).width > inner - 60 && line) { lines.push(line); line = w; } else line = t; }); lines.push(line); });
-  const qH = imgs.length ? imgs.reduce((n, x) => n + x.h + 18, 0) + 50 : 0, H = P + 70 + (qH ? qH + 30 : 0) + lines.length * LH + 60 + 70 + P;
-  cv.width = W; cv.height = H;
-  g.fillStyle = "#eef1ee"; g.fillRect(0, 0, W, H);
-  g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(24, 24, W - 48, H - 48, 28); g.fill();
-  g.direction = "rtl"; g.textAlign = "right"; g.fillStyle = "#1b2421"; g.font = '600 40px "IBM Plex Sans Arabic","Amiri",sans-serif';
-  let y = P + 44; g.fillText(title, W - P, y); y += 40;
+  d.body.split(/\n/).forEach((par) => { let line = ""; par.split(/\s+/).filter(Boolean).forEach((w) => { const t = line ? line + " " + w : w; if (probe.measureText(t).width > inner - 50 && line) { lines.push(line); line = w; } else line = t; }); lines.push(line); });
+  const items = [{ h: 64, draw: (g, y) => { g.fillStyle = "#1b2421"; g.font = "600 40px " + UI; g.fillText(d.title, W - P, y + 44); } }];
+  if (d.source) items.push({ h: 52, draw: (g, y) => { g.fillStyle = "#0f6e56"; g.font = "500 28px " + UI; g.fillText(d.source, W - P, y + 34); } });
   if (imgs.length) {
-    g.fillStyle = "#faf9f3"; g.strokeStyle = "#d9ddd6"; g.lineWidth = 2; g.beginPath(); g.roundRect(P, y, inner, qH, 20); g.fill(); g.stroke();
-    g.fillStyle = "#a67c2e"; g.fillRect(W - P - 6, y + 14, 6, qH - 28);
-    let yy = y + 30; imgs.forEach((x) => { g.drawImage(x.im, (W - x.w) / 2, yy, x.w, x.h); yy += x.h + 18; });
-    y += qH + 30;
+    const qH = imgs.reduce((n, x) => n + x.h + 18, 0) + 42;
+    items.push({ h: qH + 34, draw: (g, y) => {
+      g.fillStyle = "#faf9f3"; g.strokeStyle = "#d9ddd6"; g.lineWidth = 2; g.beginPath(); g.roundRect(P, y + 6, inner, qH, 20); g.fill(); g.stroke();
+      g.fillStyle = "#a67c2e"; g.fillRect(W - P - 6, y + 20, 6, qH - 28);
+      let yy = y + 32; imgs.forEach((x) => { g.drawImage(x.im, (W - x.w) / 2, yy, x.w, x.h); yy += x.h + 18; });
+    } });
   }
-  g.fillStyle = "#1b2421"; g.font = FONT; y += 30;
-  lines.forEach((l) => { g.fillText(l, W - P - 30, y); y += LH; });
-  g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y - lines.length * LH - 44, 4, lines.length * LH + 8);
-  g.fillStyle = "#6b7773"; g.font = '26px "IBM Plex Sans Arabic","Amiri",sans-serif'; g.fillText(foot, W - P, H - P - 6);
-  return new Promise((res) => cv.toBlob(res, "image/png"));
+  lines.forEach((l) => items.push({ h: l ? LH : LH / 2, draw: (g, y) => { g.fillStyle = "#a67c2e"; g.fillRect(W - P - 8, y, 4, l ? LH : LH / 2); g.fillStyle = "#1b2421"; g.font = FONT; g.fillText(l, W - P - 28, y + 46); } }));
+  const foot = [d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ");
+  items.push({ h: 84, draw: (g, y) => { g.fillStyle = "#6b7773"; g.font = "24px " + UI; g.fillText(foot.length > 78 ? foot.slice(0, 77) + "…" : foot, W - P, y + 62); } });
+  const total = items.reduce((n, x) => n + x.h, 0), room = pageH ? pageH - 2 * P : total, pages = [[]];
+  let used = 0;
+  items.forEach((it) => { if (used + it.h > room && used) { pages.push([]); used = 0; } pages[pages.length - 1].push(it); used += it.h; });
+  return { lines: lines.length, canvases: pages.map((pg, n) => {
+    const H = pageH || total + 2 * P, cv = document.createElement("canvas"), g = cv.getContext("2d");
+    cv.width = W; cv.height = H;
+    g.fillStyle = "#eef1ee"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(24, 24, W - 48, H - 48, 28); g.fill();
+    g.direction = "rtl"; g.textAlign = "right";
+    let y = P; pg.forEach((it) => { it.draw(g, y); y += it.h; });
+    if (pages.length > 1) { g.fillStyle = "#6b7773"; g.font = "22px " + UI; g.textAlign = "left"; g.fillText(ar(n + 1) + " / " + ar(pages.length), P, H - 44); }
+    return cv;
+  }) };
 }
-async function shareCard(k, scope) {
+// A PDF made of the painted pages (one JPEG per A4 page): Arabic keeps its exact look on every device.
+function pdfOf(canvases) {
+  const enc = new TextEncoder(), chunks = [], offs = []; let pos = 0;
+  const put = (x) => { const b = typeof x === "string" ? enc.encode(x) : x; chunks.push(b); pos += b.length; };
+  const obj = (n, body, stream) => { offs[n] = pos; put(`${n} 0 obj\n${body}\n`); if (stream) { put("stream\n"); put(stream); put("\nendstream\n"); } put("endobj\n"); };
+  const n = canvases.length, kids = canvases.map((_, i) => `${3 + i * 3} 0 R`).join(" ");
+  put("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>"); obj(2, `<< /Type /Pages /Count ${n} /Kids [${kids}] >>`);
+  canvases.forEach((cv, i) => {
+    const b64 = cv.toDataURL("image/jpeg", 0.9).split(",")[1], bin = atob(b64), jpg = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) jpg[k] = bin.charCodeAt(k);
+    const o = 3 + i * 3, draw = "q 595.28 0 0 841.89 0 0 cm /Im0 Do Q";
+    obj(o, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${o + 2} 0 R >> >> /Contents ${o + 1} 0 R >>`);
+    obj(o + 1, `<< /Length ${draw.length} >>`, enc.encode(draw));
+    obj(o + 2, `<< /Type /XObject /Subtype /Image /Width ${cv.width} /Height ${cv.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>`, jpg);
+  });
+  const xref = pos, count = 3 + n * 3;
+  put(`xref\n0 ${count}\n0000000000 65535 f \n` + offs.slice(1).map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(chunks, { type: "application/pdf" });
+}
+async function deliver(blob, name, type, text) {
+  const file = new File([blob], name, { type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], ...(text ? { text } : {}) }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancelled"; } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  return "saved";
+}
+let shareDoc = null;
+const PNG_MAX = 60;   // lines of text beyond which a single picture is too tall to read on a phone
+function openShare(d) {
+  if (!d) return toast("لا يوجد محتوى للمشاركة هنا.");
+  shareDoc = d; $("#shr-what").textContent = [d.source, d.title].filter(Boolean).join(" · "); $("#shr-msg").textContent = ""; $("#shr-png").disabled = false;
+  show(shareBox, true);
+}
+async function shareAs(kind) {
+  const d = shareDoc, msg = $("#shr-msg"); if (!d) return;
+  const done = (r, what) => { msg.textContent = r === "saved" ? `نُزّل ${what} على جهازك؛ هذا المتصفح لا يفتح قائمة المشاركة.` : r === "shared" ? "تمت المشاركة." : ""; };
   try {
-    const blob = await makeCard(k, scope), file = new File([blob], "iqra-" + k.replace(/:/g, "-") + ".png", { type: "image/png" }), text = await itemText(k);
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text }); } catch (e) {} return; }
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast("نُزّلت الصورة. هذا المتصفح لا يدعم المشاركة المباشرة.");
-  } catch (e) { toast("تعذّر إنشاء الصورة."); }
+    if (kind === "copy") { await navigator.clipboard.writeText(await docText(d)); msg.textContent = "نُسخ النص."; return; }
+    if (kind === "txt") return done(await deliver(new Blob([await docText(d)], { type: "text/plain;charset=utf-8" }), d.name + ".txt", "text/plain"), "الملف النصي");
+    msg.textContent = "جارٍ التجهيز…";
+    if (kind === "png") {
+      const r = await paintDoc(d, 0);
+      if (r.lines > PNG_MAX) { $("#shr-png").disabled = true; msg.textContent = `المحتوى طويل (${ar(r.lines)} سطرًا) ولا يصلح بطاقة واحدة. اختر PDF أو الملف النصي.`; return; }
+      const blob = await new Promise((res) => r.canvases[0].toBlob(res, "image/png"));
+      return done(await deliver(blob, d.name + ".png", "image/png"), "الصورة");
+    }
+    const r = await paintDoc(d, 1528);
+    return done(await deliver(pdfOf(r.canvases), d.name + ".pdf", "application/pdf"), `ملف PDF (${ar(r.canvases.length)} صفحة)`);
+  } catch (e) { msg.textContent = "تعذّر تجهيز الملف."; }
 }
+[["png", "png"], ["pdf", "pdf"], ["txt", "txt"], ["copy", "copy"]].forEach(([id, kind]) => $("#shr-" + id).addEventListener("click", () => shareAs(kind)));
+$("#shr-close").addEventListener("click", () => show(shareBox, false));
+$("#sh-share").addEventListener("click", () => openShare(docShown()));
 
 /* Backup file */
 function backupSave(note) { download("iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(exportObj(), null, 1), "application/json"); note.textContent = "نُزّلت النسخة الاحتياطية."; }
@@ -1851,9 +1943,9 @@ function paintMine() {
   };
   const rows = [];
   KINDS.forEach(([k, letter, name]) => { const m = marks[k]; if (!m) return; const a = m.key.split(":");
-    rows.push(mk(letter, "bm bm-" + k, "علامة " + name, `${surahName(a[0])} · الآية ${ar(a[1])} · الصفحة ${ar(m.page)} · وُضعت ${fmtDate(m.t)}`, "", () => jump(m.page, m.key), async () => { await openMark(k); shareCard(k, $("#sh-body")); }, async () => copyText(await itemText(k)))); });
+    rows.push(mk(letter, "bm bm-" + k, "علامة " + name, `${surahName(a[0])} · الآية ${ar(a[1])} · الصفحة ${ar(m.page)} · وُضعت ${fmtDate(m.t)}`, "", () => jump(m.page, m.key), async () => { await openMark(k); openShare(docOf(k)); }, async () => copyText(await itemText(k)))); });
   sortedNotes().forEach((k) => { const v = notes[k], lv = k.split(":")[0];
-    rows.push(mk(LEVELS[lv], "lv", noteWhere(k), `الصفحة ${ar(v.page)} · ${noteDates(v)}`, v.t, () => openNote(k), async () => { await openNote(k); shareCard(k, $("#sh-body")); }, async () => copyText(await itemText(k)))); });
+    rows.push(mk(LEVELS[lv], "lv", noteWhere(k), `الصفحة ${ar(v.page)} · ${noteDates(v)}`, v.t, () => openNote(k), async () => { await openNote(k); openShare(docOf(k)); }, async () => copyText(await itemText(k)))); });
   if (!rows.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "لا علامات ولا تعليقات بعد."; rows.push(li); }
   list.replaceChildren(...rows);
   $("#mine-count").textContent = `${ar(Object.keys(marks).length)} علامة · ${ar(Object.keys(notes).length)} تعليقًا`;
