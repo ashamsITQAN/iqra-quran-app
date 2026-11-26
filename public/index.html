@@ -124,6 +124,11 @@ button{cursor:pointer}
 .tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font-size:13.5px;color:var(--muted)}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .proj.solo{border:0;background:none;padding:6px 0}
+.ayah-block{background:var(--paper);border:1px solid var(--line);border-inline-start:3px solid var(--mark);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:none;width:100%;max-width:500px;margin-inline:auto;max-height:46vh;overflow:auto}
+.ayah-block svg{flex:none}
+.ayah-block svg{display:block;height:auto;max-width:100%}
+.ayah-block svg path{fill:var(--ink)}
+.ayah-block svg path[data-kind="ayah_mark_ornament"]{fill:var(--mark)}
 .sh-top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 8px}
 .sh-title{flex:1;min-width:0}
 .sh-title .big{font-family:var(--quran);font-size:30px;line-height:1.9;margin:0}
@@ -409,8 +414,40 @@ async function paintSheet() {
   const el = await card(active, key);
   if (paintSheet.token !== token) return;
   el.classList.add("solo");
-  body.replaceChildren(el);
+  const quote = level === "ayah" ? ayahBlock(ctx.ayah) : null;
+  body.replaceChildren(...(quote ? [quote, el] : [el]));
   body.scrollTop = 0;
+}
+
+/* The ayah exactly as printed: its ink is copied from the page, line by line, each line keeping the
+   width and the offset from the right margin it has in the mushaf. */
+function ayahBlock(key) {
+  const frags = [...spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"]`)].sort((a, b) => a.dataset.fragment - b.dataset.fragment);
+  if (!frags.length) return null;
+  const box = document.createElement("div");
+  box.className = "ayah-block";
+  box.setAttribute("role", "img");
+  box.setAttribute("aria-label", "نص الآية برسم المصحف");
+  const strip = (n) => { n.querySelectorAll(".hit").forEach((x) => x.remove()); n.classList.remove("sel", "found"); n.querySelectorAll(".sel,.found").forEach((x) => x.classList.remove("sel", "found")); return n; };
+  frags.forEach((f, i) => {
+    const svg = f.ownerSVGElement, sr = svg.getBoundingClientRect(), cr = svg.querySelector("#content").getBoundingClientRect();
+    if (!sr.width || !cr.width) return;
+    const vbw = svg.viewBox.baseVal.width, k = vbw / sr.width, r = f.getBoundingClientRect();
+    let L = r.left, T = r.top, R = r.right, B = r.bottom;
+    const mk = i === frags.length - 1 ? svg.querySelector(`g.ayah-mark[data-ayah-key="${key}"]`) : null;
+    if (mk) { const m = mk.getBoundingClientRect(); L = Math.min(L, m.left); T = Math.min(T, m.top); R = Math.max(R, m.right); B = Math.max(B, m.bottom); }
+    const out = svg.cloneNode(false), pageG = svg.firstElementChild.cloneNode(false), lineG = f.parentNode.cloneNode(false);
+    lineG.append(strip(f.cloneNode(true)));
+    pageG.append(lineG);
+    if (mk) pageG.append(strip(mk.cloneNode(true)));
+    out.append(pageG);
+    out.removeAttribute("style"); out.removeAttribute("role"); out.removeAttribute("aria-label"); out.setAttribute("aria-hidden", "true");
+    out.setAttribute("viewBox", `${(L - sr.left) * k - 1} ${(T - sr.top) * k - 1} ${(R - L) * k + 2} ${(B - T) * k + 2}`);
+    out.style.width = Math.min(100, ((R - L) / cr.width) * 100) + "%";
+    out.style.marginInlineStart = Math.max(0, ((cr.right - R) / cr.width) * 100) + "%";
+    box.append(out);
+  });
+  return box.children.length ? box : null;
 }
 
 async function card(p, key) {
