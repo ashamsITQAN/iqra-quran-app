@@ -134,6 +134,16 @@ button{cursor:pointer}
 .ayah-block g.word.sel path{fill:var(--accent)}
 @media (hover:hover){.ayah-block.pick g.word:hover .hit{fill:var(--tint)}}
 .tabs[hidden],.subtabs[hidden]{display:none}
+#index{width:min(520px,calc(100% - 24px));height:min(84%,780px)}
+.pagejump{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex:none}
+.pagejump input{width:64px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;text-align:center}
+.idx-list{list-style:none;margin:0;gap:4px}
+.idx-list button{display:grid;grid-template-columns:2.4em 1fr auto;align-items:center;gap:10px;width:100%;text-align:start;background:none;border:0;border-radius:8px;padding:8px 8px}
+.idx-list button:hover,.idx-list button.here{background:var(--tint)}
+.idx-list .n{font-variant-numeric:tabular-nums;color:var(--mark);font-family:var(--naskh);font-size:16px;text-align:center}
+.idx-list .t{font-family:var(--naskh);font-size:18px}
+.idx-list .t small{display:block;font-family:var(--ui);font-size:12px;color:var(--muted)}
+.idx-list .pg{font-size:12px;color:var(--muted);white-space:nowrap}
 .subtabs{display:flex;gap:6px;padding:8px 16px 0;flex-wrap:wrap;flex:none}
 .subtabs button{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 14px;font-size:13px}
 .subtabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
@@ -170,7 +180,7 @@ button{cursor:pointer}
   <span class="grow"></span>
   <button type="button" id="find-open" class="btn">بحث</button>
   <button type="button" id="set-open" class="btn">الإعدادات</button>
-  <select id="goto" aria-label="انتقال إلى صفحة"></select>
+  <button type="button" id="idx-open" class="btn">الفهرس</button>
 </header>
 
 <main id="stage"><div id="spread"></div></main>
@@ -209,6 +219,18 @@ button{cursor:pointer}
       </div></div>
     <div class="opt col"><h3>المحتوى المعروض</h3><div id="set-projects"></div></div>
   </div>
+</section>
+
+<section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">الفهرس</p></div>
+    <form id="idx-page" class="pagejump"><label for="idx-num">صفحة</label><input id="idx-num" type="number" inputmode="numeric" min="1" max="604"><button type="submit" class="btn">انتقال</button></form>
+    <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
+  </div>
+  <div class="tabs" id="idx-tabs" role="tablist">
+    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button>
+  </div>
+  <ol class="sh-body idx-list" id="idx-list"></ol>
 </section>
 
 <section id="sheet" class="modal" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
@@ -274,7 +296,6 @@ async function render() {
   const want = cols === 2 ? [start, start + 1] : [cur];
   spread.replaceChildren(...want.map((n) => pageShell(n, m.artH)));
   $("#slider").value = cur;
-  $("#goto").value = cur;
   $("#where").textContent = cols === 2 && start + 1 <= meta.last ? `${ar(start)}–${ar(start + 1)} من ${ar(meta.last)}` : `${ar(cur)} من ${ar(meta.last)}`;
   $("#prev").disabled = start <= meta.first;
   $("#next").disabled = want[want.length - 1] >= meta.last;
@@ -362,10 +383,10 @@ spread.addEventListener("click", (e) => {
   close();
 });
 
-const veil = $("#veil"), settings = $("#settings");
-function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !(sheet.classList.contains("open") || settings.classList.contains("open")); }
-function open(c, lv) { ctx = c; level = lv; show(settings, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); applySelection(); }
+const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index");
+function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
+function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -600,7 +621,37 @@ function go(dir) {
 $("#next").addEventListener("click", () => go(1));
 $("#prev").addEventListener("click", () => go(-1));
 $("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
-$("#goto").addEventListener("change", (e) => { cur = +e.target.value; close(); render(); });
+
+/* ---------- index: surahs, ajza' and ahzab ---------- */
+let idxTab = "surah";
+async function jump(page, ayah) {
+  cur = page; close(); await render();
+  if (ayah) spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${ayah}"], g.ayah-mark[data-ayah-key="${ayah}"]`).forEach((n) => n.classList.add("sel"));
+}
+function paintIndex() {
+  document.querySelectorAll("#idx-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === idxTab));
+  const here = pageMeta(cur), row = (n, title, sub, page, isHere, fn) => {
+    const li = document.createElement("li"), b = document.createElement("button"), a = document.createElement("span"), t = document.createElement("span"), g = document.createElement("span");
+    b.type = "button"; a.className = "n"; t.className = "t"; g.className = "pg";
+    a.textContent = ar(n); t.textContent = title; g.textContent = "ص " + ar(page);
+    if (sub) { const sm = document.createElement("small"); sm.textContent = sub; t.append(sm); }
+    if (isHere) b.classList.add("here");
+    b.append(a, t, g); b.addEventListener("click", fn); li.append(b);
+    return li;
+  };
+  const at = (k) => { const [s, a] = k.split(":"); return `${surahName(s)} · الآية ${ar(a)}`; };
+  let rows;
+  if (idxTab === "surah") rows = Object.entries(meta.surahs).map(([n, s]) => row(n, "سورة " + s.name, `${s.place} · ${ar(s.ayahs)} آية`, s.page, here.surahs.includes(+n), () => jump(s.page)));
+  else rows = meta[idxTab].map((d) => row(d.n, (idxTab === "juz" ? "الجزء " : "الحزب ") + ar(d.n), "يبدأ من " + at(d.ayah), d.page, here[idxTab] === d.n, () => jump(d.page, d.ayah)));
+  const list = $("#idx-list");
+  list.replaceChildren(...rows);
+  const on = list.querySelector(".here");
+  if (on) on.scrollIntoView({ block: "center" }); else list.scrollTop = 0;
+}
+$("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
+$("#idx-close").addEventListener("click", close);
+$("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; idxTab = b.dataset.v; paintIndex(); });
+$("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
 
 /* ---------- settings ---------- */
 function paintSettings() {
@@ -622,7 +673,7 @@ function paintSettings() {
 }
 $("#seg-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; mode = b.dataset.v; store.set("mode", mode); paintSettings(); render(); });
 $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; theme = b.dataset.v; store.set("theme", theme); applyTheme(); paintSettings(); });
-$("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); applySelection(); paintSettings(); show(settings, true); });
+$("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
 
 /* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
@@ -734,11 +785,7 @@ window.addEventListener("hashchange", () => { const n = +location.hash.replace("
   try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
   $("#slider").min = meta.first; $("#slider").max = meta.last;
-  $("#goto").replaceChildren(...meta.pages.map((p) => {
-    const o = document.createElement("option");
-    o.value = p.page; o.textContent = `ص ${ar(p.page)} · ${meta.surahs[p.surahs[0]].name}`;
-    return o;
-  }));
+  $("#idx-num").max = meta.last;
   const h = +location.hash.replace("#p", "");
   if (h) cur = h;
   render();

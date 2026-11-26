@@ -34,8 +34,10 @@ for p in pages:
     W(f"content/word-forms/{n:03d}.json", forms); W(f"content/ayah-text/{n:03d}.json", text)
     page_info[str(n)] = {"الجزء": juz, "الحزب": hizb, "من الآية": p["first_ayah"], "إلى الآية": p["last_ayah"], "عدد الآيات": p["ayahs"], "عدد الكلمات": p["words"], "عدد الأسطر": p["lines"]}
 for s in surahs:
-    meta["surahs"][str(s["number"])] = {"name": s["name_arabic"], "ayahs": s["ayah_count"]}
+    meta["surahs"][str(s["number"])] = {"name": s["name_arabic"], "ayahs": s["ayah_count"], "place": place.get(s["revelation_place"], ""), "page": s["pages"][0]}
     surah_info[str(s["number"])] = {"الاسم": s["name_arabic"], "النزول": place.get(s["revelation_place"], s["revelation_place"]), "ترتيب النزول": s["revelation_order"], "عدد الآيات": s["ayah_count"], "الصفحات": f"{s['pages'][0]} – {s['pages'][1]}"}
+meta["juz"] = [{"n": r["juz"], "ayah": r["ayah_key"], "page": r["page"]} for r in dv["juz"]]
+meta["hizb"] = [{"n": r["hizb"], "ayah": r["ayah_key"], "page": r["page"]} for r in dv["hizb"]]
 search.sort(key=lambda r: (r[0], r[1]))
 W("data/search.json", search)
 W("data/meta.json", meta); W("content/page-info.json", page_info); W("content/surah-info.json", surah_info)
