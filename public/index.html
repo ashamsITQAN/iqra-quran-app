@@ -39,7 +39,8 @@ button{cursor:pointer}
 .bar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .bar{min-width:0}
 .bar h1{font-size:17px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-@media (max-width:560px){.bar .chip{display:none}.bar h1{font-size:16px}}
+@media (max-width:480px){.bar h1{display:none}.bar{justify-content:space-between}.bar .grow{display:none}}
+@media (max-width:640px){.bar .chip{display:none}.bar h1{font-size:15px}.bar select{max-width:30vw}.bar{gap:6px;padding-inline:10px}}
 .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
 .bar .grow{flex:1}
 .bar select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:46vw}
@@ -74,6 +75,12 @@ button{cursor:pointer}
 .art svg g.word.sel path{fill:var(--accent)}
 .art svg .banner.sel{fill:var(--tint-strong);stroke:var(--accent)}
 
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.seg button{background:var(--paper);border:0;padding:6px 10px;font-size:13px;white-space:nowrap}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.fn{color:var(--muted);font-size:.78em}
+.more{background:none;border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:12px;margin-top:6px;color:var(--accent)}
 .pager{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:1px solid var(--line);background:var(--panel);flex:none}
 .pager button{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 14px;white-space:nowrap}
 .pager button:disabled{opacity:.4;cursor:default}
@@ -115,7 +122,11 @@ button{cursor:pointer}
   <h1>اقرأ القرآن الكريم</h1>
   <span class="chip">نسخة تجريبية</span>
   <span class="grow"></span>
-  <label class="chip" for="goto" style="border:0;padding:0">انتقال</label>
+  <div class="seg" role="group" aria-label="عدد الصفحات المعروضة">
+    <button type="button" data-mode="auto" aria-pressed="true">تلقائي</button>
+    <button type="button" data-mode="1" aria-pressed="false">صفحة</button>
+    <button type="button" data-mode="2" aria-pressed="false">صفحتان</button>
+  </div>
   <select id="goto" aria-label="انتقال إلى صفحة"></select>
 </header>
 
@@ -145,6 +156,8 @@ const ar = (v) => String(v).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
 
+let mode = "auto";
+try { mode = localStorage.getItem("iqra-mode") || "auto"; } catch (e) {}
 let meta, projects, cur = 1, cols = 1, ctx = null, level = null, swiped = false;
 const svgCache = new Map(), jsonCache = new Map();
 const spread = $("#spread"), stage = $("#stage"), sheet = $("#sheet");
@@ -164,7 +177,9 @@ const surahName = (s) => "سورة " + meta.surahs[s].name;
 function measure() {
   const w = stage.clientWidth - 32, h = stage.clientHeight - 20;
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
-  if (w >= 700 && two >= 500) return { cols: 2, artH: two };
+  const fitTwo = ((w - 6) / 2 - 14) / RATIO;
+  if (mode === "2") return { cols: 2, artH: h - FURN >= 460 ? Math.min(fitTwo, h - FURN) : fitTwo };
+  if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
   return { cols: 1, artH: one };
@@ -313,7 +328,7 @@ async function paintSheet() {
   if (paintSheet.token !== token) return;
   const note = document.createElement("p");
   note.className = "note";
-  note.textContent = "المحتوى هنا تجريبي: البطاقات المتصلة مأخوذة من فهارس quran.ws، والمنقّطة أماكن محجوزة لمشروعات فنار.";
+  note.textContent = "محتوى فنار معروض بنصه كما نشره أصحابه. البطاقات المنقّطة مشروعات لم تُربط بعد.";
   body.replaceChildren(...cards, note);
   body.scrollTop = 0;
 }
@@ -324,6 +339,7 @@ async function card(p, key) {
   const h = document.createElement("h3");
   h.append(p.name, tag(p.kind), tag(p.source, "src"));
   el.append(h);
+  if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (!p.file) {
     el.classList.add("empty");
     el.append(para("لم يُربط بعد. يُضاف هذا المشروع من فنار."));
@@ -334,13 +350,34 @@ async function card(p, key) {
   if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
   const dl = document.createElement("dl");
   for (const [k, v] of Object.entries(entry)) {
-    if (k === "النص") { const t = para(v); t.className = "text"; el.append(t); continue; }
+    if (k === "النص") { el.append(...richText(v)); continue; }
     const dt = document.createElement("dt"), dd = document.createElement("dd");
     dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
     dl.append(dt, dd);
   }
   if (dl.children.length) el.append(dl);
   return el;
+}
+/* Publisher text is shown unchanged. Editorial notes arrive wrapped in ¬ … ¥ and are only styled smaller. */
+function richText(v) {
+  const LIMIT = 700, p = document.createElement("p");
+  p.className = "text";
+  const fill = (str) => {
+    p.replaceChildren();
+    str.split(/(¬[^¥]*¥?)/).forEach((part) => {
+      if (!part) return;
+      if (part[0] === "¬") { const s = document.createElement("span"); s.className = "fn"; s.textContent = " [" + part.replace(/^¬|¥$/g, "").trim() + "] "; p.append(s); }
+      else p.append(part);
+    });
+  };
+  if (v.length <= LIMIT) { fill(v); return [p]; }
+  let cut = v.lastIndexOf(" ", LIMIT); const open = v.lastIndexOf("¬", cut), shut = v.lastIndexOf("¥", cut);
+  if (open > shut) cut = open;
+  fill(v.slice(0, cut) + " …");
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "more"; b.textContent = "عرض النص كاملًا";
+  b.addEventListener("click", () => { fill(v); b.remove(); });
+  return [p, b];
 }
 const tag = (t, c) => { const s = document.createElement("span"); s.className = "tag" + (c ? " " + c : ""); s.textContent = t; return s; };
 const para = (t) => { const p = document.createElement("p"); p.textContent = t; return p; };
@@ -356,6 +393,14 @@ $("#next").addEventListener("click", () => go(1));
 $("#prev").addEventListener("click", () => go(-1));
 $("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
 $("#goto").addEventListener("change", (e) => { cur = +e.target.value; close(); render(); });
+
+function paintMode() { document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === mode)); }
+document.querySelector(".seg").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-mode]"); if (!b) return;
+  mode = b.dataset.mode; try { localStorage.setItem("iqra-mode", mode); } catch (err) {}
+  paintMode(); render();
+});
+paintMode();
 
 let down = null;
 stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });

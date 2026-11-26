@@ -16,6 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./scripts/fetch-pages.sh
+      - name: Install Fanar assets with itqan-cli
+        env:
+          ITQAN_API_KEY: ${{ secrets.ITQAN_API_KEY }}
+          ITQAN_NO_UPDATE_NOTICE: "1"
+        run: |
+          pipx install itqan-cli
+          itqan install
+          python3 scripts/fanar.py fanar-assets public
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

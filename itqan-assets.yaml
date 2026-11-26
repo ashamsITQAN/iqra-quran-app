@@ -1,10 +1,16 @@
-# أصول فنار (cms.itqan.dev) التي يسحبها itqan-cli إلى المشروع.
-# شغّل: itqan install
+# أصول فنار (cms.itqan.dev) التي يسحبها itqan-cli وقت البناء.
+# لإضافة أصل: ابحث عن اسمه بالأمر `itqan browse` ثم أضفه هنا وفي public/data/projects.json
 schema_version: 1
 assets_dir: "fanar-assets"
 
 assets:
   word-by-word-quran-meanings:
-    version: "*"
-  # تُضاف هنا بعد معرفة أسمائها من `itqan browse`:
-  #   تفسير الطبري، تفسير السعدي، تفسير ابن كثير، أحكام التجويد لأحمد الطويل
+    version: "^1.0.0"
+  tafsir-ahkam-tajweed-kalimat-aziz:
+    version: "^1.0.0"
+  tafsir-altabari:
+    version: "^1.0.0"
+  tafsir-alsaadi:
+    version: "^1.0.0"
+  tafsir-ibn-katheer:
+    version: "^2.0.0"
