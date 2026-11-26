@@ -128,6 +128,17 @@ button{cursor:pointer}
 .ayah-block svg{flex:none}
 .ayah-block svg{display:block;height:auto;max-width:100%}
 .ayah-block svg path{fill:var(--ink)}
+.ayah-block .hit{fill:transparent;pointer-events:none}
+.ayah-block.pick .hit{pointer-events:all;cursor:pointer}
+.ayah-block g.word.sel .hit{fill:var(--tint-strong)}
+.ayah-block g.word.sel path{fill:var(--accent)}
+@media (hover:hover){.ayah-block.pick g.word:hover .hit{fill:var(--tint)}}
+.tabs[hidden],.subtabs[hidden]{display:none}
+.subtabs{display:flex;gap:6px;padding:8px 16px 0;flex-wrap:wrap;flex:none}
+.subtabs button{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 14px;font-size:13px}
+.subtabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
+.sh-nav{display:flex;justify-content:space-between;gap:8px;padding:8px 16px;border-top:1px solid var(--line);flex:none}
+.sh-nav button{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 14px;font-size:13px}
 .ayah-block svg path[data-kind="ayah_mark_ornament"]{fill:var(--mark)}
 .sh-top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 8px}
 .sh-title{flex:1;min-width:0}
@@ -207,7 +218,9 @@ button{cursor:pointer}
   </div>
   <div class="levels" id="levels"></div>
   <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
+  <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="nav-next">التالي</button></div>
 </section>
 
 <script>
@@ -221,7 +234,7 @@ const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة"
 const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("iqra-" + k, v); } catch (e) {} } };
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
-const activeTab = {};
+const activeTab = {}, activeSub = {};
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -354,12 +367,15 @@ function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-h
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(sheet, true); paintSheet(); applySelection(); }
 function close() { found = []; ctx = null; show(sheet, false); show(settings, false); applySelection(); }
 veil.addEventListener("click", close);
+$("#nav-prev").addEventListener("click", () => step(-1));
+$("#nav-next").addEventListener("click", () => step(1));
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } close(); }
   if (e.target.matches("input,select")) return;
-  if (e.key === "ArrowLeft") go(1);
-  if (e.key === "ArrowRight") go(-1);
+  const inSheet = sheet.classList.contains("open");
+  if (e.key === "ArrowLeft") inSheet ? step(1) : go(1);
+  if (e.key === "ArrowRight") inSheet ? step(-1) : go(-1);
 });
 
 function applySelection() {
@@ -395,40 +411,96 @@ async function paintSheet() {
 
   const body = $("#sh-body"), key = keyFor(level), token = {};
   paintSheet.token = token;
-  const list = projects.filter((p) => p.level === level && !hidden.has(p.id)), tabs = $("#tabs");
+  const list = projects.filter((p) => p.level === level && !hidden.has(p.id)), tabs = $("#tabs"), subs = $("#subtabs");
+  const quote = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
+  $("#nav-prev").textContent = LEVELS[level] + " السابقة"; $("#nav-next").textContent = LEVELS[level] + " التالية";
   if (!list.length) {
-    tabs.replaceChildren(); tabs.hidden = true;
-    body.replaceChildren(para("لا توجد مشروعات معروضة لهذا المستوى. يمكنك إظهارها من الإعدادات."));
+    tabs.replaceChildren(); tabs.hidden = true; subs.hidden = true;
+    body.replaceChildren(...(quote ? [quote] : []), para("لا توجد مشروعات معروضة لهذا المستوى. يمكنك إظهارها من الإعدادات."));
     return;
   }
-  const active = list.find((p) => p.id === activeTab[level]) || list[0];
+  // Projects that share a `group` sit under one tab and are switched with the row beneath it.
+  const groups = [];
+  list.forEach((p) => { const id = p.group || p.id; let g = groups.find((x) => x.id === id); if (!g) groups.push(g = { id, name: p.groupName || p.name, items: [] }); g.items.push(p); });
+  const group = groups.find((g) => g.id === activeTab[level]) || groups[0];
+  const active = group.items.find((p) => p.id === activeSub[group.id]) || group.items[0];
+  const mk = (label, on, role, fn) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", role); b.textContent = label; b.setAttribute("aria-selected", on); b.addEventListener("click", fn); return b; };
   tabs.hidden = false;
-  tabs.replaceChildren(...list.map((p) => {
-    const b = document.createElement("button");
-    b.type = "button"; b.setAttribute("role", "tab"); b.textContent = p.name; b.setAttribute("aria-selected", p === active);
-    b.addEventListener("click", () => { activeTab[level] = p.id; paintSheet(); });
-    return b;
-  }));
+  tabs.replaceChildren(...groups.map((g) => mk(g.name, g === group, "tab", () => { activeTab[level] = g.id; paintSheet(); })));
+  subs.hidden = group.items.length < 2;
+  subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => { activeSub[group.id] = p.id; paintSheet(); }))));
   const on = tabs.querySelector('[aria-selected="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
   const el = await card(active, key);
   if (paintSheet.token !== token) return;
   el.classList.add("solo");
-  const quote = level === "ayah" ? ayahBlock(ctx.ayah) : null;
   body.replaceChildren(...(quote ? [quote, el] : [el]));
   body.scrollTop = 0;
+  const hot = quote && quote.querySelector("g.word.sel");
+  if (hot) hot.scrollIntoView({ block: "nearest" });
+}
+
+/* ---------- previous / next inside the window, at the level being shown ---------- */
+async function step(dir) {
+  if (!ctx || step.busy) return;
+  step.busy = true;
+  try {
+    let page = ctx.page;
+    if (level === "page") {
+      page = ctx.page + dir;
+      if (page < meta.first || page > meta.last) return;
+      ctx = { page, surah: pageMeta(page).surahs[0], only: "page" };
+    } else if (level === "surah") {
+      const sn = ctx.surah + dir;
+      if (!meta.surahs[sn]) return;
+      page = meta.pages.find((p) => p.surahs.includes(sn)).page;
+      ctx = { page, surah: sn, only: "surah" };
+    } else {
+      const rows = await loadCorpus();
+      const [s0, a0] = ctx.ayah.split(":").map(Number);
+      let i = rows.findIndex((r) => r.s === s0 && r.a === a0), w = level === "word" ? +ctx.word.split(":")[2] + dir : 1;
+      if (level === "ayah" || w < 1 || w > rows[i].words.length) {
+        i += dir;
+        if (i < 0 || i >= rows.length) return;
+        w = level === "word" && dir < 0 ? rows[i].words.length : 1;
+      }
+      const r = rows[i];
+      page = r.page;
+      ctx = { page, surah: r.s, ayah: `${r.s}:${r.a}` };
+      if (level === "word") ctx.word = `${r.s}:${r.a}:${w}`;
+    }
+    if (!spread.querySelector(`.page[data-page="${page}"]`)) { cur = page; await render(); }
+    if (level === "word") { const g = spread.querySelector(`g.word[data-word-key="${ctx.word}"]`); ctx.text = g ? g.dataset.rasmUthmani : ""; }
+    await paintSheet();
+    applySelection();
+  } catch (e) { /* the index failed to load: stay where we are */ }
+  finally { step.busy = false; }
 }
 
 /* The ayah exactly as printed: its ink is copied from the page, line by line, each line keeping the
    width and the offset from the right margin it has in the mushaf. */
-function ayahBlock(key) {
+function ayahBlock(key, activeWord) {
   const frags = [...spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"]`)].sort((a, b) => a.dataset.fragment - b.dataset.fragment);
   if (!frags.length) return null;
   const box = document.createElement("div");
   box.className = "ayah-block";
   box.setAttribute("role", "img");
   box.setAttribute("aria-label", "نص الآية برسم المصحف");
-  const strip = (n) => { n.querySelectorAll(".hit").forEach((x) => x.remove()); n.classList.remove("sel", "found"); n.querySelectorAll(".sel,.found").forEach((x) => x.classList.remove("sel", "found")); return n; };
+  const strip = (n) => {
+    n.classList.remove("sel", "found"); n.querySelectorAll(".sel,.found").forEach((x) => x.classList.remove("sel", "found"));
+    if (activeWord) n.querySelectorAll(`g.word[data-word-key="${activeWord}"]`).forEach((x) => x.classList.add("sel"));
+    return n;
+  };
+  if (activeWord) {
+    box.classList.add("pick");
+    box.setAttribute("aria-label", "نص الآية برسم المصحف، المس كلمة لعرض محتواها");
+    box.addEventListener("click", (e) => {
+      const g = e.target.closest("g.word");
+      if (!g || g.dataset.wordKey === ctx.word) return;
+      ctx.word = g.dataset.wordKey; ctx.text = g.dataset.rasmUthmani;
+      paintSheet(); applySelection();
+    });
+  }
   frags.forEach((f, i) => {
     const svg = f.ownerSVGElement, sr = svg.getBoundingClientRect(), cr = svg.querySelector("#content").getBoundingClientRect();
     if (!sr.width || !cr.width) return;
