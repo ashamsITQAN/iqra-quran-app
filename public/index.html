@@ -66,6 +66,7 @@ button{cursor:pointer}
 .art svg .banner{fill:var(--banner);stroke:var(--mark);stroke-width:.5;pointer-events:all;cursor:pointer}
 .art svg g.surah-name{cursor:pointer}
 @media (hover:hover){
+  body.by-ayah .art svg g.ayah-fragment:hover g.word .hit{fill:var(--tint)}
   .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
   .art svg .banner:hover{fill:var(--tint)}
 }
@@ -167,6 +168,13 @@ button{cursor:pointer}
 .tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font-size:13.5px;color:var(--muted)}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .proj.solo{border:0;background:none;padding:6px 0}
+.wrows{display:flex;flex-direction:column}
+.wrow{display:grid;grid-template-columns:minmax(4.5em,auto) 1fr;gap:14px;align-items:baseline;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 6px;border-radius:6px}
+.wrow:hover{background:var(--tint-soft)}
+.wrow.on{background:var(--tint)}
+.wrow .ww{font-family:var(--quran);font-size:21px;line-height:1.9;color:var(--accent)}
+.wrow .wt{font-family:var(--naskh);font-size:16px;line-height:1.9}
+#touch-hint{margin:-2px 0 4px}
 .ayah-block{background:var(--paper);border:1px solid var(--line);border-inline-start:3px solid var(--mark);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;flex:none;width:100%;max-width:500px;margin-inline:auto;max-height:46vh;overflow-x:hidden;overflow-y:auto}
 .ayah-block svg{flex:none}
 .ayah-block svg{display:block;height:auto;max-width:100%}
@@ -279,6 +287,11 @@ button{cursor:pointer}
       <div class="seg" id="seg-mode" role="group" aria-label="عدد الصفحات المعروضة">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="1">صفحة</button><button type="button" data-v="2">صفحتان</button>
       </div></div>
+    <div class="opt"><h3>التفاعل مع الصفحة</h3>
+      <div class="seg" id="seg-touch" role="group" aria-label="وحدة اللمس في صفحة المصحف">
+        <button type="button" data-v="word">بالكلمة</button><button type="button" data-v="ayah">بالآية</button>
+      </div></div>
+    <p class="note" id="touch-hint"></p>
     <div class="opt"><h3>المظهر</h3>
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
@@ -358,6 +371,10 @@ const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); r
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
 const activeTab = {}, activeSub = {};
+// What one tap on the page selects: a single word, or the whole ayah it belongs to.
+let touch = store.get("touch", "word");
+function applyTouch() { document.body.classList.toggle("by-ayah", touch === "ayah"); }
+applyTouch();
 let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
@@ -531,6 +548,7 @@ spread.addEventListener("click", (e) => {
   const w = e.target.closest("g.word");
   if (w) {
     const k = w.dataset.wordKey, a = k.split(":").slice(0, 2).join(":");
+    if (touch === "ayah") return open({ page, surah: +k.split(":")[0], ayah: a }, "ayah");
     return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word");
   }
   close();
@@ -586,7 +604,12 @@ async function paintSheet() {
 
   const body = $("#sh-body"), key = keyFor(level), token = {};
   paintSheet.token = token;
-  const list = projects.filter((p) => p.level === level && !hidden.has(p.id)), tabs = $("#tabs"), subs = $("#subtabs");
+  let list = projects.filter((p) => p.level === level && !hidden.has(p.id));
+  if (touch === "ayah" && level === "ayah") {   // word projects appear here, one row per word of the ayah
+    const words = projects.filter((p) => p.level === "word" && !hidden.has(p.id));
+    list = [...list.filter((p) => !p.player), ...words, ...list.filter((p) => p.player)];
+  }
+  const tabs = $("#tabs"), subs = $("#subtabs");
   const quote = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
   $("#nav-prev").textContent = LEVELS[level] + " السابقة"; $("#nav-next").textContent = LEVELS[level] + " التالية";
   if (!list.length) {
@@ -615,7 +638,7 @@ async function paintSheet() {
   } else subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => choose(p.id)))));
   const on = tabs.querySelector('[aria-selected="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
-  const el = await card(active, key);
+  const el = active.level === "word" && level === "ayah" ? await wordsCard(active, quote) : await card(active, key);
   if (paintSheet.token !== token) return;
   el.classList.add("solo");
   body.replaceChildren(...(quote ? [quote, el] : [el]));
@@ -703,6 +726,38 @@ function ayahBlock(key, activeWord) {
     box.append(out);
   });
   return box.children.length ? box : null;
+}
+
+/* A word-level project shown for a whole ayah: every word of the ayah with its entry beside it.
+   Tapping a word in the printed ayah above jumps to its row; tapping a row marks the word above. */
+async function wordsCard(p, quote) {
+  const el = document.createElement("div"), h = document.createElement("h3");
+  el.className = "proj";
+  h.append(tag(p.kind), tag(p.source, "src")); el.append(h);
+  if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
+  let data, row;
+  try { [data, row] = await Promise.all([getJSON(p.file.replace("{page}", pad(ctx.page))), loadCorpus().then((rows) => { const [s, a] = ctx.ayah.split(":").map(Number); return rows.find((r) => r.s === s && r.a === a); })]); }
+  catch (e) { el.append(para("تعذّر تحميل محتوى هذا المشروع.")); return el; }
+  const list = document.createElement("div"), rows = {};
+  list.className = "wrows";
+  const mark = (k, scroll) => {
+    Object.entries(rows).forEach(([key, r]) => r.classList.toggle("on", key === k));
+    if (quote) quote.querySelectorAll("g.word").forEach((g) => g.classList.toggle("sel", g.dataset.wordKey === k));
+    if (scroll && rows[k]) rows[k].scrollIntoView({ block: "center", behavior: "smooth" });
+  };
+  (row ? row.words : []).forEach((imlai, i) => {
+    const k = `${ctx.ayah}:${i + 1}`, g = spread.querySelector(`g.word[data-word-key="${k}"]`), entry = data[k];
+    const r = document.createElement("button"), w = document.createElement("span"), t = document.createElement("span");
+    r.type = "button"; r.className = "wrow"; w.className = "ww"; t.className = "wt";
+    w.textContent = g ? g.dataset.rasmUthmani : imlai;
+    t.textContent = entry && entry["النص"] ? entry["النص"] : "—";
+    r.append(w, t); r.addEventListener("click", () => mark(k, false));
+    rows[k] = r; list.append(r);
+  });
+  if (!list.children.length) list.append(para("لا يوجد محتوى لهذه الآية."));
+  if (quote) { quote.classList.add("pick"); quote.addEventListener("click", (e) => { const g = e.target.closest("g.word"); if (g) mark(g.dataset.wordKey, true); }); }
+  el.append(list);
+  return el;
 }
 
 async function card(p, key) {
@@ -1206,7 +1261,8 @@ $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; 
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
-  press("seg-mode", mode); press("seg-theme", theme);
+  press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch);
+  $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-gharib").checked = showGharib;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
   $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view";
@@ -1246,6 +1302,7 @@ $("#seg-mode").addEventListener("click", (e) => { const b = e.target.closest("bu
 $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; theme = b.dataset.v; store.set("theme", theme); applyTheme(); paintSettings(); });
 $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
+$("#seg-touch").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; touch = b.dataset.v; store.set("touch", touch); applyTouch(); paintSettings(); });
 $("#set-gharib").addEventListener("change", (e) => { showGharib = e.target.checked; store.set("gharib", showGharib ? "1" : "0"); remarkGharib(); });
 
 /* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
