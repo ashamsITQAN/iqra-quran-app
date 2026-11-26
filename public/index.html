@@ -52,13 +52,13 @@ button{cursor:pointer}
 /* paper thickness on the outer side of each page: a few sheet edges, then a soft grey shadow */
 .page.rt{box-shadow:1px 0 0 var(--line),3px 0 0 var(--paper),4px 0 0 var(--line),6px 0 0 var(--paper),7px 0 0 var(--line),13px 3px 14px rgba(0,0,0,.22)}
 .page.lt{box-shadow:-1px 0 0 var(--line),-3px 0 0 var(--paper),-4px 0 0 var(--line),-6px 0 0 var(--paper),-7px 0 0 var(--line),-13px 3px 14px rgba(0,0,0,.22)}
-.head{height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-family:var(--naskh);font-size:14px;color:var(--muted);flex:none}
+.head{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-family:var(--naskh);font-size:14px;color:var(--muted);flex:none}
 .head button,.foot button{background:none;border:0;padding:4px 8px;border-radius:6px;color:inherit}
 .head button:hover,.foot button:hover{background:var(--tint)}
-.art{position:relative;margin-inline:2px}
+.art{position:relative;border-block:1px solid var(--mark);margin-inline:6px;outline:1px solid var(--line);outline-offset:2px}
 .art svg{display:block;width:100%;height:100%}
 .art .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
-.foot{height:34px;display:grid;place-items:center;flex:none}
+.foot{height:38px;display:grid;place-items:center;flex:none}
 .foot button{font-family:var(--naskh);font-size:16px;min-width:48px;color:var(--ink);border:1px solid var(--line)}
 .page.sel .foot button,.head button.sel{background:var(--tint-strong);border-color:var(--accent);color:var(--accent)}
 
@@ -416,7 +416,7 @@ body[data-tpi="3"]{--tpo:52%}
 
 <script>
 (() => {
-const RATIO = 345 / 550, FURN = 28 + 34 + 4, PAD = 6;   // head + foot heights; side margins and borders of a page
+const RATIO = 345 / 550, FURN = 32 + 38 + 4;
 const $ = (s, r = document) => r.querySelector(s);
 const ar = (v) => String(v).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 const pad = (n) => String(n).padStart(3, "0");
@@ -459,11 +459,11 @@ const surahName = (s) => "سورة " + meta.surahs[s].name;
 /* ---------- layout: one page on a phone, two on a tablet or desktop ---------- */
 function measure() {
   const w = stage.clientWidth - 32, h = stage.clientHeight - 20;
-  const two = Math.min(h - FURN, ((w - 6)  / 2 - PAD) / RATIO);
-  const fitTwo = ((w - 6)  / 2 - PAD) / RATIO;
+  const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
+  const fitTwo = ((w - 6) / 2 - 14) / RATIO;
   if (mode === "2") return { cols: 2, artH: h - FURN >= 460 ? Math.min(fitTwo, h - FURN) : fitTwo };
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
-  let one = (Math.min(w, 620) - PAD) / RATIO;
+  let one = (Math.min(w, 620) - 14) / RATIO;
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
   return { cols: 1, artH: one };
 }
@@ -490,7 +490,7 @@ async function render() {
 function pageShell(n, artH) {
   const el = document.createElement("article");
   el.className = "page";
-  el.style.width = Math.round(artH * RATIO + PAD) + "px";
+  el.style.width = Math.round(artH * RATIO + 14) + "px";
   if (n > meta.last) { el.classList.add("blank"); el.style.height = Math.round(artH + FURN) + "px"; return el; }
   const pm = pageMeta(n), s = pm.surahs[0];
   el.dataset.page = n; el.classList.add(n % 2 ? "rt" : "lt");   // odd pages sit on the right of the open mushaf
