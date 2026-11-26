@@ -289,7 +289,7 @@ button{cursor:pointer}
       </div></div>
     <div class="opt"><h3>التفاعل مع الصفحة</h3>
       <div class="seg" id="seg-touch" role="group" aria-label="وحدة اللمس في صفحة المصحف">
-        <button type="button" data-v="word">بالكلمة</button><button type="button" data-v="ayah">بالآية</button>
+        <button type="button" data-v="ayah">بالآية</button><button type="button" data-v="word">بالكلمة</button>
       </div></div>
     <p class="note" id="touch-hint"></p>
     <div class="opt"><h3>المظهر</h3>
@@ -372,7 +372,7 @@ let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
 const activeTab = {}, activeSub = {};
 // What one tap on the page selects: a single word, or the whole ayah it belongs to.
-let touch = store.get("touch", "word");
+let touch = store.get("touch", "ayah");
 function applyTouch() { document.body.classList.toggle("by-ayah", touch === "ayah"); }
 applyTouch();
 let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
