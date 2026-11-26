@@ -738,7 +738,7 @@ function paintSettings() {
     $("#set-rabt").checked = showRabt;
   }
   [setTab].forEach((lv) => {
-    const list = projects.filter((p) => (fam ? p.family === "mokhtasar" : p.level === lv && !p.family));
+    const list = projects.filter((p) => (fam ? p.family === "mokhtasar" : p.level === lv));
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
