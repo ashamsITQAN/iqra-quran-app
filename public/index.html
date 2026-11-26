@@ -124,7 +124,7 @@ button{cursor:pointer}
 .tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font-size:13.5px;color:var(--muted)}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .proj.solo{border:0;background:none;padding:6px 0}
-.ayah-block{background:var(--paper);border:1px solid var(--line);border-inline-start:3px solid var(--mark);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:none;width:100%;max-width:500px;margin-inline:auto;max-height:46vh;overflow:auto}
+.ayah-block{background:var(--paper);border:1px solid var(--line);border-inline-start:3px solid var(--mark);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;align-items:center;flex:none;width:100%;max-width:500px;margin-inline:auto;max-height:46vh;overflow-x:hidden;overflow-y:auto}
 .ayah-block svg{flex:none}
 .ayah-block svg{display:block;height:auto;max-width:100%}
 .ayah-block svg path{fill:var(--ink)}
@@ -498,8 +498,8 @@ async function step(dir) {
   finally { step.busy = false; }
 }
 
-/* The ayah exactly as printed: its ink is copied from the page, line by line, each line keeping the
-   width and the offset from the right margin it has in the mushaf. */
+/* The ayah exactly as printed: its ink is copied from the page, line by line. Each line keeps the size
+   it has in the mushaf and is centred in the block. */
 function ayahBlock(key, activeWord) {
   const frags = [...spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"]`)].sort((a, b) => a.dataset.fragment - b.dataset.fragment);
   if (!frags.length) return null;
@@ -537,7 +537,6 @@ function ayahBlock(key, activeWord) {
     out.removeAttribute("style"); out.removeAttribute("role"); out.removeAttribute("aria-label"); out.setAttribute("aria-hidden", "true");
     out.setAttribute("viewBox", `${(L - sr.left) * k - 1} ${(T - sr.top) * k - 1} ${(R - L) * k + 2} ${(B - T) * k + 2}`);
     out.style.width = Math.min(100, ((R - L) / cr.width) * 100) + "%";
-    out.style.marginInlineStart = Math.max(0, ((cr.right - R) / cr.width) * 100) + "%";
     box.append(out);
   });
   return box.children.length ? box : null;
