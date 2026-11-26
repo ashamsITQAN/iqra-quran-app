@@ -170,6 +170,11 @@ body[data-tpi="3"]{--tpo:52%}
 .btn:disabled{opacity:.45;cursor:default}
 #player{flex:none;border-top:1px solid var(--line);background:var(--panel);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
 #player[hidden],.pager[hidden],#toast[hidden]{display:none}
+@media (min-width:900px){   /* on a wide screen the player is a single slim row, so it takes little height from the mushaf */
+  #player{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px 16px;padding:6px 16px}
+  #player .pl-bar{grid-column:1/-1;grid-row:1}#player .pl-info{grid-column:1;grid-row:2}#player .pl-ctl{grid-column:2;grid-row:2;flex-wrap:nowrap}
+  #player #pl-left{grid-column:3;grid-row:2;text-align:end;margin:0}
+}
 .pl-info{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:14px}
 .pl-info span{color:var(--muted);font-size:13px}
 #pl-phase{margin-inline-start:auto;font-weight:600;color:var(--accent)}
@@ -593,7 +598,7 @@ function measure() {
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
   const fitTwo = ((w - 6) / 2 - 14) / RATIO;
   // "Two pages" holds only while both fit on screen in full; once a page would run off the screen, show one.
-  if (mode === "2" && w >= 700 && h - FURN >= 460) return { cols: 2, artH: Math.min(fitTwo, h - FURN) };
+  if (mode === "2" && w >= 700 && h - FURN >= 400) return { cols: 2, artH: Math.min(fitTwo, h - FURN) };
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
@@ -1516,6 +1521,7 @@ function paintNow() {
   if (!S) { paintWords(); return; }
   const s = S.steps[S.i], hide = S.c.hide && S.phase !== "play";
   for (let a = s.a; a <= s.b; a++) if (a === S.now) spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${S.c.surah}:${a}"]`).forEach((n) => n.classList.add("now"));
+  if (S.c.listen) { paintWords(); return; }   // plain listening has no passage to set apart: only the ayah being recited is lit
   if (S.fine) {   // the step may be part of an ayah: mark its own words, not the whole ayah
     if (!s.keys) s.keys = wordsIn(S.fine, S.c.surah, s.a, s.b, s.st, s.en);
     s.keys.forEach((k) => spread.querySelectorAll(`g.word[data-word-key="${k}"]`).forEach((n) => n.classList.add("segw", ...(hide ? ["hidew"] : []))));
