@@ -918,7 +918,7 @@ async function wordsCard(p, quote) {
   const el = document.createElement("div"), h = document.createElement("h3");
   el.className = "proj";
   h.append(tag(p.kind), tag(p.source, "src")); el.append(h);
-  if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
+  if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   let data, row;
   try { [data, row] = await Promise.all([getJSON(p.file.replace("{page}", pad(ctx.page))), loadCorpus().then((rows) => { const [s, a] = ctx.ayah.split(":").map(Number); return rows.find((r) => r.s === s && r.a === a); })]); }
   catch (e) { el.append(para("تعذّر تحميل محتوى هذا المشروع.")); return el; }
@@ -950,7 +950,7 @@ async function card(p, key) {
   const h = document.createElement("h3");
   h.append(tag(p.kind), tag(p.source, "src"));
   el.append(h);
-  if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
+  if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (p.player) return recitationCard(p);
   if (p.topics) return topicsCard();
   if (!p.file) {
