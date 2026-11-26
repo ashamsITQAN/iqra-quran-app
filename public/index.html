@@ -113,7 +113,8 @@ button{cursor:pointer}
   background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column}
 .modal.open{display:flex}
 #settings{width:min(520px,calc(100% - 24px));height:min(70%,560px)}
-.sh-body[hidden]{display:none}
+.sh-body[hidden],.opt[hidden]{display:none}
+#set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
 .opt{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0}
 .opt.col{flex-direction:column;align-items:stretch}
 .opt h3{margin:0;font-size:14px;font-weight:600}
@@ -216,7 +217,7 @@ button{cursor:pointer}
     <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
   </div>
   <div class="tabs" id="set-tabs" role="tablist">
-    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button>
+    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="mokhtasar">المختصر</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button>
   </div>
   <div class="sh-body" id="set-view">
     <div class="opt"><h3>عرض الصفحات</h3>
@@ -231,6 +232,8 @@ button{cursor:pointer}
   </div>
   <div class="sh-body" id="set-content" hidden>
     <p class="note" id="set-hint"></p>
+    <div class="opt" id="set-lang-row" hidden><h3><label for="set-lang">لغة المختصر</label></h3><select id="set-lang"></select></div>
+    <div class="opt" id="set-rabt-row" hidden><h3><label for="set-rabt">إظهار الربط بين الآيات</label></h3><input id="set-rabt" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div id="set-projects"></div>
   </div>
 </section>
@@ -271,7 +274,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); r
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
 const activeTab = {}, activeSub = {};
-let showGharib = store.get("gharib", "1") === "1";
+let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -610,6 +613,7 @@ async function card(p, key) {
   for (const [k, v] of Object.entries(entry)) {
     if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null, p.marksWords)); continue; }
     if (k === "الهامش" || (p.marksWords && k === "الكلمات")) continue;
+    if (k === "الربط" && !showRabt) continue;
     if (k === "الربط") {
       const box = document.createElement("div"), t = document.createElement("p");
       box.className = "rabt"; box.setAttribute("aria-label", "الربط بين الآيات");
@@ -713,6 +717,8 @@ $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n =
 
 /* ---------- settings ---------- */
 let setTab = "view";
+$("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
@@ -723,13 +729,22 @@ function paintSettings() {
   const box = $("#set-projects"); box.replaceChildren();
   if (setTab === "view") return;
   $("#set-hint").textContent = `اختر ما يظهر في النافذة عند لمس ${{ word: "كلمة", ayah: "رأس آية", page: "رقم صفحة", surah: "ترويسة سورة" }[setTab]}.`;
+  const fam = setTab === "mokhtasar";
+  $("#set-lang-row").hidden = !fam; $("#set-rabt-row").hidden = !fam;
+  if (fam) {
+    $("#set-hint").textContent = "مشروعات المختصر في تفسير القرآن الكريم: اللغة وما يظهر منها.";
+    const sel = $("#set-lang"), langs = projects.filter((p) => p.group === "mokhtasar");
+    sel.replaceChildren(...langs.map((p) => { const o = document.createElement("option"); o.value = p.lang; o.textContent = p.short; o.selected = p.lang === store.get("lang", "ar"); return o; }));
+    $("#set-rabt").checked = showRabt;
+  }
   [setTab].forEach((lv) => {
-    const list = projects.filter((p) => p.level === lv);
+    const list = projects.filter((p) => (fam ? p.family === "mokhtasar" : p.level === lv && !p.family));
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
     list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
+    if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {
       const label = document.createElement("label"), input = document.createElement("input");
       input.type = "checkbox"; input.id = "show-" + u.key; input.checked = u.items.some((p) => !hidden.has(p.id));
