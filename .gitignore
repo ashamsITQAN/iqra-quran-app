@@ -1,0 +1,11 @@
+# صفحات المصحف وفهارسها تُنزَّل وقت البناء ولا تُحفظ في المستودع
+public/pages/
+public/content/
+public/data/meta.json
+# أصول فنار المنزَّلة
+fanar-assets/
+# مفاتيح وأسرار
+.env
+.env.*
+node_modules/
+dist/

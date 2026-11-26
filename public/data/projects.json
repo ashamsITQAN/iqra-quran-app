@@ -1,0 +1,13 @@
+[
+ {"id":"word-forms","level":"word","name":"صيغ الكلمة","kind":"نصي","source":"quran.ws","file":"content/word-forms/{page}.json"},
+ {"id":"word-meanings","level":"word","name":"معاني مفردات القرآن كلمة كلمة","kind":"نصي","source":"فنار","file":null},
+ {"id":"tajweed-tawil","level":"word","name":"أحكام التجويد (أحمد الطويل)","kind":"نصي","source":"فنار","file":null},
+ {"id":"ayah-text","level":"ayah","name":"نص الآية بالرسم الإملائي","kind":"نصي","source":"quran.ws","file":"content/ayah-text/{page}.json"},
+ {"id":"tafsir-tabari","level":"ayah","name":"تفسير الطبري","kind":"نصي","source":"فنار","file":null},
+ {"id":"tafsir-saadi","level":"ayah","name":"تفسير السعدي","kind":"نصي","source":"فنار","file":null},
+ {"id":"tafsir-ibn-kathir","level":"ayah","name":"تفسير ابن كثير","kind":"نصي","source":"فنار","file":null},
+ {"id":"ayah-recitation","level":"ayah","name":"التلاوات المزمّنة","kind":"تلاوة","source":"فنار","file":null},
+ {"id":"page-info","level":"page","name":"بيانات الصفحة","kind":"نصي","source":"quran.ws","file":"content/page-info.json"},
+ {"id":"surah-info","level":"surah","name":"بطاقة السورة","kind":"نصي","source":"quran.ws","file":"content/surah-info.json"},
+ {"id":"surah-recitation","level":"surah","name":"تلاوة السورة كاملة","kind":"تلاوة","source":"فنار","file":null}
+]

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اقرأ القرآن الكريم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one-screen reader. Slim bar, the printed page (or a two-page spread) fills the stage,
+   a pager at the bottom, and a sheet that slides in with the projects of whatever was tapped. */
+:root{
+  --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
+  --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.24);
+  --panel:#ffffff; --banner:rgba(161,122,34,.10);
+  --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
+  --naskh:"Noto Naskh Arabic","Traditional Arabic",serif;
+  --quran:"Amiri Quran","Noto Naskh Arabic",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
+    --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.30);
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
+  --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.30);
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;display:flex;flex-direction:column;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.bar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.bar{min-width:0}
+.bar h1{font-size:17px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:560px){.bar .chip{display:none}.bar h1{font-size:16px}}
+.chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.bar .grow{flex:1}
+.bar select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:46vw}
+
+#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px 16px;overflow:auto;touch-action:pan-y}
+#spread{display:flex;gap:6px;align-items:flex-start;justify-content:center;margin:auto}
+.page{background:var(--paper);border:1px solid var(--line);border-radius:4px;display:flex;flex-direction:column;flex:none;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.page.blank{visibility:hidden}
+.head{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-family:var(--naskh);font-size:14px;color:var(--muted);flex:none}
+.head button,.foot button{background:none;border:0;padding:4px 8px;border-radius:6px;color:inherit}
+.head button:hover,.foot button:hover{background:var(--tint)}
+.art{position:relative;border-block:1px solid var(--mark);margin-inline:6px;outline:1px solid var(--line);outline-offset:2px}
+.art svg{display:block;width:100%;height:100%}
+.art .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
+.foot{height:38px;display:grid;place-items:center;flex:none}
+.foot button{font-family:var(--naskh);font-size:16px;min-width:48px;color:var(--ink);border:1px solid var(--line)}
+.page.sel .foot button,.head button.sel{background:var(--tint-strong);border-color:var(--accent);color:var(--accent)}
+
+/* the page artwork */
+.art svg path{fill:var(--ink)}
+.art svg path[data-kind="ayah_mark_ornament"]{fill:var(--mark)}
+.art svg .hit{fill:transparent;pointer-events:all;cursor:pointer}
+.art svg .banner{fill:var(--banner);stroke:var(--mark);stroke-width:.5;pointer-events:all;cursor:pointer}
+.art svg g.surah-name{cursor:pointer}
+@media (hover:hover){
+  .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
+  .art svg .banner:hover{fill:var(--tint)}
+}
+.art svg g.ayah-fragment.sel g.word .hit{fill:var(--tint)}
+.art svg g.ayah-mark.sel .hit{fill:var(--tint-strong)}
+.art svg g.word.sel .hit{fill:var(--tint-strong)}
+.art svg g.word.sel path{fill:var(--accent)}
+.art svg .banner.sel{fill:var(--tint-strong);stroke:var(--accent)}
+
+.pager{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:1px solid var(--line);background:var(--panel);flex:none}
+.pager button{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 14px;white-space:nowrap}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager input{flex:1;min-width:0;accent-color:var(--accent)}
+.pager output{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;min-width:5.5em;text-align:center}
+
+#sheet{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;
+  box-shadow:0 -8px 30px rgba(0,0,0,.18);max-height:62%;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .22s ease;visibility:hidden}
+#sheet.open{transform:none;visibility:visible}
+@media (prefers-reduced-motion:reduce){#sheet{transition:none}}
+@media (min-width:900px){
+  #sheet{inset-inline:auto 16px;bottom:16px;width:400px;border:1px solid var(--line);border-radius:14px;max-height:70%}
+}
+.sh-top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 8px}
+.sh-title{flex:1;min-width:0}
+.sh-title .big{font-family:var(--quran);font-size:30px;line-height:1.9;margin:0}
+.sh-title .big.plain{font-family:var(--ui);font-size:18px;font-weight:600;line-height:1.5}
+.sh-title .sub{color:var(--muted);font-size:13px;margin:0}
+.sh-close{background:none;border:1px solid var(--line);border-radius:8px;width:34px;height:34px;flex:none;font-size:18px;line-height:1}
+.levels{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
+.levels button{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:13px}
+.levels button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
+.sh-body{overflow:auto;padding:4px 16px 18px;display:flex;flex-direction:column;gap:10px}
+.proj{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper)}
+.proj.empty{border-style:dashed;background:none}
+.proj h3{margin:0 0 6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:400;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 8px}
+.tag.src{color:var(--mark);border-color:var(--mark)}
+.proj p{margin:0;color:var(--muted);font-size:13px}
+.proj p.text{font-family:var(--naskh);font-size:18px;line-height:2;color:var(--ink)}
+.proj dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.proj dt{color:var(--muted)}
+.proj dd{margin:0;font-family:var(--naskh);font-size:16px}
+.note{font-size:12px;color:var(--muted);margin:2px 0 0}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1>اقرأ القرآن الكريم</h1>
+  <span class="chip">نسخة تجريبية</span>
+  <span class="grow"></span>
+  <label class="chip" for="goto" style="border:0;padding:0">انتقال</label>
+  <select id="goto" aria-label="انتقال إلى صفحة"></select>
+</header>
+
+<main id="stage"><div id="spread"></div></main>
+
+<nav class="pager" aria-label="تقليب الصفحات">
+  <button id="prev" type="button">السابقة</button>
+  <input id="slider" type="range" min="1" max="604" step="1" value="1" aria-label="رقم الصفحة">
+  <output id="where" for="slider"></output>
+  <button id="next" type="button">التالية</button>
+</nav>
+
+<section id="sheet" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big" id="sh-big"></p><p class="sub" id="sh-sub"></p></div>
+    <button class="sh-close" id="sh-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="levels" id="levels"></div>
+  <div class="sh-body" id="sh-body"></div>
+</section>
+
+<script>
+(() => {
+const RATIO = 345 / 550, FURN = 32 + 38 + 4;
+const $ = (s, r = document) => r.querySelector(s);
+const ar = (v) => String(v).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+const pad = (n) => String(n).padStart(3, "0");
+const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
+
+let meta, projects, cur = 1, cols = 1, ctx = null, level = null, swiped = false;
+const svgCache = new Map(), jsonCache = new Map();
+const spread = $("#spread"), stage = $("#stage"), sheet = $("#sheet");
+
+const getJSON = (url) => {
+  if (!jsonCache.has(url)) jsonCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); }));
+  return jsonCache.get(url);
+};
+const getSVG = (n) => {
+  if (!svgCache.has(n)) svgCache.set(n, fetch(`pages/${pad(n)}.svg`).then((r) => { if (!r.ok) throw new Error("page " + n); return r.text(); }));
+  return svgCache.get(n);
+};
+const pageMeta = (n) => meta.pages.find((p) => p.page === n);
+const surahName = (s) => "سورة " + meta.surahs[s].name;
+
+/* ---------- layout: one page on a phone, two on a tablet or desktop ---------- */
+function measure() {
+  const w = stage.clientWidth - 32, h = stage.clientHeight - 20;
+  const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
+  if (w >= 700 && two >= 500) return { cols: 2, artH: two };
+  let one = (Math.min(w, 620) - 14) / RATIO;
+  if (h - FURN >= 460) one = Math.min(one, h - FURN);
+  return { cols: 1, artH: one };
+}
+function firstOfSpread(n) { return cols === 2 && n % 2 === 0 ? n - 1 : n; }
+
+async function render() {
+  const m = measure();
+  cols = m.cols;
+  cur = Math.max(meta.first, Math.min(meta.last, cur));
+  const start = firstOfSpread(cur);
+  const want = cols === 2 ? [start, start + 1] : [cur];
+  spread.replaceChildren(...want.map((n) => pageShell(n, m.artH)));
+  $("#slider").value = cur;
+  $("#goto").value = cur;
+  $("#where").textContent = cols === 2 && start + 1 <= meta.last ? `${ar(start)}–${ar(start + 1)} من ${ar(meta.last)}` : `${ar(cur)} من ${ar(meta.last)}`;
+  $("#prev").disabled = start <= meta.first;
+  $("#next").disabled = want[want.length - 1] >= meta.last;
+  try { history.replaceState(null, "", "#p" + cur); } catch (e) {}
+  await Promise.all(want.filter((n) => n <= meta.last).map(fillPage));
+  applySelection();
+  [start - 1, start - 2, start + cols, start + cols + 1].forEach((n) => { if (n >= meta.first && n <= meta.last) getSVG(n).catch(() => {}); });
+}
+
+function pageShell(n, artH) {
+  const el = document.createElement("article");
+  el.className = "page";
+  el.style.width = Math.round(artH * RATIO + 14) + "px";
+  if (n > meta.last) { el.classList.add("blank"); el.style.height = Math.round(artH + FURN) + "px"; return el; }
+  const pm = pageMeta(n), s = pm.surahs[0];
+  el.dataset.page = n;
+  el.innerHTML = `<div class="head"><button type="button" data-surah="${s}" title="مشروعات السورة">${surahName(s)}</button><span>الجزء ${ar(pm.juz)}</span></div>
+    <div class="art" style="height:${Math.round(artH)}px"><div class="wait">جارٍ تحميل الصفحة…</div></div>
+    <div class="foot"><button type="button" data-pnum="${n}" title="مشروعات الصفحة" aria-label="الصفحة ${n}">${ar(n)}</button></div>`;
+  return el;
+}
+
+async function fillPage(n) {
+  const art = spread.querySelector(`.page[data-page="${n}"] .art`);
+  if (!art) return;
+  let txt;
+  try { txt = await getSVG(n); }
+  catch (e) { svgCache.delete(n); art.firstElementChild.textContent = "تعذّر تحميل الصفحة. أعد المحاولة."; return; }
+  if (!art.isConnected) return;
+  const doc = new DOMParser().parseFromString(txt, "image/svg+xml");
+  const svg = document.importNode(doc.documentElement, true);
+  svg.removeAttribute("width"); svg.removeAttribute("height");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "صفحة المصحف " + n);
+  art.replaceChildren(svg);
+  decorate(svg);
+}
+
+/* Add invisible touch targets and the surah banner. The printed ink is never moved or redrawn. */
+function decorate(svg) {
+  const NS = "http://www.w3.org/2000/svg";
+  const rect = (b, padX, padY, cls) => {
+    const r = document.createElementNS(NS, "rect");
+    r.setAttribute("x", b.x - padX); r.setAttribute("y", b.y - padY);
+    r.setAttribute("width", b.width + 2 * padX); r.setAttribute("height", b.height + 2 * padY);
+    r.setAttribute("class", cls);
+    return r;
+  };
+  const content = svg.querySelector("#content"), markers = svg.querySelector("#ayah_markers");
+  const cb = content.getBBox();
+  svg.querySelectorAll("g.surah-name").forEach((g) => {
+    const frame = g.parentNode, t = /translate\(\s*([-\d.]+)[\s,]+([-\d.]+)/.exec(frame.getAttribute("transform") || "");
+    const nb = g.getBBox();
+    const full = { x: cb.x - (t ? +t[1] : 0), y: nb.y, width: cb.width, height: nb.height };
+    const r = rect(t ? full : nb, 0, 3.2, "banner");
+    r.setAttribute("rx", 2.5); r.dataset.sid = g.dataset.sid;
+    frame.insertBefore(r, g);
+  });
+  svg.querySelectorAll("g.word").forEach((g) => g.insertBefore(rect(g.getBBox(), 1, 0.6, "hit"), g.firstChild));
+  if (markers) {
+    markers.querySelectorAll("g.ayah-mark").forEach((g) => g.appendChild(rect(g.getBBox(), 1.2, 1.2, "hit")));
+    content.parentNode.appendChild(markers); // markers win the tap where a word's target touches them
+  }
+}
+
+/* ---------- taps ---------- */
+spread.addEventListener("click", (e) => {
+  if (swiped) { swiped = false; return; }
+  const pageEl = e.target.closest(".page");
+  if (!pageEl || !pageEl.dataset.page) return;
+  const page = +pageEl.dataset.page;
+  const pnum = e.target.closest("[data-pnum]");
+  if (pnum) return open({ page, surah: pageMeta(page).surahs[0], only: "page" }, "page");
+  const head = e.target.closest("[data-surah]");
+  if (head) return open({ page, surah: +head.dataset.surah, only: "surah" }, "surah");
+  const banner = e.target.closest(".banner, g.surah-name");
+  if (banner) return open({ page, surah: +banner.dataset.sid, only: "surah" }, "surah");
+  const mk = e.target.closest("g.ayah-mark");
+  if (mk) { const k = mk.dataset.ayahKey; return open({ page, surah: +k.split(":")[0], ayah: k }, "ayah"); }
+  const w = e.target.closest("g.word");
+  if (w) {
+    const k = w.dataset.wordKey, a = k.split(":").slice(0, 2).join(":");
+    return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word");
+  }
+  close();
+});
+
+function open(c, lv) { ctx = c; level = lv; sheet.classList.add("open"); sheet.setAttribute("aria-hidden", "false"); paintSheet(); applySelection(); }
+function close() { ctx = null; sheet.classList.remove("open"); sheet.setAttribute("aria-hidden", "true"); applySelection(); }
+$("#sh-close").addEventListener("click", close);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") close();
+  if (e.target.matches("input,select")) return;
+  if (e.key === "ArrowLeft") go(1);
+  if (e.key === "ArrowRight") go(-1);
+});
+
+function applySelection() {
+  spread.querySelectorAll(".sel").forEach((n) => n.classList.remove("sel"));
+  if (!ctx) return;
+  const q = (s) => spread.querySelectorAll(s).forEach((n) => n.classList.add("sel"));
+  if (level === "word") q(`g.word[data-word-key="${ctx.word}"]`);
+  if (level === "ayah") { q(`g.ayah-fragment[data-ayah-key="${ctx.ayah}"]`); q(`g.ayah-mark[data-ayah-key="${ctx.ayah}"]`); }
+  if (level === "surah") { q(`.banner[data-sid="${ctx.surah}"]`); q(`.head button[data-surah="${ctx.surah}"]`); }
+  if (level === "page") q(`.page[data-page="${ctx.page}"]`);
+}
+
+/* ---------- the sheet: projects for the tapped level ---------- */
+function keyFor(lv) { return { word: ctx.word, ayah: ctx.ayah, surah: String(ctx.surah), page: String(ctx.page) }[lv]; }
+
+async function paintSheet() {
+  const avail = ctx.only ? [ctx.only] : ["word", "ayah", "surah", "page"].filter((l) => keyFor(l));
+  const lv = $("#levels");
+  lv.replaceChildren(...avail.map((l) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = LEVELS[l]; b.setAttribute("aria-pressed", l === level);
+    b.addEventListener("click", () => { level = l; paintSheet(); applySelection(); });
+    return b;
+  }));
+  lv.hidden = avail.length < 2;
+  const big = $("#sh-big"), sub = $("#sh-sub"), an = ctx.ayah ? ar(ctx.ayah.split(":")[1]) : "";
+  big.classList.toggle("plain", level !== "word");
+  if (level === "word") { big.textContent = ctx.text; sub.textContent = `${surahName(ctx.surah)} · الآية ${an} · الكلمة ${ar(ctx.word.split(":")[2])}`; }
+  if (level === "ayah") { big.textContent = `${surahName(ctx.surah)} · الآية ${an}`; sub.textContent = `الصفحة ${ar(ctx.page)}`; }
+  if (level === "surah") { big.textContent = surahName(ctx.surah); sub.textContent = `${ar(meta.surahs[ctx.surah].ayahs)} آية`; }
+  if (level === "page") { big.textContent = `الصفحة ${ar(ctx.page)}`; sub.textContent = `الجزء ${ar(pageMeta(ctx.page).juz)} · الحزب ${ar(pageMeta(ctx.page).hizb)}`; }
+
+  const body = $("#sh-body"), key = keyFor(level), token = {};
+  paintSheet.token = token;
+  const cards = await Promise.all(projects.filter((p) => p.level === level).map((p) => card(p, key)));
+  if (paintSheet.token !== token) return;
+  const note = document.createElement("p");
+  note.className = "note";
+  note.textContent = "المحتوى هنا تجريبي: البطاقات المتصلة مأخوذة من فهارس quran.ws، والمنقّطة أماكن محجوزة لمشروعات فنار.";
+  body.replaceChildren(...cards, note);
+  body.scrollTop = 0;
+}
+
+async function card(p, key) {
+  const el = document.createElement("div");
+  el.className = "proj";
+  const h = document.createElement("h3");
+  h.append(p.name, tag(p.kind), tag(p.source, "src"));
+  el.append(h);
+  if (!p.file) {
+    el.classList.add("empty");
+    el.append(para("لم يُربط بعد. يُضاف هذا المشروع من فنار."));
+    return el;
+  }
+  let entry;
+  try { entry = (await getJSON(p.file.replace("{page}", pad(ctx.page))))[key]; } catch (e) { el.append(para("تعذّر تحميل محتوى هذا المشروع.")); return el; }
+  if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
+  const dl = document.createElement("dl");
+  for (const [k, v] of Object.entries(entry)) {
+    if (k === "النص") { const t = para(v); t.className = "text"; el.append(t); continue; }
+    const dt = document.createElement("dt"), dd = document.createElement("dd");
+    dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
+    dl.append(dt, dd);
+  }
+  if (dl.children.length) el.append(dl);
+  return el;
+}
+const tag = (t, c) => { const s = document.createElement("span"); s.className = "tag" + (c ? " " + c : ""); s.textContent = t; return s; };
+const para = (t) => { const p = document.createElement("p"); p.textContent = t; return p; };
+
+/* ---------- paging: in a mushaf the next page is to the left ---------- */
+function go(dir) {
+  const start = firstOfSpread(cur), next = dir > 0 ? start + cols : start - cols;
+  if (next > meta.last || next + cols - 1 < meta.first) return;
+  cur = Math.max(meta.first, next);
+  close(); render();
+}
+$("#next").addEventListener("click", () => go(1));
+$("#prev").addEventListener("click", () => go(-1));
+$("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
+$("#goto").addEventListener("change", (e) => { cur = +e.target.value; close(); render(); });
+
+let down = null;
+stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
+stage.addEventListener("pointerup", (e) => {
+  if (!down) return;
+  const dx = e.clientX - down.x, dy = e.clientY - down.y; down = null;
+  if (Math.abs(dx) > 60 && Math.abs(dy) < 50) { swiped = true; setTimeout(() => { swiped = false; }, 50); go(dx > 0 ? 1 : -1); }
+});
+stage.addEventListener("pointercancel", () => { down = null; });
+
+let rz;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - parseFloat(($(".art") || {}).style?.height || 0)) > 2) render(); }, 120); });
+window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
+
+(async function init() {
+  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); }
+  catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
+  $("#slider").min = meta.first; $("#slider").max = meta.last;
+  $("#goto").replaceChildren(...meta.pages.map((p) => {
+    const o = document.createElement("option");
+    o.value = p.page; o.textContent = `ص ${ar(p.page)} · ${meta.surahs[p.surahs[0]].name}`;
+    return o;
+  }));
+  const h = +location.hash.replace("#p", "");
+  if (h) cur = h;
+  render();
+})();
+})();
+</script>
+</body>
+</html>
