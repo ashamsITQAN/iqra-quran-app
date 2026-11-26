@@ -39,8 +39,7 @@ button{cursor:pointer}
 .bar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .bar{min-width:0}
 .bar h1{font-size:17px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-@media (max-width:480px){.bar h1{display:none}.bar{justify-content:space-between}.bar .grow{display:none}}
-@media (max-width:640px){.bar .chip{display:none}.bar h1{font-size:15px}.bar select{max-width:30vw}.bar{gap:6px;padding-inline:10px}}
+@media (max-width:640px){.bar .chip{display:none}.bar h1{font-size:15px}.bar select{max-width:34vw}.bar{gap:6px;padding-inline:10px}}
 .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
 .bar .grow{flex:1}
 .bar select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:46vw}
@@ -94,6 +93,7 @@ button{cursor:pointer}
 .seg button{background:var(--paper);border:0;padding:6px 10px;font-size:13px;white-space:nowrap}
 .seg button+button{border-inline-start:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
+.seg button{padding:7px 14px}
 .pm{color:var(--muted);font-size:.62em;font-family:var(--ui);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
 .ref{background:none;border:0;padding:0 1px;color:var(--accent);font-family:var(--ui);font-size:.62em;vertical-align:super;line-height:1}
 .notes{margin:10px 0 4px;padding:8px 22px 0 0;border-top:1px solid var(--line);font-family:var(--naskh);font-size:14px;line-height:1.9;color:var(--muted);list-style:arabic-indic}
@@ -106,13 +106,24 @@ button{cursor:pointer}
 .pager input{flex:1;min-width:0;accent-color:var(--accent)}
 .pager output{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;min-width:5.5em;text-align:center}
 
-#sheet{position:fixed;inset-inline:0;bottom:0;z-index:5;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;
-  box-shadow:0 -8px 30px rgba(0,0,0,.18);max-height:62%;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .22s ease;visibility:hidden}
-#sheet.open{transform:none;visibility:visible}
-@media (prefers-reduced-motion:reduce){#sheet{transition:none}}
-@media (min-width:900px){
-  #sheet{inset-inline:auto 16px;bottom:16px;width:400px;border:1px solid var(--line);border-radius:14px;max-height:70%}
-}
+#veil{position:fixed;inset:0;z-index:4;background:rgba(0,0,0,.38)}
+#veil[hidden]{display:none}
+.modal{position:fixed;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 24px));max-height:min(84%,780px);
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column}
+.modal.open{display:flex}
+#settings{width:min(480px,calc(100% - 24px))}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0}
+.opt.col{flex-direction:column;align-items:stretch}
+.opt h3{margin:0;font-size:14px;font-weight:600}
+#set-projects{display:flex;flex-direction:column;gap:2px}
+#set-projects h4{margin:10px 0 2px;font-size:12px;font-weight:500;color:var(--muted)}
+#set-projects label{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:6px;font-size:14px;cursor:pointer}
+#set-projects label:hover{background:var(--tint)}
+#set-projects input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.tabs{display:flex;gap:2px;overflow-x:auto;padding:0 12px;border-bottom:1px solid var(--line);flex:none;scrollbar-width:thin}
+.tabs button{white-space:nowrap;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font-size:13.5px;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.proj.solo{border:0;background:none;padding:6px 0}
 .sh-top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 8px}
 .sh-title{flex:1;min-width:0}
 .sh-title .big{font-family:var(--quran);font-size:30px;line-height:1.9;margin:0}
@@ -122,7 +133,7 @@ button{cursor:pointer}
 .levels{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
 .levels button{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:13px}
 .levels button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
-.sh-body{overflow:auto;padding:4px 16px 18px;display:flex;flex-direction:column;gap:10px}
+.sh-body{overflow:auto;padding:10px 16px 18px;display:flex;flex-direction:column;gap:10px}
 .proj{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper)}
 .proj.empty{border-style:dashed;background:none}
 .proj h3{margin:0 0 6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -142,11 +153,7 @@ button{cursor:pointer}
   <span class="chip">نسخة تجريبية</span>
   <span class="grow"></span>
   <button type="button" id="find-open" class="btn">بحث</button>
-  <div class="seg" role="group" aria-label="عدد الصفحات المعروضة">
-    <button type="button" data-mode="auto" aria-pressed="true">تلقائي</button>
-    <button type="button" data-mode="1" aria-pressed="false">صفحة</button>
-    <button type="button" data-mode="2" aria-pressed="false">صفحتان</button>
-  </div>
+  <button type="button" id="set-open" class="btn">الإعدادات</button>
   <select id="goto" aria-label="انتقال إلى صفحة"></select>
 </header>
 
@@ -168,12 +175,33 @@ button{cursor:pointer}
   <ol id="results"></ol>
 </section>
 
-<section id="sheet" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
+<div id="veil" hidden></div>
+
+<section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">الإعدادات</p></div>
+    <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
+  </div>
+  <div class="sh-body">
+    <div class="opt"><h3>عرض الصفحات</h3>
+      <div class="seg" id="seg-mode" role="group" aria-label="عدد الصفحات المعروضة">
+        <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="1">صفحة</button><button type="button" data-v="2">صفحتان</button>
+      </div></div>
+    <div class="opt"><h3>المظهر</h3>
+      <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
+        <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
+      </div></div>
+    <div class="opt col"><h3>المحتوى المعروض</h3><div id="set-projects"></div></div>
+  </div>
+</section>
+
+<section id="sheet" class="modal" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big" id="sh-big"></p><p class="sub" id="sh-sub"></p></div>
     <button class="sh-close" id="sh-close" type="button" aria-label="إغلاق">×</button>
   </div>
   <div class="levels" id="levels"></div>
+  <div class="tabs" id="tabs" role="tablist"></div>
   <div class="sh-body" id="sh-body"></div>
 </section>
 
@@ -185,8 +213,12 @@ const ar = (v) => String(v).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
 
-let mode = "auto";
-try { mode = localStorage.getItem("iqra-mode") || "auto"; } catch (e) {}
+const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("iqra-" + k, v); } catch (e) {} } };
+let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
+let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
+const activeTab = {};
+function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
+applyTheme();
 let found = [];
 let meta, projects, cur = 1, cols = 1, ctx = null, level = null, swiped = false;
 const svgCache = new Map(), jsonCache = new Map();
@@ -312,8 +344,11 @@ spread.addEventListener("click", (e) => {
   close();
 });
 
-function open(c, lv) { ctx = c; level = lv; sheet.classList.add("open"); sheet.setAttribute("aria-hidden", "false"); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; sheet.classList.remove("open"); sheet.setAttribute("aria-hidden", "true"); applySelection(); }
+const veil = $("#veil"), settings = $("#settings");
+function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !(sheet.classList.contains("open") || settings.classList.contains("open")); }
+function open(c, lv) { ctx = c; level = lv; show(settings, false); show(sheet, true); paintSheet(); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); applySelection(); }
+veil.addEventListener("click", close);
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } close(); }
@@ -355,12 +390,26 @@ async function paintSheet() {
 
   const body = $("#sh-body"), key = keyFor(level), token = {};
   paintSheet.token = token;
-  const cards = await Promise.all(projects.filter((p) => p.level === level).map((p) => card(p, key)));
+  const list = projects.filter((p) => p.level === level && !hidden.has(p.id)), tabs = $("#tabs");
+  if (!list.length) {
+    tabs.replaceChildren(); tabs.hidden = true;
+    body.replaceChildren(para("لا توجد مشروعات معروضة لهذا المستوى. يمكنك إظهارها من الإعدادات."));
+    return;
+  }
+  const active = list.find((p) => p.id === activeTab[level]) || list[0];
+  tabs.hidden = false;
+  tabs.replaceChildren(...list.map((p) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "tab"); b.textContent = p.name; b.setAttribute("aria-selected", p === active);
+    b.addEventListener("click", () => { activeTab[level] = p.id; paintSheet(); });
+    return b;
+  }));
+  const on = tabs.querySelector('[aria-selected="true"]');
+  if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const el = await card(active, key);
   if (paintSheet.token !== token) return;
-  const note = document.createElement("p");
-  note.className = "note";
-  note.textContent = "محتوى فنار معروض بنصه كما نشره أصحابه. البطاقات المنقّطة مشروعات لم تُربط بعد.";
-  body.replaceChildren(...cards, note);
+  el.classList.add("solo");
+  body.replaceChildren(el);
   body.scrollTop = 0;
 }
 
@@ -368,7 +417,7 @@ async function card(p, key) {
   const el = document.createElement("div");
   el.className = "proj";
   const h = document.createElement("h3");
-  h.append(p.name, tag(p.kind), tag(p.source, "src"));
+  h.append(tag(p.kind), tag(p.source, "src"));
   el.append(h);
   if (p.credit) { const c = para("الناشر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (!p.file) {
@@ -444,13 +493,28 @@ $("#prev").addEventListener("click", () => go(-1));
 $("#slider").addEventListener("input", (e) => { cur = +e.target.value; close(); render(); });
 $("#goto").addEventListener("change", (e) => { cur = +e.target.value; close(); render(); });
 
-function paintMode() { document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === mode)); }
-document.querySelector(".seg").addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-mode]"); if (!b) return;
-  mode = b.dataset.mode; try { localStorage.setItem("iqra-mode", mode); } catch (err) {}
-  paintMode(); render();
-});
-paintMode();
+/* ---------- settings ---------- */
+function paintSettings() {
+  const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+  press("seg-mode", mode); press("seg-theme", theme);
+  const box = $("#set-projects"); box.replaceChildren();
+  ["word", "ayah", "page", "surah"].forEach((lv) => {
+    const list = projects.filter((p) => p.level === lv);
+    if (!list.length) return;
+    const h = document.createElement("h4"); h.textContent = "مستوى " + LEVELS[lv]; box.append(h);
+    list.forEach((p) => {
+      const label = document.createElement("label"), input = document.createElement("input");
+      input.type = "checkbox"; input.id = "show-" + p.id; input.checked = !hidden.has(p.id);
+      input.addEventListener("change", () => { if (input.checked) hidden.delete(p.id); else hidden.add(p.id); store.set("hidden", JSON.stringify([...hidden])); });
+      label.append(input, p.name + (p.file ? "" : " (لم يُربط بعد)"));
+      box.append(label);
+    });
+  });
+}
+$("#seg-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; mode = b.dataset.v; store.set("mode", mode); paintSettings(); render(); });
+$("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; theme = b.dataset.v; store.set("theme", theme); applyTheme(); paintSettings(); });
+$("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); applySelection(); paintSettings(); show(settings, true); });
+$("#set-close").addEventListener("click", close);
 
 /* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
 const MARKS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
@@ -529,7 +593,7 @@ async function runSearch() {
     b.append(where, ay);
     b.addEventListener("click", async () => {
       findBox.hidden = true;
-      cur = r.page; ctx = null; sheet.classList.remove("open");
+      cur = r.page; ctx = null; show(sheet, false);
       found = idx.map((i) => `${r.s}:${r.a}:${i + 1}`);
       await render();
       const first = spread.querySelector("g.word.found");
