@@ -1823,8 +1823,11 @@ function pdfOf(canvases) {
 }
 async function deliver(blob, name, type, text) {
   const file = new File([blob], name, { type });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], ...(text ? { text } : {}) }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancelled"; } }
+  // The system share sheet is only useful on phones and tablets; on a computer the file is saved (and a picture is also copied).
+  const handheld = (navigator.userAgentData && navigator.userAgentData.mobile) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  if (handheld && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], ...(text ? { text } : {}) }); return "shared"; } catch (e) { if (e && e.name === "AbortError") return "cancelled"; } }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  if (type === "image/png" && navigator.clipboard && window.ClipboardItem) { try { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); return "saved+copied"; } catch (e) {} }
   return "saved";
 }
 let shareDoc = null;
@@ -1836,7 +1839,7 @@ function openShare(d) {
 }
 async function shareAs(kind) {
   const d = shareDoc, msg = $("#shr-msg"); if (!d) return;
-  const done = (r, what) => { msg.textContent = r === "saved" ? `نُزّل ${what} على جهازك؛ هذا المتصفح لا يفتح قائمة المشاركة.` : r === "shared" ? "تمت المشاركة." : ""; };
+  const done = (r, what) => { msg.textContent = r === "saved+copied" ? `نُزّلت ${what} في مجلد التنزيلات، ونُسخت أيضًا: الصقها مباشرة (Ctrl+V) في واتساب أو فيسبوك.` : r === "saved" ? `نُزّل ${what} في مجلد التنزيلات؛ أرفقه من هناك في واتساب أو فيسبوك أو البريد.` : r === "shared" ? "تمت المشاركة." : ""; };
   try {
     if (kind === "copy") { await navigator.clipboard.writeText(await docText(d)); msg.textContent = "نُسخ النص."; return; }
     if (kind === "txt") return done(await deliver(new Blob([await docText(d)], { type: "text/plain;charset=utf-8" }), d.name + ".txt", "text/plain"), "الملف النصي");
