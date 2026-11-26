@@ -842,16 +842,20 @@ function ayahBlock(key, activeWord) {
       paintSheet(); applySelection();
     });
   }
-  frags.forEach((f, i) => {
-    const svg = f.ownerSVGElement, sr = svg.getBoundingClientRect(), cr = svg.querySelector("#content").getBoundingClientRect();
+  // One strip per printed line. Some pages carry one fragment per word, so fragments are gathered by line first.
+  const rows = [];
+  frags.forEach((f) => { const ln = f.closest("g.line") || f.parentNode, last = rows[rows.length - 1]; if (last && last.ln === ln) last.fs.push(f); else rows.push({ ln, fs: [f] }); });
+  rows.forEach((row, i) => {
+    const svg = row.fs[0].ownerSVGElement, sr = svg.getBoundingClientRect(), cr = svg.querySelector("#content").getBoundingClientRect();
     if (!sr.width || !cr.width) return;
-    const vbw = svg.viewBox.baseVal.width, k = vbw / sr.width, r = f.getBoundingClientRect();
-    let L = r.left, T = r.top, R = r.right, B = r.bottom;
-    const mk = i === frags.length - 1 ? svg.querySelector(`g.ayah-mark[data-ayah-key="${key}"]`) : null;
-    if (mk) { const m = mk.getBoundingClientRect(); L = Math.min(L, m.left); T = Math.min(T, m.top); R = Math.max(R, m.right); B = Math.max(B, m.bottom); }
-    const out = svg.cloneNode(false), pageG = svg.firstElementChild.cloneNode(false), lineG = f.parentNode.cloneNode(false);
-    lineG.append(strip(f.cloneNode(true)));
-    pageG.append(lineG);
+    const vbw = svg.viewBox.baseVal.width, k = vbw / sr.width;
+    let L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+    const grow = (n) => { const m = n.getBoundingClientRect(); L = Math.min(L, m.left); T = Math.min(T, m.top); R = Math.max(R, m.right); B = Math.max(B, m.bottom); };
+    row.fs.forEach(grow);
+    const mk = i === rows.length - 1 ? svg.querySelector(`g.ayah-mark[data-ayah-key="${key}"]`) : null;
+    if (mk) grow(mk);
+    const out = svg.cloneNode(false), pageG = svg.firstElementChild.cloneNode(false);
+    row.fs.forEach((f) => { const wrap = f.parentNode.cloneNode(false); wrap.append(strip(f.cloneNode(true))); pageG.append(wrap); });
     if (mk) pageG.append(strip(mk.cloneNode(true)));
     out.append(pageG);
     out.removeAttribute("style"); out.removeAttribute("role"); out.removeAttribute("aria-label"); out.setAttribute("aria-hidden", "true");
