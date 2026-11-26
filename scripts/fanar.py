@@ -13,6 +13,31 @@ for f in sorted(glob.glob(os.path.join(dst, "content/ayah-text/*.json"))):
 if not ayah_page:
     sys.exit("public/content/ayah-text is empty: run scripts/build.py first")
 
+ALIAS = {"sura": "surah", "surah_number": "surah", "sura_no": "surah", "surah_id": "surah", "chapter": "surah",
+         "aya": "ayah", "ayah_number": "ayah", "aya_no": "ayah", "ayah_id": "ayah", "verse": "ayah",
+         "word_number": "word", "word_no": "word", "word_index": "word", "position": "word",
+         "tafsir": "text", "meaning": "text", "content": "text", "translation": "text"}
+POSITIONAL = {2: ["surah", "text"], 3: ["surah", "ayah", "text"], 5: ["word_id", "surah", "ayah", "word", "text"]}
+
+def table(stream):
+    """Yields dict rows. Tolerates other delimiters, renamed columns and a missing header row."""
+    head = stream.read(8192); stream.seek(0)
+    try: dialect = csv.Sniffer().sniff(head, delimiters=",;\t|")
+    except csv.Error: dialect = csv.excel
+    rows = csv.reader(stream, dialect)
+    first = next(rows, None)
+    if first is None: return
+    names = [ALIAS.get(c.strip().lower(), c.strip().lower()) for c in first]
+    print("  header:", first[:8], "delimiter:", repr(dialect.delimiter))
+    if "surah" not in names or "text" not in names:
+        guess = POSITIONAL.get(len(first))
+        if guess is None: print("  unknown layout, skipped"); return
+        if first[0].strip().isdigit(): yield dict(zip(guess, first))   # no header row: the first line is data
+        names = guess
+        print("  using positional columns:", names)
+    for r in rows:
+        yield dict(zip(names, r))
+
 def read_rows(folder):
     files = [f for f in glob.glob(os.path.join(folder, "*")) if not os.path.basename(f).startswith(".")]
     print("  files:", [(os.path.basename(f), os.path.getsize(f)) for f in files])
@@ -21,9 +46,9 @@ def read_rows(folder):
             z = zipfile.ZipFile(f)
             for n in z.namelist():
                 if n.lower().endswith(".csv"):
-                    yield from csv.DictReader(io.TextIOWrapper(z.open(n), encoding="utf-8-sig", newline=""))
-        elif f.lower().endswith((".csv", ".pkg")):
-            yield from csv.DictReader(open(f, encoding="utf-8-sig", newline=""))
+                    yield from table(io.StringIO(z.read(n).decode("utf-8-sig"), newline=""))
+        elif f.lower().endswith((".csv", ".tsv", ".pkg")):
+            yield from table(open(f, encoding="utf-8-sig", newline=""))
 
 report = {}
 for folder in sorted(glob.glob(os.path.join(src, "*"))):
