@@ -24,6 +24,11 @@ jobs:
           pipx install itqan-cli
           itqan install
           python3 scripts/fanar.py fanar-assets public
+      - name: Stamp the build version
+        run: |
+          sed -i "s/__BUILD__/${GITHUB_SHA::10}/" public/index.html
+          echo "{\"v\":\"${GITHUB_SHA::10}\"}" > public/version.json
+          du -sh public
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

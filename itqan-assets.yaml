@@ -14,11 +14,13 @@ assets:
     version: "^1.0.0"
   tafsir-ibn-katheer:
     version: "^2.0.0"
-  al-mokhtasar:
-    version: "^7.0.0"
-  al-mokhtasar-en:
-    asset: al-mokhtasar
-    language: en
+  tafsir-albaghawi:
+    version: "^1.0.0"
+  tafseer-muyassar:
+    version: "^1.0.0"
+  al-jami-al-wajeez-tafsir:
+    version: "^1.0.0"
+  surah-sciences-al-jami-al-wajeez:
     version: "^1.0.0"
   muyassar-of-ghareeb-al-quran:
     version: "^1.0.0"
@@ -26,3 +28,89 @@ assets:
     version: "^7.0.0"
   surah-objectives-al-mukhtasar:
     version: "^7.0.0"
+  al-mokhtasar:
+    version: "^7.0.0"
+  al-mokhtasar-as:
+    asset: al-mokhtasar
+    language: as
+    version: "^1.0.0"
+  al-mokhtasar-bs:
+    asset: al-mokhtasar
+    language: bs
+    version: "^1.0.0"
+  al-mokhtasar-en:
+    asset: al-mokhtasar
+    language: en
+    version: "^1.0.0"
+  al-mokhtasar-fr:
+    asset: al-mokhtasar
+    language: fr
+    version: "^1.0.0"
+  al-mokhtasar-ha:
+    asset: al-mokhtasar
+    language: ha
+    version: "^1.0.0"
+  al-mokhtasar-id:
+    asset: al-mokhtasar
+    language: id
+    version: "^1.0.0"
+  al-mokhtasar-ja:
+    asset: al-mokhtasar
+    language: ja
+    version: "^1.0.0"
+  al-mokhtasar-km:
+    asset: al-mokhtasar
+    language: km
+    version: "^1.0.0"
+  al-mokhtasar-ko:
+    asset: al-mokhtasar
+    language: ko
+    version: "^1.0.0"
+  al-mokhtasar-ku:
+    asset: al-mokhtasar
+    language: ku
+    version: "^1.0.0"
+  al-mokhtasar-ky:
+    asset: al-mokhtasar
+    language: ky
+    version: "^1.0.0"
+  al-mokhtasar-mg:
+    asset: al-mokhtasar
+    language: mg
+    version: "^1.0.0"
+  al-mokhtasar-ml:
+    asset: al-mokhtasar
+    language: ml
+    version: "^1.0.0"
+  al-mokhtasar-ne:
+    asset: al-mokhtasar
+    language: ne
+    version: "^1.0.0"
+  al-mokhtasar-pt:
+    asset: al-mokhtasar
+    language: pt
+    version: "^1.0.0"
+  al-mokhtasar-sw:
+    asset: al-mokhtasar
+    language: sw
+    version: "^1.0.0"
+  al-mokhtasar-th:
+    asset: al-mokhtasar
+    language: th
+    version: "^1.0.0"
+  al-mokhtasar-tl:
+    asset: al-mokhtasar
+    language: tl
+    version: "^1.0.0"
+  al-mokhtasar-ur:
+    asset: al-mokhtasar
+    language: ur
+    version: "^1.0.0"
+  al-mokhtasar-yo:
+    asset: al-mokhtasar
+    language: yo
+    version: "^1.0.0"
+  al-mokhtasar-zh:
+    asset: al-mokhtasar
+    language: zh
+    version: "^1.0.0"

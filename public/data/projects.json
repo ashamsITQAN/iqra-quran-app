@@ -1,19 +1,38 @@
 [
  {"id":"word-meanings","level":"word","name":"معاني مفردات القرآن كلمة كلمة","groupName":"معاني المفردات","kind":"نصي","source":"فنار","credit":"دار النفائس · CC BY-NC-ND","file":"content/word-by-word-quran-meanings/{page}.json"},
-
  {"id":"al-mokhtasar","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"العربية","name":"المختصر في تفسير القرآن الكريم (العربية)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar/{page}.json"},
+ {"id":"al-mokhtasar-as","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"অসমীয়া","name":"المختصر في تفسير القرآن الكريم (অসমীয়া)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-as/{page}.json"},
+ {"id":"al-mokhtasar-bs","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Bosanski","name":"المختصر في تفسير القرآن الكريم (Bosanski)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-bs/{page}.json"},
  {"id":"al-mokhtasar-en","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"English","name":"المختصر في تفسير القرآن الكريم (English)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-en/{page}.json"},
-
+ {"id":"al-mokhtasar-fr","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Français","name":"المختصر في تفسير القرآن الكريم (Français)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-fr/{page}.json"},
+ {"id":"al-mokhtasar-ha","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Hausa","name":"المختصر في تفسير القرآن الكريم (Hausa)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ha/{page}.json"},
+ {"id":"al-mokhtasar-id","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Indonesia","name":"المختصر في تفسير القرآن الكريم (Indonesia)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-id/{page}.json"},
+ {"id":"al-mokhtasar-ja","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"日本語","name":"المختصر في تفسير القرآن الكريم (日本語)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ja/{page}.json"},
+ {"id":"al-mokhtasar-km","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"ខ្មែរ","name":"المختصر في تفسير القرآن الكريم (ខ្មែរ)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-km/{page}.json"},
+ {"id":"al-mokhtasar-ko","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"한국어","name":"المختصر في تفسير القرآن الكريم (한국어)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ko/{page}.json"},
+ {"id":"al-mokhtasar-ku","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Kurdî","name":"المختصر في تفسير القرآن الكريم (Kurdî)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ku/{page}.json"},
+ {"id":"al-mokhtasar-ky","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Кыргызча","name":"المختصر في تفسير القرآن الكريم (Кыргызча)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ky/{page}.json"},
+ {"id":"al-mokhtasar-mg","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Malagasy","name":"المختصر في تفسير القرآن الكريم (Malagasy)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-mg/{page}.json"},
+ {"id":"al-mokhtasar-ml","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"മലയാളം","name":"المختصر في تفسير القرآن الكريم (മലയാളം)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ml/{page}.json"},
+ {"id":"al-mokhtasar-ne","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"नेपाली","name":"المختصر في تفسير القرآن الكريم (नेपाली)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ne/{page}.json"},
+ {"id":"al-mokhtasar-pt","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Português","name":"المختصر في تفسير القرآن الكريم (Português)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-pt/{page}.json"},
+ {"id":"al-mokhtasar-sw","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Kiswahili","name":"المختصر في تفسير القرآن الكريم (Kiswahili)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-sw/{page}.json"},
+ {"id":"al-mokhtasar-th","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"ไทย","name":"المختصر في تفسير القرآن الكريم (ไทย)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-th/{page}.json"},
+ {"id":"al-mokhtasar-tl","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Tagalog","name":"المختصر في تفسير القرآن الكريم (Tagalog)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-tl/{page}.json"},
+ {"id":"al-mokhtasar-ur","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"اردو","name":"المختصر في تفسير القرآن الكريم (اردو)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-ur/{page}.json"},
+ {"id":"al-mokhtasar-yo","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"Yorùbá","name":"المختصر في تفسير القرآن الكريم (Yorùbá)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-yo/{page}.json"},
+ {"id":"al-mokhtasar-zh","level":"ayah","group":"mokhtasar","groupName":"المختصر","short":"中文","name":"المختصر في تفسير القرآن الكريم (中文)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-zh/{page}.json"},
+ {"id":"tafseer-muyassar","level":"ayah","group":"tafsir","groupName":"التفسير","short":"الميسر","name":"التفسير الميسر","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/tafseer-muyassar/{page}.json"},
  {"id":"tafsir-altabari","level":"ayah","group":"tafsir","groupName":"التفسير","short":"الطبري","name":"تفسير الطبري","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-altabari/{page}.json"},
  {"id":"tafsir-ibn-katheer","level":"ayah","group":"tafsir","groupName":"التفسير","short":"ابن كثير","name":"تفسير ابن كثير","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-ibn-katheer/{page}.json"},
  {"id":"tafsir-alsaadi","level":"ayah","group":"tafsir","groupName":"التفسير","short":"السعدي","name":"تفسير السعدي","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-alsaadi/{page}.json"},
-
+ {"id":"tafsir-albaghawi","level":"ayah","group":"tafsir","groupName":"التفسير","short":"البغوي","name":"تفسير البغوي","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-albaghawi/{page}.json"},
+ {"id":"al-jami-al-wajeez","level":"ayah","group":"tafsir","groupName":"التفسير","short":"الوجيز","name":"الجامع الوجيز في تفسير آي الكتاب العزيز","kind":"نصي","source":"فنار","credit":"موقع مقرأ","file":"content/al-jami-al-wajeez-tafsir/{page}.json"},
  {"id":"tajweed","level":"ayah","groupName":"التجويد","name":"أحكام التجويد في كلمات العزيز الحميد (أحمد الطويل)","kind":"نصي","source":"فنار","credit":"أحمد الطويل · دار القبلتين للنشر والتوزيع","file":"content/tafsir-ahkam-tajweed-kalimat-aziz/{page}.json"},
- {"id":"ghareeb","level":"ayah","marksWords":true,"groupName":"غريب القرآن","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
+ {"id":"ghareeb","level":"ayah","marksWords":true,"group":"ghareeb","groupName":"الغريب","short":"الميسر","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
  {"id":"ayah-recitation","level":"ayah","groupName":"التلاوة","name":"التلاوات المزمّنة","kind":"تلاوة","source":"فنار","file":null},
-
  {"id":"page-benefits","level":"page","groupName":"فوائد الصفحة","name":"فوائد الصفحات من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/benefits-of-the-verses-from-al-mukhtasar/{page}.json"},
-
  {"id":"surah-objectives","level":"surah","groupName":"مقاصد السورة","name":"مقاصد السور من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-al-mukhtasar.json"},
+ {"id":"surah-sciences","level":"surah","groupName":"علوم السورة","name":"علوم السور من الجامع الوجيز في تفسير آي الكتاب العزيز","kind":"نصي","source":"فنار","credit":"موقع مقرأ","file":"content/surah-sciences-al-jami-al-wajeez.json"},
  {"id":"surah-recitation","level":"surah","groupName":"التلاوة","name":"تلاوة السورة كاملة","kind":"تلاوة","source":"فنار","file":null}
 ]
