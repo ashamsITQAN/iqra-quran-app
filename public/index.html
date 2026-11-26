@@ -790,6 +790,11 @@ function decorate(svg) {
     const pitch = sxx ? sxy / sxx : 0, half = Math.abs(pitch) * 0.47;
     if (half > 0) inked.forEach((L) => { const c = my + pitch * (L.n - mx); L.top = c - half; L.bottom = c + half; });
   }
+  // Ayah numbers take part in their line's channel like words do, so colour runs through them without a step or an overlap.
+  if (markers) markers.querySelectorAll("g.ayah-mark").forEach((g) => {
+    const r = g.getBoundingClientRect(), cy = (r.top + r.bottom) / 2, L = inked.find((x) => cy >= x.top && cy <= x.bottom);
+    if (L && r.width) { L.ws.push(g); L.rs.push(r); }
+  });
   inked.forEach((L) => {
     const order = L.rs.map((r, i) => i).sort((i, j) => L.rs[i].left - L.rs[j].left), cap = 3 * unit;
     order.forEach((wi, n) => {
@@ -803,7 +808,7 @@ function decorate(svg) {
   });
   svg.querySelectorAll("g.word:not(:has(> .hit))").forEach((g) => g.insertBefore(rect(g.getBBox(), 1, 0.6, "hit"), g.firstChild));
   if (markers) {
-    markers.querySelectorAll("g.ayah-mark").forEach((g) => g.appendChild(rect(g.getBBox(), 1.2, 1.2, "hit")));
+    markers.querySelectorAll("g.ayah-mark").forEach((g) => { if (!g.querySelector(":scope > .hit")) g.appendChild(rect(g.getBBox(), 1.2, 1.2, "hit")); });
     content.parentNode.appendChild(markers); // markers win the tap where a word's target touches them
   }
 }
