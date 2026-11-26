@@ -1,13 +1,14 @@
 [
  {"id":"word-meanings","level":"word","name":"معاني مفردات القرآن كلمة كلمة","kind":"نصي","source":"فنار","credit":"دار النفائس · CC BY-NC-ND","file":"content/word-by-word-quran-meanings/{page}.json"},
- {"id":"word-forms","level":"word","name":"صيغ الكلمة","kind":"نصي","source":"quran.ws","file":"content/word-forms/{page}.json"},
- {"id":"ayah-text","level":"ayah","name":"نص الآية بالرسم الإملائي","kind":"نصي","source":"quran.ws","file":"content/ayah-text/{page}.json"},
+ {"id":"al-mokhtasar","level":"ayah","name":"المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar/{page}.json"},
+ {"id":"al-mokhtasar-en","level":"ayah","name":"المختصر في تفسير القرآن الكريم (English)","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/al-mokhtasar-en/{page}.json"},
+ {"id":"ghareeb","level":"ayah","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
  {"id":"tafsir-alsaadi","level":"ayah","name":"تفسير السعدي","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-alsaadi/{page}.json"},
  {"id":"tafsir-ibn-katheer","level":"ayah","name":"تفسير ابن كثير","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-ibn-katheer/{page}.json"},
  {"id":"tafsir-altabari","level":"ayah","name":"تفسير الطبري","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-altabari/{page}.json"},
  {"id":"tajweed","level":"ayah","name":"أحكام التجويد في كلمات العزيز الحميد","kind":"نصي","source":"فنار","credit":"دار القبلتين للنشر والتوزيع","file":"content/tafsir-ahkam-tajweed-kalimat-aziz/{page}.json"},
  {"id":"ayah-recitation","level":"ayah","name":"التلاوات المزمّنة","kind":"تلاوة","source":"فنار","file":null},
- {"id":"page-info","level":"page","name":"بيانات الصفحة","kind":"نصي","source":"quran.ws","file":"content/page-info.json"},
- {"id":"surah-info","level":"surah","name":"بطاقة السورة","kind":"نصي","source":"quran.ws","file":"content/surah-info.json"},
+ {"id":"page-benefits","level":"page","name":"فوائد الصفحات من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/benefits-of-the-verses-from-al-mukhtasar/{page}.json"},
+ {"id":"surah-objectives","level":"surah","name":"مقاصد السور من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/surah-objectives-al-mukhtasar.json"},
  {"id":"surah-recitation","level":"surah","name":"تلاوة السورة كاملة","kind":"تلاوة","source":"فنار","file":null}
 ]

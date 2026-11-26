@@ -61,29 +61,46 @@ def read_rows(folder):
         elif f.lower().endswith((".csv", ".tsv", ".pkg")):
             yield from table(open(f, encoding="utf-8-sig", newline=""))
 
+# Assets whose rows are keyed by ayah but belong to the whole page the ayah is on.
+PAGE_LEVEL = {"benefits-of-the-verses-from-al-mukhtasar"}
+
 report = {}
 for folder in sorted(glob.glob(os.path.join(src, "*"))):
     if not os.path.isdir(folder): continue
     slug = os.path.basename(folder)
     print(slug)
-    by_page, skipped, rows, level, max_word = {}, 0, 0, "ayah", {}
+    by_page, by_surah, skipped, rows, level, max_word = {}, {}, 0, 0, "ayah", {}
     for r in read_rows(folder):
         rows += 1
         r = {(k or "").strip(): (v or "").strip() for k, v in r.items()}
-        try: a = f"{int(r['surah'])}:{int(r['ayah'])}"
-        except (KeyError, ValueError): skipped += 1; continue
-        if a not in ayah_page or not r.get("text"): skipped += 1; continue
-        key = a
-        if r.get("word"):
-            level = "word"; key = f"{a}:{int(r['word'])}"; max_word[a] = max(max_word.get(a, 0), int(r["word"]))
+        if not r.get("text"): skipped += 1; continue
         entry = {"النص": r["text"]}
         for col, label in EXTRA.items():
             if r.get(col): entry[label] = r[col]
-        by_page.setdefault(ayah_page[a], {})[key] = entry
-    out = os.path.join(dst, "content", slug); os.makedirs(out, exist_ok=True)
-    for n in set(ayah_page.values()):
-        json.dump(by_page.get(n, {}), open(os.path.join(out, f"{n:03d}.json"), "w", encoding="utf8"), ensure_ascii=False, separators=(",", ":"))
-    info = {"level": level, "rows": rows, "skipped": skipped, "entries": sum(len(v) for v in by_page.values())}
+        try: surah = int(r["surah"])
+        except (KeyError, ValueError): skipped += 1; continue
+        if not r.get("ayah"):                      # one row per surah
+            level = "surah"; by_surah[str(surah)] = entry; continue
+        try: a = f"{surah}:{int(r['ayah'])}"
+        except ValueError: skipped += 1; continue
+        if a not in ayah_page: skipped += 1; continue
+        page = ayah_page[a]
+        if slug in PAGE_LEVEL:
+            level = "page"; old = by_page.setdefault(page, {}).get(str(page))
+            if old: old["النص"] += "\n\n" + entry["النص"]
+            else: by_page[page][str(page)] = entry
+            continue
+        key = a
+        if r.get("word"):
+            level = "word"; key = f"{a}:{int(r['word'])}"; max_word[a] = max(max_word.get(a, 0), int(r["word"]))
+        by_page.setdefault(page, {})[key] = entry
+    dump = lambda o, p: json.dump(o, open(p, "w", encoding="utf8"), ensure_ascii=False, separators=(",", ":"))
+    if level == "surah":
+        dump(by_surah, os.path.join(dst, "content", slug + ".json"))
+    else:
+        out = os.path.join(dst, "content", slug); os.makedirs(out, exist_ok=True)
+        for n in set(ayah_page.values()): dump(by_page.get(n, {}), os.path.join(out, f"{n:03d}.json"))
+    info = {"level": level, "rows": rows, "skipped": skipped, "entries": len(by_surah) + sum(len(v) for v in by_page.values())}
     if level == "word":
         diff = sorted((a for a in max_word if max_word[a] != ayah_words[a]), key=lambda a: tuple(map(int, a.split(":"))))
         info["ayahs_with_different_word_count"] = len(diff); info["examples"] = [f"{a} (fanar {max_word[a]}, quran.ws {ayah_words[a]})" for a in diff[:15]]

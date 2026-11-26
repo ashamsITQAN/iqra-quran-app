@@ -14,3 +14,15 @@ assets:
     version: "^1.0.0"
   tafsir-ibn-katheer:
     version: "^2.0.0"
+  al-mokhtasar:
+    version: "^7.0.0"
+  al-mokhtasar-en:
+    asset: al-mokhtasar
+    language: en
+    version: "^1.0.0"
+  muyassar-of-ghareeb-al-quran:
+    version: "^1.0.0"
+  benefits-of-the-verses-from-al-mukhtasar:
+    version: "^7.0.0"
+  surah-objectives-al-mukhtasar:
+    version: "^7.0.0"

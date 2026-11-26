@@ -357,7 +357,7 @@ async function card(p, key) {
     if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null)); continue; }
     if (k === "الهامش") continue;
     const dt = document.createElement("dt"), dd = document.createElement("dd");
-    dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
+    dd.dir = "auto"; dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
     dl.append(dt, dd);
   }
   if (dl.children.length) el.append(dl);
@@ -368,7 +368,7 @@ async function card(p, key) {
 function richText(v, extraNotes) {
   const LIMIT = 700, PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;
   const p = document.createElement("p"), notes = document.createElement("ol"), wrap = document.createElement("div");
-  p.className = "text"; notes.className = "notes";
+  p.className = "text"; p.dir = "auto"; notes.className = "notes";
   const fill = (str) => {
     p.replaceChildren(); notes.replaceChildren();
     let n = 0;
