@@ -767,6 +767,14 @@ function decorate(svg) {
   }
 }
 
+// The context for a page or a surah opened as a whole: it also carries the first ayah there, so the window can move
+// between the page, the surah and the ayah levels. Falls back to the single level while the page is still loading.
+function ctxAt(page, surah) {
+  const pg = spread.querySelector(`.page[data-page="${page}"]`), w = pg && pg.querySelector(surah ? `g.word[data-word-key^="${surah}:"]` : "g.word");
+  if (!w) return { page, surah: surah || pageMeta(page).surahs[0], only: surah ? "surah" : "page" };
+  const k = w.dataset.wordKey.split(":");
+  return { page, surah: +k[0], ayah: k[0] + ":" + k[1] };
+}
 /* ---------- taps ---------- */
 spread.addEventListener("click", (e) => {
   if (swiped) { swiped = false; return; }
@@ -774,11 +782,11 @@ spread.addEventListener("click", (e) => {
   if (!pageEl || !pageEl.dataset.page) return;
   const page = +pageEl.dataset.page;
   const pnum = e.target.closest("[data-pnum]");
-  if (pnum) return open({ page, surah: pageMeta(page).surahs[0], only: "page" }, "page");
+  if (pnum) return open(ctxAt(page), "page");
   const head = e.target.closest("[data-surah]");
-  if (head) return open({ page, surah: +head.dataset.surah, only: "surah" }, "surah");
+  if (head) return open(ctxAt(page, +head.dataset.surah), "surah");
   const banner = e.target.closest(".banner, g.surah-name");
-  if (banner) return open({ page, surah: +banner.dataset.sid, only: "surah" }, "surah");
+  if (banner) return open(ctxAt(page, +banner.dataset.sid), "surah");
   const mk = e.target.closest("g.ayah-mark");
   if (mk) { const k = mk.dataset.ayahKey; return open({ page, surah: +k.split(":")[0], ayah: k }, "ayah"); }
   const w = e.target.closest("g.word");
@@ -927,12 +935,13 @@ async function step(dir) {
     if (level === "page") {
       page = ctx.page + dir;
       if (page < meta.first || page > meta.last) return;
-      ctx = { page, surah: pageMeta(page).surahs[0], only: "page" };
+      const r = (await loadCorpus()).find((x) => x.page === page);
+      ctx = r ? { page, surah: r.s, ayah: `${r.s}:${r.a}` } : { page, surah: pageMeta(page).surahs[0], only: "page" };
     } else if (level === "surah") {
       const sn = ctx.surah + dir;
       if (!meta.surahs[sn]) return;
       page = meta.pages.find((p) => p.surahs.includes(sn)).page;
-      ctx = { page, surah: sn, only: "surah" };
+      ctx = { page, surah: sn, ayah: sn + ":1" };
     } else {
       const rows = await loadCorpus();
       const [s0, a0] = ctx.ayah.split(":").map(Number);
@@ -1719,7 +1728,7 @@ function ctxOf(lv, a, v) { return lv === "page" ? { page: v.page, surah: v.surah
 async function openNote(k) {
   const v = notes[k], a = k.split(":"), lv = a[0];
   await jump(v.page);
-  activeTab[lv] = "my-notes-" + lv; open(ctxOf(lv, a, v), lv);
+  activeTab[lv] = "my-notes-" + lv; open(lv === "page" ? ctxAt(v.page) : lv === "surah" ? ctxAt(v.page, v.surah) : ctxOf(lv, a, v), lv);
   await new Promise((r) => setTimeout(r, 350));
 }
 async function openMark(k) { const m = marks[k], a = m.key.split(":"); await jump(m.page); open({ page: m.page, surah: +a[0], ayah: m.key }, "ayah"); await new Promise((r) => setTimeout(r, 350)); }
