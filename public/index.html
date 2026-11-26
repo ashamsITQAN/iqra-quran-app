@@ -12,7 +12,7 @@
 :root{
   --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
   --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.26); --tint-soft:rgba(13,104,88,.06);
-  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --tpA:rgba(190,140,30,.16); --tpB:rgba(40,110,170,.11);
+  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --tpA:#e69f00; --tpB:#0072b2; --tpbar:#1b2321;
   --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
   --naskh:"Noto Naskh Arabic","Traditional Arabic",serif;
   --quran:"Amiri Quran","Noto Naskh Arabic",serif;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
     --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:rgba(211,176,103,.17); --tpB:rgba(110,170,230,.14); color-scheme:dark;
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
   --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:rgba(211,176,103,.17); --tpB:rgba(110,170,230,.14); color-scheme:dark;
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
@@ -71,8 +71,14 @@ button{cursor:pointer}
   .art svg .banner:hover{fill:var(--tint)}
 }
 /* Thematic division: neighbouring subjects alternate between two quiet tints. */
-.art svg g.word.tpA .hit,.art svg g.ayah-mark.tpA .hit{fill:var(--tpA)}
-.art svg g.word.tpB .hit,.art svg g.ayah-mark.tpB .hit{fill:var(--tpB)}
+/* The pair is orange and blue, which stay apart for the common kinds of colour blindness, and the start of
+   every subject also carries a dark bar, so the division never depends on colour alone. */
+body{--tpo:32%}
+body[data-tpi="1"]{--tpo:16%}
+body[data-tpi="3"]{--tpo:52%}
+.art svg g.word.tpA .hit,.art svg g.ayah-mark.tpA .hit{fill:color-mix(in srgb,var(--tpA) var(--tpo),transparent)}
+.art svg g.word.tpB .hit,.art svg g.ayah-mark.tpB .hit{fill:color-mix(in srgb,var(--tpB) calc(var(--tpo) * .8),transparent)}
+.art svg .tpbar{fill:var(--tpbar);pointer-events:none}
 .art svg g.word.gh path{fill:var(--gharib)}
 .art svg g.ayah-fragment.sel g.word .hit{fill:var(--tint)}
 .art svg g.ayah-mark.sel .hit{fill:var(--tint-strong)}
@@ -300,6 +306,10 @@ button{cursor:pointer}
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
     <div class="opt"><h3><label for="set-topics">التفصيل الموضوعي: تظليل الآيات التي تتناول موضوعًا واحدًا</label></h3><input id="set-topics" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3>وضوح ألوان التفصيل الموضوعي</h3>
+      <div class="seg" id="seg-tpi" role="group" aria-label="وضوح ألوان التفصيل الموضوعي">
+        <button type="button" data-v="1">هادئ</button><button type="button" data-v="2">واضح</button><button type="button" data-v="3">قوي</button>
+      </div></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -379,7 +389,8 @@ const activeTab = {}, activeSub = {};
 let touch = store.get("touch", "ayah");
 function applyTouch() { document.body.classList.toggle("by-ayah", touch === "ayah"); }
 applyTouch();
-let showTopics = store.get("topics", "0") === "1";
+let showTopics = store.get("topics", "0") === "1", tpi = store.get("tpi", "2");
+document.body.dataset.tpi = tpi;
 let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
@@ -470,6 +481,7 @@ async function fillPage(n) {
 const topicOf = (topics, s, a) => { const list = topics[s] || [], i = list.findIndex((t) => a >= t[0] && a <= t[1]); return i < 0 ? null : { i, from: list[i][0], to: list[i][1], title: list[i][2] }; };
 async function markTopics(svg) {
   svg.querySelectorAll(".tpA,.tpB").forEach((n) => n.classList.remove("tpA", "tpB"));
+  svg.querySelectorAll(".tpbar").forEach((n) => n.remove());
   if (!showTopics) return;
   let topics;
   try { topics = await getJSON("data/topics.json"); } catch (e) { return; }
@@ -480,6 +492,18 @@ async function markTopics(svg) {
     const cls = t.i % 2 ? "tpB" : "tpA";
     if (el.classList.contains("ayah-mark")) el.classList.add(cls); else el.querySelectorAll("g.word").forEach((w) => w.classList.add(cls));
   });
+  // A bar before the first word of each subject (on its right, where the reading starts).
+  Object.entries(topics).forEach(([s, list]) => list.forEach((t) => {
+    const w = svg.querySelector(`g.word[data-word-key="${s}:${t[0]}:1"]`), hit = w && w.querySelector(".hit");
+    if (!hit) return;
+    const hr = hit.getBoundingClientRect(), px = (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width) * 1.2;
+    const box = toLocal(w, hr.right - px, hr.top, hr.right, hr.bottom);
+    if (!box) return;
+    const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    ["x", "y", "width", "height"].forEach((k) => bar.setAttribute(k, box[k]));
+    bar.setAttribute("class", "tpbar");
+    w.appendChild(bar);
+  }));
 }
 
 /* Colour the words explained in the gharib project. Its "الكلمات" field lists, one line per entry,
@@ -500,6 +524,15 @@ async function markGharib(n, svg) {
   }
 }
 function remarkGharib() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markGharib(+svg.closest(".page").dataset.page, svg)); }
+
+// A rectangle given in screen pixels, expressed in the coordinates of an SVG element.
+function toLocal(el, left, top, right, bottom) {
+  const m = el.getScreenCTM();
+  if (!m) return null;
+  const inv = m.inverse(), a = new DOMPoint(left, top).matrixTransform(inv), b = new DOMPoint(right, bottom).matrixTransform(inv);
+  const box = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+  return isFinite(box.x + box.y + box.width + box.height) ? box : null;
+}
 
 /* Add invisible touch targets and the surah banner. The printed ink is never moved or redrawn. */
 function decorate(svg) {
@@ -524,26 +557,28 @@ function decorate(svg) {
   // Word targets double as the highlight. Printed lines sit at an even pitch, so a straight line is fitted
   // through the lines' ink centres and every word gets a band of one pitch around its line's fitted centre,
   // reaching halfway to its neighbours: colour then moves along one even channel per line, however tall or
-  // low a word's own letters are.
+  // low a word's own letters are. Everything is measured on screen and then mapped into each word's own
+  // coordinates, because some pages place every word with a transform of its own.
+  const unit = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;   // screen px per drawing unit
   const inked = [...svg.querySelectorAll("g.line")].map((line) => {
-    const ws = [...line.querySelectorAll("g.word")], bs = ws.map((g) => g.getBBox());
-    return { ws, bs, n: +line.dataset.line, y0: Math.min(...bs.map((b) => b.y)), y1: Math.max(...bs.map((b) => b.y + b.height)) };
-  }).filter((L) => L.ws.length);
+    const ws = [...line.querySelectorAll("g.word")], rs = ws.map((g) => g.getBoundingClientRect());
+    return { ws, rs, n: +line.dataset.line, top: Math.min(...rs.map((r) => r.top)), bottom: Math.max(...rs.map((r) => r.bottom)) };
+  }).filter((L) => L.ws.length && unit > 0);
   if (inked.length > 2) {
-    const N = inked.length, mx = inked.reduce((t, L) => t + L.n, 0) / N, my = inked.reduce((t, L) => t + (L.y0 + L.y1) / 2, 0) / N;
-    const sxx = inked.reduce((t, L) => t + (L.n - mx) ** 2, 0), sxy = inked.reduce((t, L) => t + (L.n - mx) * ((L.y0 + L.y1) / 2 - my), 0);
+    const N = inked.length, mx = inked.reduce((t, L) => t + L.n, 0) / N, my = inked.reduce((t, L) => t + (L.top + L.bottom) / 2, 0) / N;
+    const sxx = inked.reduce((t, L) => t + (L.n - mx) ** 2, 0), sxy = inked.reduce((t, L) => t + (L.n - mx) * ((L.top + L.bottom) / 2 - my), 0);
     const pitch = sxx ? sxy / sxx : 0, half = Math.abs(pitch) * 0.47;
-    if (half > 0) inked.forEach((L) => { const c = my + pitch * (L.n - mx); L.y0 = c - half; L.y1 = c + half; });
+    if (half > 0) inked.forEach((L) => { const c = my + pitch * (L.n - mx); L.top = c - half; L.bottom = c + half; });
   }
   inked.forEach((L) => {
-    const order = L.bs.map((b, i) => i).sort((i, j) => L.bs[i].x - L.bs[j].x);
+    const order = L.rs.map((r, i) => i).sort((i, j) => L.rs[i].left - L.rs[j].left), cap = 3 * unit;
     order.forEach((wi, n) => {
-      const b = L.bs[wi], left = L.bs[order[n - 1]], right = L.bs[order[n + 1]];
+      const r = L.rs[wi], left = L.rs[order[n - 1]], right = L.rs[order[n + 1]];
       // meet the neighbour halfway; where two words' ink overlaps, pull back so the bands do not double up
-      const padL = left ? Math.max(-3, Math.min(3, (b.x - (left.x + left.width)) / 2)) : 1;
-      const padR = right ? Math.max(-3, Math.min(3, (right.x - (b.x + b.width)) / 2)) : 1;
-      const r = rect({ x: b.x - padL, y: L.y0, width: b.width + padL + padR, height: L.y1 - L.y0 }, 0, 0, "hit");
-      L.ws[wi].insertBefore(r, L.ws[wi].firstChild);
+      const padL = left ? Math.max(-cap, Math.min(cap, (r.left - left.right) / 2)) : unit;
+      const padR = right ? Math.max(-cap, Math.min(cap, (right.left - r.right) / 2)) : unit;
+      const box = toLocal(L.ws[wi], r.left - padL, L.top, r.right + padR, L.bottom);
+      if (box) L.ws[wi].insertBefore(rect(box, 0, 0, "hit"), L.ws[wi].firstChild);
     });
   });
   svg.querySelectorAll("g.word:not(:has(> .hit))").forEach((g) => g.insertBefore(rect(g.getBBox(), 1, 0.6, "hit"), g.firstChild));
@@ -1289,7 +1324,7 @@ $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; 
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
-  press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch);
+  press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
@@ -1331,6 +1366,7 @@ $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("b
 $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
 $("#seg-touch").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; touch = b.dataset.v; store.set("touch", touch); applyTouch(); paintSettings(); });
+$("#seg-tpi").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; tpi = b.dataset.v; store.set("tpi", tpi); document.body.dataset.tpi = tpi; paintSettings(); });
 $("#set-topics").addEventListener("change", (e) => { showTopics = e.target.checked; store.set("topics", showTopics ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(markTopics); });
 $("#set-gharib").addEventListener("change", (e) => { showGharib = e.target.checked; store.set("gharib", showGharib ? "1" : "0"); remarkGharib(); });
 
