@@ -214,6 +214,7 @@ body[data-tpi="3"]{--tpo:52%}
 .rabt{margin-top:16px;padding:10px 14px;border:1px solid var(--mark);border-inline-start-width:4px;border-radius:8px;background:var(--banner)}
 .rabt p.text{margin:0}
 .subtabs select{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:180px}
+.aq{color:var(--accent);font-family:var(--quran);font-size:1.08em}   /* a Quranic quotation inside content text: its own colour and the mushaf typeface */
 .gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
 .ayah-block .hit{fill:transparent;pointer-events:none}
 .ayah-block.pick .hit{pointer-events:all;cursor:pointer}
@@ -365,6 +366,7 @@ body[data-tpi="3"]{--tpo:52%}
         <button type="button" data-v="1">هادئ</button><button type="button" data-v="2">واضح</button><button type="button" data-v="3">قوي</button>
       </div></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
+    <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
     <p class="note" id="set-hint"></p>
@@ -464,7 +466,7 @@ function applyTouch() { document.body.classList.toggle("by-ayah", touch === "aya
 applyTouch();
 let showTopics = store.get("topics", "0") === "1", tpi = store.get("tpi", "2");
 document.body.dataset.tpi = tpi;
-let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1";
+let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -967,7 +969,7 @@ async function card(p, key) {
     if (k === "الربط") {
       const box = document.createElement("div"), t = document.createElement("p");
       box.className = "rabt"; box.setAttribute("aria-label", "الربط بين الآيات");
-      t.className = "text"; t.dir = "auto"; t.textContent = v;
+      t.className = "text"; t.dir = "auto"; withAyat(t, v, showAyat ? "aq" : "");
       box.append(t); el.append(box); continue;
     }
     const dt = document.createElement("dt"), dd = document.createElement("dd");
@@ -979,6 +981,12 @@ async function card(p, key) {
 }
 /* Publisher text is shown unchanged. Editorial footnotes arrive wrapped in ¬ … ¥: each becomes a numbered
    reference in the text and a numbered note under it. Print page markers (ج1 ص109) stay inline as a small tag. */
+// Appends text to a node, wrapping Quranic quotations (﴿…﴾, or {…} holding Arabic letters) in a span of the given class.
+const AYAT = /(﴿[^﴾]*﴾|\{[^{}]*[\u0621-\u064A][^{}]*\})/;
+function withAyat(node, str, cls) {
+  if (!cls) { node.append(str); return; }
+  String(str).split(AYAT).forEach((x, i) => { if (!x) return; if (i % 2) { const g = document.createElement("span"); g.className = cls; g.textContent = x; node.append(g); } else node.append(x); });
+}
 function richText(v, extraNotes, quoted) {
   const LIMIT = 700, PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;
   const p = document.createElement("p"), notes = document.createElement("ol"), wrap = document.createElement("div");
@@ -989,8 +997,7 @@ function richText(v, extraNotes, quoted) {
     str.split(/(¬[^¥]*¥?)/).forEach((part) => {
       if (!part) return;
       if (part[0] !== "¬") {
-        if (!quoted) { p.append(part); return; }
-        part.split(/(﴿[^﴾]*﴾)/).forEach((x) => { if (x[0] === "﴿") { const g = document.createElement("span"); g.className = "gh-word"; g.textContent = x; p.append(g); } else if (x) p.append(x); });
+        withAyat(p, part, quoted ? "gh-word" : showAyat ? "aq" : "");
         return;
       }
       const body = part.replace(/^¬|¥$/g, "").trim();
@@ -1003,7 +1010,7 @@ function richText(v, extraNotes, quoted) {
       ref.type = back.type = "button"; ref.className = "ref"; back.className = "ref back";
       ref.textContent = back.textContent = "(" + ar(n) + ")";
       ref.setAttribute("aria-label", "الذهاب إلى الهامش " + n); back.setAttribute("aria-label", "العودة إلى موضع الهامش " + n + " في النص");
-      txt.textContent = body;
+      withAyat(txt, body, showAyat ? "aq" : "");
       ref.addEventListener("click", () => flash(li)); back.addEventListener("click", () => flash(ref));
       li.append(back, " ", txt);
       p.append(ref); notes.append(li);
@@ -1521,13 +1528,14 @@ $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n =
 /* ---------- settings ---------- */
 let setTab = "view";
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
 $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
-  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics;
+  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
   $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view";
   const box = $("#set-projects"); box.replaceChildren();
