@@ -978,6 +978,7 @@ F("listen").addEventListener("click", () => { readForm(); show(hifzBox, false); 
 let S = null, ticker = null, wake = null, ayahPage = null;
 async function startSession(c) {
   stopSession();
+  if (c.listen) c = { ...c, speed: "1" };   // the speed chosen for memorising is not carried into plain listening
   let t, fine, steps;
   try { [t, fine] = await Promise.all([loadTrack(c.reciter, c.surah), loadFine(c.reciter, c.surah)]); if (!ayahPage) { ayahPage = {}; (await loadCorpus()).forEach((r) => { ayahPage[r.s + ":" + r.a] = r.page; }); } }
   catch (e) { toast("تعذّر بدء التلاوة. تحقق من الاتصال."); return; }
