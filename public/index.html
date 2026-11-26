@@ -155,7 +155,11 @@ body[data-tpi="3"]{--tpo:52%}
 .pl-ctl .btn{padding:6px 12px}.pl-ctl .main{min-width:110px}
 #pl-left{text-align:center}
 .pl-entry{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px}
-#card-reciter,#card-speed{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:70%}
+#card-reciter,#card-speed{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;max-width:100%}
+.pl-pick{display:flex;gap:6px 18px;flex-wrap:wrap;align-items:center}
+.pl-pick .opt{flex-wrap:nowrap;justify-content:flex-start;gap:8px;min-width:0;padding:2px 0}
+.pl-pick{flex-wrap:nowrap}.pl-pick .opt:first-child{flex:1 1 0}.pl-pick .opt:last-child{flex:none}#card-speed{padding-inline:6px}.pl-pick .opt:first-child select{flex:1;min-width:0}
+.pl-pick label{white-space:nowrap;font-size:13px;color:var(--muted)}
 .proj p.warn{color:var(--gharib);border:1px solid var(--gharib);border-radius:8px;padding:8px 10px;font-size:13px}
 #toast{position:fixed;z-index:9;bottom:150px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 /* Recitation layers, weakest to strongest: the passage, the ayah, the breath group, the word. */
@@ -1063,7 +1067,7 @@ const api = (path, lang) => fetch(API + path, lang ? { headers: { "Accept-Langua
 let recitersP = null;
 function loadReciters() {
   if (recitersP) return recitersP;
-  try { const c = JSON.parse(store.get("reciters", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
+  try { const c = JSON.parse(store.get("reciters2", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
   recitersP = (async () => {
     const all = (await api("/recitations/?page_size=200", true)).results.filter((x) => x.riwayah && /حفص/.test(x.riwayah.name) && x.surahs_count === 114);
     const seen = {};
@@ -1071,11 +1075,13 @@ function loadReciters() {
     const list = await Promise.all(all.map(async (x) => {
       let timed = false;
       try { const t = (await api(`/recitations/${x.id}/?page_size=1`)).results[0]; timed = !!(t && t.ayahs_timings && t.ayahs_timings.length); } catch (e) {}
-      return { id: String(x.id), name: x.reciter.name + (seen[x.reciter.name] > 1 && x.name ? " · " + x.name : ""), timed };
+      // Reciter, riwayah, and the madd of the separated kind where the recitation's title states it (Fanar has no field for it).
+      const madd = /قصر/.test(x.name) ? "بقصر المنفصل" : /توسط/.test(x.name) ? "بالتوسط" : "";
+      return { id: String(x.id), name: x.reciter.name + " · " + x.riwayah.name + (madd ? " · " + madd : seen[x.reciter.name] > 1 && x.name ? " · " + x.name : ""), timed };
     }));
     list.sort((a, b) => b.timed - a.timed || a.name.localeCompare(b.name, "ar"));
     if (!list.length) throw new Error("no recitations");
-    store.set("reciters", JSON.stringify({ t: Date.now(), list }));
+    store.set("reciters2", JSON.stringify({ t: Date.now(), list }));
     return list;
   })();
   recitersP.catch(() => { recitersP = null; });
@@ -1471,8 +1477,8 @@ async function recitationCard(p) {
   sel.addEventListener("change", () => { hz.reciter = sel.value; saveHz(); const opt = F("reciter").querySelector(`option[value="${sel.value}"]`); if (opt) F("reciter").value = sel.value; paintSheet(); });
   pick.append(lab, sel);
   const pace = document.createElement("div"), plab = document.createElement("label"), psel = document.createElement("select");
-  pace.className = "opt"; psel.id = "card-speed"; plab.htmlFor = psel.id; plab.textContent = "سرعة الاستماع";
-  [["0.75", "أبطأ ٠٫٧٥"], ["1", "عادية"], ["1.25", "أسرع ١٫٢٥"], ["1.5", "أسرع ١٫٥"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; o.selected = v === store.get("lspeed", "1"); psel.append(o); });
+  pace.className = "opt"; psel.id = "card-speed"; plab.htmlFor = psel.id; plab.textContent = "السرعة"; psel.setAttribute("aria-label", "سرعة الاستماع");
+  [["0.75", "٠٫٧٥×"], ["1", "١×"], ["1.25", "١٫٢٥×"], ["1.5", "١٫٥×"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; o.selected = v === store.get("lspeed", "1"); psel.append(o); });
   psel.addEventListener("change", () => store.set("lspeed", psel.value));
   pace.append(plab, psel);
   const btn = (label, fn, main, off) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (main ? " main" : ""); b.textContent = label; b.disabled = !!off; b.addEventListener("click", fn); row.append(b); };
@@ -1488,7 +1494,8 @@ async function recitationCard(p) {
     btn("استمع إلى السورة", () => listen(1, n), true);
     btn("احفظ من هذه السورة", () => openHifz({ surah: s, from: 1, to: Math.min(n, 5) }), false, off);
   }
-  el.append(pick, pace, row);
+  const top = document.createElement("div"); top.className = "pl-pick"; top.append(pick, pace);
+  el.append(top, row);
   if (off) { const w = para(UNTIMED); w.className = "warn"; el.append(w); }
   else el.append(para("التلاوات من فنار برواية حفص عن عاصم."));
   return el;
