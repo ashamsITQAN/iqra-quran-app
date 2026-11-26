@@ -478,7 +478,10 @@ async function paintSheet() {
   const groups = [];
   list.forEach((p) => { const id = p.group || p.id; let g = groups.find((x) => x.id === id); if (!g) groups.push(g = { id, name: p.groupName || p.name, items: [] }); g.items.push(p); });
   const group = groups.find((g) => g.id === activeTab[level]) || groups[0];
-  const active = group.items.find((p) => p.id === (activeSub[group.id] || store.get("sub-" + group.id, ""))) || group.items[0];
+  // Groups whose items are languages share one choice, so the surah objectives follow the tafsir language.
+  const byLang = !!group.items[0].lang;
+  const active = (byLang ? group.items.find((p) => p.lang === store.get("lang", "ar")) : group.items.find((p) => p.id === (activeSub[group.id] || store.get("sub-" + group.id, "")))) || group.items[0];
+  const choose = (id) => { const p = group.items.find((x) => x.id === id); if (p.lang) store.set("lang", p.lang); else { activeSub[group.id] = id; store.set("sub-" + group.id, id); } paintSheet(); };
   const mk = (label, on, role, fn) => { const b = document.createElement("button"); b.type = "button"; b.setAttribute("role", role); b.textContent = label; b.setAttribute("aria-selected", on); b.addEventListener("click", fn); return b; };
   tabs.hidden = false;
   tabs.replaceChildren(...groups.map((g) => mk(g.name, g === group, "tab", () => { activeTab[level] = g.id; paintSheet(); })));
@@ -487,9 +490,9 @@ async function paintSheet() {
     const sel = document.createElement("select");
     sel.id = "sub-" + group.id; sel.setAttribute("aria-label", "اختيار " + group.name);
     group.items.forEach((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.short || p.name; o.selected = p === active; sel.append(o); });
-    sel.addEventListener("change", () => { activeSub[group.id] = sel.value; store.set("sub-" + group.id, sel.value); paintSheet(); });
+    sel.addEventListener("change", () => choose(sel.value));
     subs.replaceChildren(sel);
-  } else subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => { activeSub[group.id] = p.id; store.set("sub-" + group.id, p.id); paintSheet(); }))));
+  } else subs.replaceChildren(...(group.items.length < 2 ? [] : group.items.map((p) => mk(p.short || p.name, p === active, "tab", () => choose(p.id)))));
   const on = tabs.querySelector('[aria-selected="true"]');
   if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
   const el = await card(active, key);
@@ -712,11 +715,19 @@ function paintSettings() {
     const list = projects.filter((p) => p.level === lv);
     if (!list.length) return;
     const h = document.createElement("h4"); h.textContent = "مستوى " + LEVELS[lv]; box.append(h);
-    list.forEach((p) => {
+    // One switch per project; a project offered in several languages gets a single switch for all of them.
+    const units = [];
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+      let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
+    units.forEach((u) => {
       const label = document.createElement("label"), input = document.createElement("input");
-      input.type = "checkbox"; input.id = "show-" + p.id; input.checked = !hidden.has(p.id);
-      input.addEventListener("change", () => { if (input.checked) hidden.delete(p.id); else hidden.add(p.id); store.set("hidden", JSON.stringify([...hidden])); if (p.marksWords) remarkGharib(); });
-      label.append(input, p.name + (p.file ? "" : " (لم يُربط بعد)"));
+      input.type = "checkbox"; input.id = "show-" + u.key; input.checked = u.items.some((p) => !hidden.has(p.id));
+      input.addEventListener("change", () => {
+        u.items.forEach((p) => { if (input.checked) hidden.delete(p.id); else hidden.add(p.id); });
+        store.set("hidden", JSON.stringify([...hidden]));
+        if (u.items.some((p) => p.marksWords)) remarkGharib();
+      });
+      label.append(input, u.name);
       box.append(label);
     });
   });

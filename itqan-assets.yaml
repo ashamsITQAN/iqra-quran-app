@@ -30,6 +30,7 @@ assets:
     version: "^7.0.0"
   al-mokhtasar:
     version: "^7.0.0"
+  # لغات المختصر: المعروض ما يتوفر فيه التفسير ومقاصد السور معًا
   al-mokhtasar-as:
     asset: al-mokhtasar
     language: as
@@ -37,10 +38,6 @@ assets:
   al-mokhtasar-bs:
     asset: al-mokhtasar
     language: bs
-    version: "^1.0.0"
-  al-mokhtasar-en:
-    asset: al-mokhtasar
-    language: en
     version: "^1.0.0"
   al-mokhtasar-fr:
     asset: al-mokhtasar
@@ -112,5 +109,85 @@ assets:
     version: "^1.0.0"
   al-mokhtasar-zh:
     asset: al-mokhtasar
+    language: zh
+    version: "^1.0.0"
+  surah-objectives-as:
+    asset: surah-objectives-al-mukhtasar
+    language: as
+    version: "^1.0.0"
+  surah-objectives-bs:
+    asset: surah-objectives-al-mukhtasar
+    language: bs
+    version: "^1.0.0"
+  surah-objectives-fr:
+    asset: surah-objectives-al-mukhtasar
+    language: fr
+    version: "^1.0.0"
+  surah-objectives-ha:
+    asset: surah-objectives-al-mukhtasar
+    language: ha
+    version: "^1.0.0"
+  surah-objectives-id:
+    asset: surah-objectives-al-mukhtasar
+    language: id
+    version: "^1.0.0"
+  surah-objectives-ja:
+    asset: surah-objectives-al-mukhtasar
+    language: ja
+    version: "^1.0.0"
+  surah-objectives-km:
+    asset: surah-objectives-al-mukhtasar
+    language: km
+    version: "^1.0.0"
+  surah-objectives-ko:
+    asset: surah-objectives-al-mukhtasar
+    language: ko
+    version: "^1.0.0"
+  surah-objectives-ku:
+    asset: surah-objectives-al-mukhtasar
+    language: ku
+    version: "^1.0.0"
+  surah-objectives-ky:
+    asset: surah-objectives-al-mukhtasar
+    language: ky
+    version: "^1.0.0"
+  surah-objectives-mg:
+    asset: surah-objectives-al-mukhtasar
+    language: mg
+    version: "^1.0.0"
+  surah-objectives-ml:
+    asset: surah-objectives-al-mukhtasar
+    language: ml
+    version: "^1.0.0"
+  surah-objectives-ne:
+    asset: surah-objectives-al-mukhtasar
+    language: ne
+    version: "^1.0.0"
+  surah-objectives-pt:
+    asset: surah-objectives-al-mukhtasar
+    language: pt
+    version: "^1.0.0"
+  surah-objectives-sw:
+    asset: surah-objectives-al-mukhtasar
+    language: sw
+    version: "^1.0.0"
+  surah-objectives-th:
+    asset: surah-objectives-al-mukhtasar
+    language: th
+    version: "^1.0.0"
+  surah-objectives-tl:
+    asset: surah-objectives-al-mukhtasar
+    language: tl
+    version: "^1.0.0"
+  surah-objectives-ur:
+    asset: surah-objectives-al-mukhtasar
+    language: ur
+    version: "^1.0.0"
+  surah-objectives-yo:
+    asset: surah-objectives-al-mukhtasar
+    language: yo
+    version: "^1.0.0"
+  surah-objectives-zh:
+    asset: surah-objectives-al-mukhtasar
     language: zh
     version: "^1.0.0"
