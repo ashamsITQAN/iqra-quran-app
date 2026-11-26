@@ -14,7 +14,7 @@ def div_at(lst, key, page):
     return v
 place = {"makkah": "مكية", "madinah": "مدنية"}
 meta = {"first": 1, "last": len(pages), "pages": [], "surahs": {}}
-page_info, surah_info = {}, {}
+page_info, surah_info, search = {}, {}, []
 os.makedirs(os.path.join(dst, "pages"), exist_ok=True)
 for p in pages:
     n = p["page"]
@@ -29,10 +29,14 @@ for p in pages:
     for k, ws in ay.items():
         ws.sort(key=lambda x: int(x["word_key"].split(":")[2]))
         text[k] = {"النص": " ".join(x["rasm_imlai"] for x in ws), "عدد الكلمات": len(ws), "الصفحة": n}
+        su, ay_no = map(int, k.split(":"))
+        search.append([su, ay_no, n, [x["rasm_imlai"] for x in ws]])   # one imla'i spelling per printed word, in order
     W(f"content/word-forms/{n:03d}.json", forms); W(f"content/ayah-text/{n:03d}.json", text)
     page_info[str(n)] = {"الجزء": juz, "الحزب": hizb, "من الآية": p["first_ayah"], "إلى الآية": p["last_ayah"], "عدد الآيات": p["ayahs"], "عدد الكلمات": p["words"], "عدد الأسطر": p["lines"]}
 for s in surahs:
     meta["surahs"][str(s["number"])] = {"name": s["name_arabic"], "ayahs": s["ayah_count"]}
     surah_info[str(s["number"])] = {"الاسم": s["name_arabic"], "النزول": place.get(s["revelation_place"], s["revelation_place"]), "ترتيب النزول": s["revelation_order"], "عدد الآيات": s["ayah_count"], "الصفحات": f"{s['pages'][0]} – {s['pages'][1]}"}
+search.sort(key=lambda r: (r[0], r[1]))
+W("data/search.json", search)
 W("data/meta.json", meta); W("content/page-info.json", page_info); W("content/surah-info.json", surah_info)
 print("pages:", len(pages))

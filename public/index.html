@@ -75,6 +75,21 @@ button{cursor:pointer}
 .art svg g.word.sel path{fill:var(--accent)}
 .art svg .banner.sel{fill:var(--tint-strong);stroke:var(--accent)}
 
+.btn{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:13px;flex:none}
+#find{position:fixed;inset:0;z-index:8;background:var(--bg);display:flex;flex-direction:column;padding:12px 16px;gap:8px}
+#find[hidden]{display:none}
+.find-top{display:flex;gap:8px;max-width:760px;width:100%;margin-inline:auto}
+#q{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:17px;font-family:var(--naskh)}
+#find .note{max-width:760px;width:100%;margin-inline:auto}
+#results{list-style:none;margin:0 auto;padding:0;overflow:auto;flex:1;max-width:760px;width:100%;display:flex;flex-direction:column;gap:8px}
+#results button{display:block;width:100%;text-align:start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+#results button:hover{border-color:var(--accent)}
+#results .where{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+#results .ay{font-family:var(--naskh);font-size:18px;line-height:2}
+#results mark{background:var(--tint-strong);color:var(--accent);border-radius:3px;padding:0 1px}
+#results .near{font-size:11px;color:var(--mark);border:1px solid var(--mark);border-radius:999px;padding:0 8px;margin-inline-start:6px}
+.art svg g.word.found .hit{fill:var(--tint-strong)}
+.art svg g.word.found path{fill:var(--accent)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
 .seg button{background:var(--paper);border:0;padding:6px 10px;font-size:13px;white-space:nowrap}
 .seg button+button{border-inline-start:1px solid var(--line)}
@@ -126,6 +141,7 @@ button{cursor:pointer}
   <h1>اقرأ القرآن الكريم</h1>
   <span class="chip">نسخة تجريبية</span>
   <span class="grow"></span>
+  <button type="button" id="find-open" class="btn">بحث</button>
   <div class="seg" role="group" aria-label="عدد الصفحات المعروضة">
     <button type="button" data-mode="auto" aria-pressed="true">تلقائي</button>
     <button type="button" data-mode="1" aria-pressed="false">صفحة</button>
@@ -142,6 +158,15 @@ button{cursor:pointer}
   <output id="where" for="slider"></output>
   <button id="next" type="button">التالية</button>
 </nav>
+
+<section id="find" role="dialog" aria-label="البحث في القرآن" hidden>
+  <div class="find-top">
+    <input id="q" type="search" placeholder="اكتب كلمة أو جزءًا من آية" autocomplete="off" aria-label="نص البحث">
+    <button class="sh-close" id="find-close" type="button" aria-label="إغلاق البحث">×</button>
+  </div>
+  <p class="note" id="find-info">يتسامح البحث مع الهمزات والتاء المربوطة والألف المقصورة والأخطاء الإملائية القريبة.</p>
+  <ol id="results"></ol>
+</section>
 
 <section id="sheet" role="dialog" aria-label="مشروعات المحتوى" aria-hidden="true">
   <div class="sh-top">
@@ -162,6 +187,7 @@ const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة"
 
 let mode = "auto";
 try { mode = localStorage.getItem("iqra-mode") || "auto"; } catch (e) {}
+let found = [];
 let meta, projects, cur = 1, cols = 1, ctx = null, level = null, swiped = false;
 const svgCache = new Map(), jsonCache = new Map();
 const spread = $("#spread"), stage = $("#stage"), sheet = $("#sheet");
@@ -287,17 +313,18 @@ spread.addEventListener("click", (e) => {
 });
 
 function open(c, lv) { ctx = c; level = lv; sheet.classList.add("open"); sheet.setAttribute("aria-hidden", "false"); paintSheet(); applySelection(); }
-function close() { ctx = null; sheet.classList.remove("open"); sheet.setAttribute("aria-hidden", "true"); applySelection(); }
+function close() { found = []; ctx = null; sheet.classList.remove("open"); sheet.setAttribute("aria-hidden", "true"); applySelection(); }
 $("#sh-close").addEventListener("click", close);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") close();
+  if (e.key === "Escape") { if (!findBox.hidden) { findBox.hidden = true; return; } close(); }
   if (e.target.matches("input,select")) return;
   if (e.key === "ArrowLeft") go(1);
   if (e.key === "ArrowRight") go(-1);
 });
 
 function applySelection() {
-  spread.querySelectorAll(".sel").forEach((n) => n.classList.remove("sel"));
+  spread.querySelectorAll(".sel,.found").forEach((n) => n.classList.remove("sel", "found"));
+  found.forEach((k) => spread.querySelectorAll(`g.word[data-word-key="${k}"]`).forEach((n) => n.classList.add("found")));
   if (!ctx) return;
   const q = (s) => spread.querySelectorAll(s).forEach((n) => n.classList.add("sel"));
   if (level === "word") q(`g.word[data-word-key="${ctx.word}"]`);
@@ -406,6 +433,7 @@ const para = (t) => { const p = document.createElement("p"); p.textContent = t; 
 
 /* ---------- paging: in a mushaf the next page is to the left ---------- */
 function go(dir) {
+  found = [];
   const start = firstOfSpread(cur), next = dir > 0 ? start + cols : start - cols;
   if (next > meta.last || next + cols - 1 < meta.first) return;
   cur = Math.max(meta.first, next);
@@ -423,6 +451,98 @@ document.querySelector(".seg").addEventListener("click", (e) => {
   paintMode(); render();
 });
 paintMode();
+
+/* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
+const MARKS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
+// Fold what people commonly mistype: hamza seats, alif forms, ta marbuta / ha, alif maqsura / ya.
+const fold = (s) => s.replace(MARKS, "").replace(/[أإآٱ]/g, "ا").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ء/g, "").replace(/ى/g, "ي").replace(/ة/g, "ه");
+let corpus = null, vocab = null;
+async function loadCorpus() {
+  if (corpus) return corpus;
+  const rows = await getJSON("data/search.json");
+  vocab = new Set();
+  corpus = rows.map(([s, a, page, words]) => {
+    const norm = words.map((w) => fold(w));
+    norm.forEach((w) => vocab.add(w));
+    return { s, a, page, words, norm, line: " " + norm.join(" ") + " " };
+  });
+  vocab = [...vocab];
+  return corpus;
+}
+// True when a and b differ by at most `max` single-letter edits (insert, delete, swap one for another).
+function near(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return false;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i]; let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (row[j] < best) best = row[j];
+    }
+    if (best > max) return false;
+    prev = row;
+  }
+  return prev[b.length] <= max;
+}
+function search(query) {
+  const qw = fold(query).split(/\s+/).filter(Boolean);
+  if (!qw.length || qw.join("").length < 2) return { hits: [], fuzzy: false };
+  const phrase = qw.join(" ");
+  const pick = (row, test) => row.norm.map((w, i) => (test(w) ? i : -1)).filter((i) => i >= 0);
+  // 1) the words as typed, in order, anywhere in the ayah (a typed word may be part of a longer one)
+  let hits = corpus.filter((r) => r.line.includes(phrase)).map((r) => {
+    const idx = [];
+    for (let i = 0; i + qw.length <= r.norm.length; i++) {
+      if (qw.every((w, k) => (qw.length === 1 ? r.norm[i + k].includes(w) : k === 0 ? r.norm[i + k].endsWith(w) : k === qw.length - 1 ? r.norm[i + k].startsWith(w) : r.norm[i + k] === w))) for (let k = 0; k < qw.length; k++) idx.push(i + k);
+    }
+    return { r, idx: [...new Set(idx)] };
+  });
+  if (hits.length) return { hits, fuzzy: false };
+  // 2) every word present, in any order
+  hits = corpus.filter((r) => qw.every((w) => r.line.includes(w))).map((r) => ({ r, idx: pick(r, (x) => qw.some((w) => x.includes(w))) }));
+  if (hits.length) return { hits, fuzzy: false };
+  // 3) spelling mistakes: each typed word may be one letter off (two for long words)
+  const alts = qw.map((w) => (w.length < 3 ? [w] : vocab.filter((v) => near(w, v, w.length >= 7 ? 2 : 1))));
+  if (alts.some((a) => !a.length)) return { hits: [], fuzzy: true };
+  const sets = alts.map((a) => new Set(a));
+  hits = corpus.filter((r) => sets.every((set) => r.norm.some((w) => set.has(w)))).map((r) => ({ r, idx: pick(r, (x) => sets.some((set) => set.has(x))) }));
+  return { hits, fuzzy: true };
+}
+const findBox = $("#find"), qInput = $("#q"), resultsEl = $("#results"), findInfo = $("#find-info");
+const HELP = findInfo.textContent, MAX = 150;
+let findTimer;
+async function runSearch() {
+  const query = qInput.value.trim();
+  if (!query) { resultsEl.replaceChildren(); findInfo.textContent = HELP; return; }
+  try { await loadCorpus(); } catch (e) { findInfo.textContent = "تعذّر تحميل فهرس البحث. أعد المحاولة."; jsonCache.delete("data/search.json"); return; }
+  if (qInput.value.trim() !== query) return;
+  const { hits, fuzzy } = search(query);
+  findInfo.textContent = !hits.length ? "لا توجد نتائج. جرّب كلمة أقل أو تهجئة أخرى."
+    : `عدد الآيات: ${ar(hits.length)}${fuzzy ? "، بتهجئة قريبة مما كتبت" : ""}${hits.length > MAX ? `، المعروض أول ${ar(MAX)}` : ""}`;
+  resultsEl.replaceChildren(...hits.slice(0, MAX).map(({ r, idx }) => {
+    const li = document.createElement("li"), b = document.createElement("button"), where = document.createElement("span"), ay = document.createElement("span");
+    b.type = "button"; where.className = "where"; ay.className = "ay";
+    where.textContent = `${surahName(r.s)} · الآية ${ar(r.a)} · الصفحة ${ar(r.page)}`;
+    if (fuzzy) { const t = document.createElement("span"); t.className = "near"; t.textContent = "تهجئة قريبة"; where.append(t); }
+    const on = new Set(idx);
+    r.words.forEach((w, i) => { if (on.has(i)) { const m = document.createElement("mark"); m.textContent = w; ay.append(m, " "); } else ay.append(w + " "); });
+    b.append(where, ay);
+    b.addEventListener("click", async () => {
+      findBox.hidden = true;
+      cur = r.page; ctx = null; sheet.classList.remove("open");
+      found = idx.map((i) => `${r.s}:${r.a}:${i + 1}`);
+      await render();
+      const first = spread.querySelector("g.word.found");
+      if (first) first.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+    li.append(b);
+    return li;
+  }));
+  resultsEl.scrollTop = 0;
+}
+qInput.addEventListener("input", () => { clearTimeout(findTimer); findTimer = setTimeout(runSearch, 180); });
+$("#find-open").addEventListener("click", () => { findBox.hidden = false; qInput.focus(); loadCorpus().catch(() => {}); });
+$("#find-close").addEventListener("click", () => { findBox.hidden = true; });
 
 let down = null;
 stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });

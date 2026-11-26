@@ -2,6 +2,7 @@
 public/pages/
 public/content/
 public/data/meta.json
+public/data/search.json
 # أصول فنار المنزَّلة
 fanar-assets/
 public/data/fanar-report.json
