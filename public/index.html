@@ -12,7 +12,7 @@
 :root{
   --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
   --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.24);
-  --panel:#ffffff; --banner:rgba(161,122,34,.10);
+  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b;
   --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
   --naskh:"Noto Naskh Arabic","Traditional Arabic",serif;
   --quran:"Amiri Quran","Noto Naskh Arabic",serif;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
     --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.30);
-    --panel:#1c2624; --banner:rgba(211,176,103,.12); color-scheme:dark;
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
   --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.30);
-  --panel:#1c2624; --banner:rgba(211,176,103,.12); color-scheme:dark;
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
@@ -68,6 +68,7 @@ button{cursor:pointer}
   .art svg g.word:hover .hit,.art svg g.ayah-mark:hover .hit{fill:var(--tint)}
   .art svg .banner:hover{fill:var(--tint)}
 }
+.art svg g.word.gh path{fill:var(--gharib)}
 .art svg g.ayah-fragment.sel g.word .hit{fill:var(--tint)}
 .art svg g.ayah-mark.sel .hit{fill:var(--tint-strong)}
 .art svg g.word.sel .hit{fill:var(--tint-strong)}
@@ -128,6 +129,8 @@ button{cursor:pointer}
 .ayah-block svg{flex:none}
 .ayah-block svg{display:block;height:auto;max-width:100%}
 .ayah-block svg path{fill:var(--ink)}
+.ayah-block g.word.gh path{fill:var(--gharib)}
+.gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
 .ayah-block .hit{fill:transparent;pointer-events:none}
 .ayah-block.pick .hit{pointer-events:all;cursor:pointer}
 .ayah-block g.word.sel .hit{fill:var(--tint-strong)}
@@ -217,6 +220,7 @@ button{cursor:pointer}
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
+    <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div class="opt col"><h3>المحتوى المعروض</h3><div id="set-projects"></div></div>
   </div>
 </section>
@@ -257,6 +261,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); r
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
 const activeTab = {}, activeSub = {};
+let showGharib = store.get("gharib", "1") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -332,7 +337,27 @@ async function fillPage(n) {
   svg.setAttribute("aria-label", "صفحة المصحف " + n);
   art.replaceChildren(svg);
   decorate(svg);
+  markGharib(n, svg);
 }
+
+/* Colour the words explained in the gharib project. Its "الكلمات" field lists, one line per entry,
+   the position of the word (or words) in the ayah. */
+async function markGharib(n, svg) {
+  const gp = projects.find((p) => p.marksWords && p.file);
+  svg.querySelectorAll("g.word.gh").forEach((g) => g.classList.remove("gh"));
+  if (!gp || !showGharib || hidden.has(gp.id)) return;
+  let data;
+  try { data = await getJSON(gp.file.replace("{page}", pad(n))); } catch (e) { return; }
+  if (!svg.isConnected) return;
+  for (const [ayah, entry] of Object.entries(data)) {
+    String(entry["الكلمات"] || "").split(/\n+/).forEach((line) => {
+      const range = /^\s*(\d+)\s*[-–]\s*(\d+)\s*$/.exec(line);
+      const nums = range ? Array.from({ length: Math.max(0, range[2] - range[1] + 1) }, (_, i) => +range[1] + i) : (line.match(/\d+/g) || []).map(Number);
+      nums.forEach((w) => { const g = svg.querySelector(`g.word[data-word-key="${ayah}:${w}"]`); if (g) g.classList.add("gh"); });
+    });
+  }
+}
+function remarkGharib() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markGharib(+svg.closest(".page").dataset.page, svg)); }
 
 /* Add invisible touch targets and the surah banner. The printed ink is never moved or redrawn. */
 function decorate(svg) {
@@ -559,8 +584,8 @@ async function card(p, key) {
   if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
   const dl = document.createElement("dl");
   for (const [k, v] of Object.entries(entry)) {
-    if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null)); continue; }
-    if (k === "الهامش") continue;
+    if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null, p.marksWords)); continue; }
+    if (k === "الهامش" || (p.marksWords && k === "الكلمات")) continue;
     const dt = document.createElement("dt"), dd = document.createElement("dd");
     dd.dir = "auto"; dt.textContent = k; dd.textContent = typeof v === "number" || /^[\d:\s–-]+$/.test(v) ? ar(v) : v;
     dl.append(dt, dd);
@@ -570,7 +595,7 @@ async function card(p, key) {
 }
 /* Publisher text is shown unchanged. Editorial footnotes arrive wrapped in ¬ … ¥: each becomes a numbered
    reference in the text and a numbered note under it. Print page markers (ج1 ص109) stay inline as a small tag. */
-function richText(v, extraNotes) {
+function richText(v, extraNotes, quoted) {
   const LIMIT = 700, PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;
   const p = document.createElement("p"), notes = document.createElement("ol"), wrap = document.createElement("div");
   p.className = "text"; p.dir = "auto"; notes.className = "notes";
@@ -579,7 +604,11 @@ function richText(v, extraNotes) {
     let n = 0;
     str.split(/(¬[^¥]*¥?)/).forEach((part) => {
       if (!part) return;
-      if (part[0] !== "¬") { p.append(part); return; }
+      if (part[0] !== "¬") {
+        if (!quoted) { p.append(part); return; }
+        part.split(/(﴿[^﴾]*﴾)/).forEach((x) => { if (x[0] === "﴿") { const g = document.createElement("span"); g.className = "gh-word"; g.textContent = x; p.append(g); } else if (x) p.append(x); });
+        return;
+      }
       const body = part.replace(/^¬|¥$/g, "").trim();
       if (!body) return;
       if (PAGE_MARK.test(body)) { const m = document.createElement("span"); m.className = "pm"; m.textContent = ar(body); p.append(" ", m, " "); return; }
@@ -656,6 +685,7 @@ $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n =
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme);
+  $("#set-gharib").checked = showGharib;
   const box = $("#set-projects"); box.replaceChildren();
   ["word", "ayah", "page", "surah"].forEach((lv) => {
     const list = projects.filter((p) => p.level === lv);
@@ -664,7 +694,7 @@ function paintSettings() {
     list.forEach((p) => {
       const label = document.createElement("label"), input = document.createElement("input");
       input.type = "checkbox"; input.id = "show-" + p.id; input.checked = !hidden.has(p.id);
-      input.addEventListener("change", () => { if (input.checked) hidden.delete(p.id); else hidden.add(p.id); store.set("hidden", JSON.stringify([...hidden])); });
+      input.addEventListener("change", () => { if (input.checked) hidden.delete(p.id); else hidden.add(p.id); store.set("hidden", JSON.stringify([...hidden])); if (p.marksWords) remarkGharib(); });
       label.append(input, p.name + (p.file ? "" : " (لم يُربط بعد)"));
       box.append(label);
     });
@@ -674,6 +704,7 @@ $("#seg-mode").addEventListener("click", (e) => { const b = e.target.closest("bu
 $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; theme = b.dataset.v; store.set("theme", theme); applyTheme(); paintSettings(); });
 $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
+$("#set-gharib").addEventListener("change", (e) => { showGharib = e.target.checked; store.set("gharib", showGharib ? "1" : "0"); remarkGharib(); });
 
 /* ---------- search: imla'i spelling in, place in the printed mushaf out ---------- */
 const MARKS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;

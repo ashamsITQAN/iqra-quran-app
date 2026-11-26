@@ -9,7 +9,7 @@
  {"id":"tafsir-alsaadi","level":"ayah","group":"tafsir","groupName":"التفسير","short":"السعدي","name":"تفسير السعدي","kind":"نصي","source":"فنار","credit":"مركز تفسير · CC BY-ND","file":"content/tafsir-alsaadi/{page}.json"},
 
  {"id":"tajweed","level":"ayah","groupName":"التجويد","name":"أحكام التجويد في كلمات العزيز الحميد (أحمد الطويل)","kind":"نصي","source":"فنار","credit":"أحمد الطويل · دار القبلتين للنشر والتوزيع","file":"content/tafsir-ahkam-tajweed-kalimat-aziz/{page}.json"},
- {"id":"ghareeb","level":"ayah","groupName":"غريب القرآن","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
+ {"id":"ghareeb","level":"ayah","marksWords":true,"groupName":"غريب القرآن","name":"الميسر في غريب القرآن الكريم","kind":"نصي","source":"فنار","credit":"مجمع الملك فهد لطباعة المصحف الشريف","file":"content/muyassar-of-ghareeb-al-quran/{page}.json"},
  {"id":"ayah-recitation","level":"ayah","groupName":"التلاوة","name":"التلاوات المزمّنة","kind":"تلاوة","source":"فنار","file":null},
 
  {"id":"page-benefits","level":"page","groupName":"فوائد الصفحة","name":"فوائد الصفحات من المختصر في تفسير القرآن الكريم","kind":"نصي","source":"فنار","credit":"دار المختصر","file":"content/benefits-of-the-verses-from-al-mukhtasar/{page}.json"},
