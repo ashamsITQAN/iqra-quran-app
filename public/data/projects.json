@@ -24,7 +24,7 @@
     "source": "سورة",
     "credit": "إعراب القرآن الكريم على مستوى الكلمة، إعداد الفريق العلمي بمركز تفسير للدراسات القرآنية، من موقع سورة",
     "surah": "eerab-word",
-    "ord": 5
+    "ord": 3
   },
   {
     "id": "sarf-word",
@@ -36,7 +36,7 @@
     "credit": "تصريف كلمات القرآن، من موقع سورة",
     "surah": "word-tasreef",
     "group": "lugha",
-    "ord": 6,
+    "ord": 5,
     "short": "الصرف"
   },
   {
@@ -457,19 +457,6 @@
     "credit": "أحكام التجويد في كلمات العزيز الحميد، أحمد الطويل، دار القبلتين للنشر والتوزيع",
     "file": "content/tafsir-ahkam-tajweed-kalimat-aziz/{page}.json",
     "asset": 189
-  },
-  {
-    "id": "irab-surah",
-    "level": "ayah",
-    "group": "lugha",
-    "groupName": "اللغة",
-    "short": "إعراب سورة",
-    "name": "إعراب سورة (على مستوى الآية)",
-    "kind": "نصي",
-    "source": "سورة",
-    "credit": "إعراب القرآن الكريم، إعداد الفريق العلمي بمركز تفسير للدراسات القرآنية، من موقع سورة",
-    "surah": "eerab-word-aya",
-    "ord": 3
   },
   {
     "id": "irab-nahj",
