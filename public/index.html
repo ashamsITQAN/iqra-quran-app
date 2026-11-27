@@ -272,7 +272,29 @@ body[data-tpi="3"]{--tpo:52%}
 #ts-bar a{color:var(--muted);font-size:12.5px}
 #ts-prog{width:90px;height:8px;accent-color:var(--accent)}
 #ts-go[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
-body.ts-on .art svg g.word:not(.rd) path{opacity:0}
+body.ts-on.ts-hide .art svg g.word:not(.rd) path{opacity:0}
+body.ts-on.ts-nomark .art svg g.ayah-mark:not(.rdm){opacity:0}
+body.ts-on:not(.ts-hide) .art svg g.word.rd .hit{fill:var(--tint-soft)}   /* words shown: what has been read is tinted, the word reached more strongly */
+body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
+/* my activity */
+#ac-body h3{font-size:14px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+.ac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ac-card{border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px 12px}
+.ac-card b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.ac-card span{font-size:13px;color:var(--muted)}
+.ac-week{display:flex;align-items:flex-end;gap:6px;height:130px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px 10px 6px}
+.ac-week div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;font-size:11.5px;color:var(--muted)}
+.ac-week i{display:block;width:70%;min-height:2px;background:var(--accent);border-radius:4px 4px 0 0}
+.ac-ring{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:12px}
+.ac-ring svg{width:120px;height:120px;flex:none}.ac-ring dl{margin:0;display:grid;grid-template-columns:auto auto;gap:4px 16px;font-size:14.5px}.ac-ring dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.ac-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ac-list li{border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:8px 12px}
+.ac-list .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}.ac-list strong{font-family:var(--naskh);font-size:17px}
+.ac-list small{color:var(--muted);font-size:12.5px}.ac-list .acts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.ac-list .btn{padding:3px 10px;font-size:12.5px}
+.ac-bar{height:7px;border-radius:4px;background:var(--line);margin-top:6px;overflow:hidden;display:flex}.ac-bar i{display:block;height:100%;background:var(--accent)}
+.ac-strip{display:flex;height:12px;border-radius:3px;overflow:hidden;margin-top:6px;background:var(--line)}.ac-strip i{flex:1;background:var(--accent)}
+.ac-strip i.n0{background:transparent}.ac-strip i.n1{opacity:.35}.ac-strip i.n2{opacity:.65}
+.ac-kind{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+.ac-filter{display:flex;gap:12px;flex-wrap:wrap;font-size:13.5px;margin:0 0 8px}.ac-filter input{accent-color:var(--accent)}
 body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 @media (max-width:480px){header .btn{padding-inline:8px}}
 .zoomer{display:flex;align-items:center;gap:8px;flex:1;min-width:220px;max-width:360px}
@@ -473,7 +495,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <ol id="results"></ol>
 </section>
 
-<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
+<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -527,6 +549,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
       </div></div>
     <div class="opt"><h3>تمييز الكلمات في صفحة المصحف<p id="wmark-help"></p></h3>
       <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
+    <div class="opt"><h3><label for="set-tshide">التسميع: إخفاء الكلمات حتى تُقرأ</label></h3><input id="set-tshide" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsmark">التسميع: إخفاء أرقام الآيات أيضًا</label></h3><input id="set-tsmark" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -573,7 +597,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
   </div>
   <div class="tabs" id="idx-tabs" role="tablist">
-    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button><button type="button" role="tab" data-v="marks">علاماتي</button><button type="button" role="tab" data-v="notes">تعليقاتي</button>
+    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button><button type="button" role="tab" data-v="marks">علاماتي</button><button type="button" role="tab" data-v="notes">تعليقاتي</button><button type="button" role="tab" data-v="act">نشاطي</button>
   </div>
   <ol class="sh-body idx-list" id="idx-list"></ol>
   <div id="idx-backup" hidden><button type="button" class="btn" id="bk-save">حفظ نسخة احتياطية</button><button type="button" class="btn" id="bk-load">استرجاع من ملف</button><input type="file" id="bk-file" accept="application/json,.json" hidden><span class="note" id="bk-note">علاماتك وتعليقاتك محفوظة على هذا الجهاز فقط.</span></div>
@@ -589,6 +613,15 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
+</section>
+
+<section id="activity" class="modal" role="dialog" aria-label="نشاطي" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">نشاطي</p><p class="sub" id="ac-sub"></p></div>
+    <button class="sh-close" id="ac-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="tabs" id="ac-tabs" role="tablist"><button type="button" role="tab" data-v="stats">الإحصائيات</button><button type="button" role="tab" data-v="khatma">الختمة</button><button type="button" role="tab" data-v="hifz">الحفظ</button><button type="button" role="tab" data-v="log">الجلسات</button></div>
+  <div class="sh-body" id="ac-body"></div>
 </section>
 
 <section id="share" class="modal" role="dialog" aria-label="مشاركة المحتوى" aria-hidden="true">
@@ -637,6 +670,7 @@ const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
 
 const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("iqra-" + k, v); } catch (e) {} } };
+let tsHide = store.get("tshide", "1") === "1", tsNoMark = store.get("tsmark", "0") === "1";   // recitation: hide the words until read, and the ayah numbers too
 let view = store.get("view", "print"), zoom = Math.max(1.2, Math.min(3, +store.get("zoom", "1.4") || 1.4));   // "flow": the page's words set again in bigger lines
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
 let hidden = new Set(); try { hidden = new Set(JSON.parse(store.get("hidden", "[]"))); } catch (e) {}
@@ -1110,7 +1144,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -2012,7 +2046,7 @@ function paintIndex() {
 }
 $("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
 $("#idx-close").addEventListener("click", close);
-$("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; idxTab = b.dataset.v; paintIndex(); });
+$("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; if (b.dataset.v === "act") return openActivity(); idxTab = b.dataset.v; paintIndex(); });
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
 
 /* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes ----------
@@ -2021,7 +2055,7 @@ const KINDS = [["hifz", "ح", "الحفظ"], ["read", "ق", "القراءة"], [
 const GOOGLE_CLIENT_ID = "" || store.get("gcid", "");   // OAuth client id (public, not a secret) of the Google Cloud project that owns the Drive link
 const readJ = (k) => { try { return JSON.parse(store.get(k, "{}")) || {}; } catch (e) { return {}; } };
 const fmtDate = (ms) => { try { return new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric" }).format(ms); } catch (e) { return new Date(ms).toISOString().slice(0, 10); } };
-const rawMarks = readJ("marks"), rawNotes = readJ("notes");
+const rawMarks = readJ("marks"), rawNotes = readJ("notes"), rawAct = Object.assign({ s: {}, kh: { n: 0, done: [], last: -1, t: 0 } }, readJ("activity"));
 let marks = {}, notes = {};
 function liveViews() {
   marks = {}; notes = {};
@@ -2030,7 +2064,7 @@ function liveViews() {
 }
 liveViews();
 function saveMine(fromSync) {
-  store.set("marks", JSON.stringify(rawMarks)); store.set("notes", JSON.stringify(rawNotes));
+  store.set("marks", JSON.stringify(rawMarks)); store.set("notes", JSON.stringify(rawNotes)); store.set("activity", JSON.stringify(rawAct));
   liveViews(); paintMarks();
   if (!fromSync) queueSync();
 }
@@ -2042,9 +2076,15 @@ function mergeMine(d) {
   if (!d || typeof d.notes !== "object" || typeof d.marks !== "object") throw new Error("shape");
   Object.entries(d.notes || {}).forEach(([k, v]) => { if (v && (v.del || typeof v.t === "string") && (v.u || 0) > ((rawNotes[k] || {}).u || 0)) { rawNotes[k] = v; n += 1; } });
   Object.entries(d.marks || {}).forEach(([k, v]) => { if (v && (v.del || v.key) && KINDS.some((x) => x[0] === k) && (v.t || 0) > ((rawMarks[k] || {}).t || 0)) { rawMarks[k] = v; n += 1; } });
+  // my activity: sessions are joined (a removed one stays removed); the khatma kept is the one touched last
+  const a = d.activity;
+  if (a && typeof a === "object") {
+    Object.entries(a.s || {}).forEach(([k, v]) => { const mine = rawAct.s[k]; if (v && (!mine || (v.del && !mine.del))) { rawAct.s[k] = v; n += 1; } });
+    if (a.kh && (a.kh.t || 0) > (rawAct.kh.t || 0)) { rawAct.kh = a.kh; n += 1; }
+  }
   return n;
 }
-const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes });
+const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct });
 function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
 function paintMarks() {
@@ -2535,7 +2575,7 @@ function folAway(hit) {   // null: back on track; undefined: off the place, the 
   const bar = $("#ts-bar"), jump = $("#ts-jump");
   if (hit === null) { FOL.away = null; bar.classList.remove("away"); jump.hidden = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); return; }
   const here = folName(FOL.ug[Math.min(FOL.n - 1, FOL.pos)]);   // the ayah to go on from
-  if (!bar.classList.contains("away")) { bar.classList.add("away"); try { navigator.vibrate && navigator.vibrate([90, 60, 90]); } catch (e) {} }
+  if (!bar.classList.contains("away")) { bar.classList.add("away"); FOL.notes = (FOL.notes || 0) + 1; try { navigator.vibrate && navigator.vibrate([90, 60, 90]); } catch (e) {} }
   if (hit) { FOL.away.hit = hit; jump.hidden = false; tsSay(`تنبيه: ما تقرؤه الآن يوافق موضعًا آخر (${folName(FOL.ug[hit.pos - 1])}). موضعك الذي تكمل منه: ${here}.`); }
   else { jump.hidden = true; tsSay(`تنبيه: ما تقرؤه الآن لا يوافق موضعك (${here}). أكمل من موضعك.`); }
 }
@@ -2544,14 +2584,18 @@ function folReveal() {   // the words between where this stretch began and the p
   const last = to - 1, endsWord = to >= n || ug[to] !== ug[last] || uw[to] !== uw[last];
   for (let g = ug[FOL.from]; g <= ug[last]; g++) {
     const key = rows[g][0] + ":" + rows[g][1], lo = g === ug[FOL.from] ? uw[FOL.from] + 1 : 1, hi = g < ug[last] ? rows[g][3].length : uw[last] + (endsWord ? 1 : 0);
-    const r = FOL.done.get(key); FOL.done.set(key, r ? [Math.min(r[0], lo), Math.max(r[1], hi)] : [lo, hi]);
+    const r = FOL.done.get(key), nr = r ? [Math.min(r[0], lo), Math.max(r[1], hi)] : [lo, hi]; FOL.done.set(key, nr);
+    if (nr[0] <= 1 && nr[1] >= rows[g][3].length && !FOL.full.has(key)) { FOL.full.add(key); FOL.gs.add(g); }   // the whole ayah has been read
     if (FOL.g1 == null || g < FOL.g1) FOL.g1 = g; if (FOL.g2 == null || g > FOL.g2) FOL.g2 = g;
   }
   const g = ug[last]; FOL.now = rows[g][0] + ":" + rows[g][1] + ":" + Math.max(1, uw[last] + (endsWord ? 1 : 0));
   folPaint(true);
 }
+function tsClasses() { document.body.classList.toggle("ts-hide", tsHide); document.body.classList.toggle("ts-nomark", tsHide && tsNoMark); $("#ts-eye").textContent = tsHide ? "أظهر الآيات" : "أخفِ الآيات"; if (FOL.on) FOL.kind = tsHide ? "h" : "r"; }
+tsClasses();
 function folPaint(move) {
   if (!FOL.on) return;
+  spread.querySelectorAll(".art svg g.ayah-mark").forEach((m) => { const r = FOL.done.get(m.dataset.ayahKey); m.classList.toggle("rdm", !!r && FOL.full.has(m.dataset.ayahKey)); });
   spread.querySelectorAll(".art svg g.word").forEach((w) => {
     const k = w.dataset.wordKey, i = k.lastIndexOf(":"), r = FOL.done.get(k.slice(0, i)), num = +k.slice(i + 1);
     w.classList.toggle("rd", !!r && num >= r[0] && num <= r[1]); w.classList.toggle("rdnow", k === FOL.now);
@@ -2566,7 +2610,7 @@ function folPaint(move) {
 }
 async function folTake() {   // one take: the microphone until the reader ends it
   const model = qlModel; $("#ts-begin").hidden = true;
-  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true;
+  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, full: new Set(), gs: new Set(), kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true;
   try {
     qlSession = await model.listen(tsDev ? { from: model.sampleClips[0] } : {});
     tsSay("أسمعك… اقرأ من أي موضع في المصحف.");
@@ -2577,11 +2621,11 @@ async function folTake() {   // one take: the microphone until the reader ends i
   } catch (e) {
     if (!e || e.code !== "cancelled") { tsSay(qlSay(e)); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; $("#ts-begin").hidden = !qlModel; }
   }
-  qlSession = null;
+  qlSession = null; actSave();
 }
 async function folStart() {
   if (FOL.on) return folStop();
-  close(); FOL.on = true; FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null;
+  close(); FOL.on = true; FOL.done = new Map(); FOL.full = new Set(); FOL.gs = new Set(); FOL.now = ""; FOL.g1 = FOL.g2 = null;
   document.body.classList.add("ts-on"); $("#ts-go").setAttribute("aria-pressed", "true"); $("#ts-bar").hidden = false; $("#ts-begin").hidden = true; folPaint(false);
   const ready = !!(qlModel && FOL.U);
   try {
@@ -2600,6 +2644,99 @@ function folStop() {
 $("#ts-go").addEventListener("click", folStart);
 $("#ts-begin").addEventListener("click", () => { if (FOL.on && qlModel && !qlSession) { FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null; folPaint(false); folTake(); } });   // the microphone needs a tap
 $("#ts-end").addEventListener("click", folStop);
+$("#ts-eye").addEventListener("click", () => { tsHide = !tsHide; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
+$("#ts-act").addEventListener("click", () => { if (FOL.on) folStop(); openActivity(); });
+
+/* ---------- my activity: what was recited and when. A record of reading only: it holds no marks or scores of a recitation. ---------- */
+const ranges = (set) => { const a = [...set].sort((x, y) => x - y), out = []; a.forEach((g) => { const l = out[out.length - 1]; if (l && g <= l[1] + 1) l[1] = Math.max(l[1], g); else out.push([g, g]); }); return out; };
+const spanCount = (rs) => rs.reduce((t, r) => t + r[1] - r[0] + 1, 0);
+function actSave() {   // called when a take ends: one session, if at least one whole ayah was read
+  if (!FOL.gs || !FOL.gs.size) return;
+  const r = ranges(FOL.gs), id = String(FOL.t0);
+  rawAct.s[id] = { t: FOL.t0, d: Math.max(1, Math.round((Date.now() - FOL.t0) / 1000)), k: FOL.kind, r, w: FOL.notes || 0 };
+  const kh = rawAct.kh, all = new Set(); (kh.done || []).forEach(([a, b]) => { for (let g = a; g <= b; g++) all.add(g); }); FOL.gs.forEach((g) => all.add(g));
+  kh.last = r[r.length - 1][1]; kh.t = Date.now();
+  if (all.size >= FOL.rows.length) { kh.n = (kh.n || 0) + 1; kh.done = []; } else kh.done = ranges(all);
+  FOL.gs = new Set(); saveMine();
+}
+let acTab = "stats", acPeriod = "week", acKind = "all", acShow = { done: true, part: true, none: false };
+const acEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const acDur = (sec) => { const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h ? `${ar(h)} س ${ar(m)} د` : m ? `${ar(m)} د` : `${ar(sec)} ث`; };
+const acDay = (ms) => { const d = new Date(ms); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const acSessions = () => Object.values(rawAct.s).filter((x) => x && !x.del && x.r).sort((a, b) => b.t - a.t);
+async function openActivity() { close(); show($("#activity"), true); await paintActivity(); }
+async function paintActivity() {
+  document.querySelectorAll("#ac-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === acTab));
+  const body = $("#ac-body"), rows = await getJSON("data/search.json"), all = acSessions(), name = (g) => `${meta.surahs[rows[g][0]].name} ${ar(rows[g][1])}`;
+  const span = (r) => { const a = r[0][0], b = r[r.length - 1][1]; return rows[a][0] === rows[b][0] ? `${meta.surahs[rows[a][0]].name} ${ar(rows[a][1])}` + (b > a ? `–${ar(rows[b][1])}` : "") : `${name(a)} – ${name(b)}`; };
+  $("#ac-sub").textContent = all.length ? `${ar(all.length)} جلسة` : "";
+  body.replaceChildren();
+  if (!all.length && acTab !== "khatma") { body.append(acEl("p", "note", "لا يوجد نشاط مسجَّل بعد. اضغط «تسميع» في الشريط العلوي واقرأ، فتُسجَّل الجلسة هنا عند انتهائها.")); if (acTab !== "stats") return; }
+  if (acTab === "stats") {
+    const seg = acEl("div", "seg"); [["day", "اليوم"], ["week", "الأسبوع"], ["month", "الشهر"], ["year", "السنة"], ["all", "الكل"]].forEach(([v, t]) => { const b = acEl("button", "", t); b.type = "button"; b.setAttribute("aria-pressed", v === acPeriod); b.addEventListener("click", () => { acPeriod = v; paintActivity(); }); seg.append(b); });
+    const now = Date.now(), from = { day: new Date().setHours(0, 0, 0, 0), week: now - 7 * 864e5, month: now - 30 * 864e5, year: now - 365 * 864e5, all: 0 }[acPeriod], inP = all.filter((x) => x.t >= from);
+    const days = new Set(all.map((x) => acDay(x.t))); let streak = 0; for (let t = now; days.has(acDay(t)) || (streak === 0 && t === now && days.has(acDay(now - 864e5))); t -= 864e5) { if (days.has(acDay(t))) streak += 1; else if (t !== now) break; }
+    const cards = acEl("div", "ac-grid"), card = (v, t) => { const c = acEl("div", "ac-card"); c.append(acEl("b", "", v), acEl("span", "", t)); cards.append(c); };
+    card(acDur(inP.reduce((t, x) => t + x.d, 0)), "زمن التلاوة"); card(ar(inP.reduce((t, x) => t + spanCount(x.r), 0)), "آيات تمت تلاوتها"); card(ar(inP.length), "عدد الجلسات");
+    card(ar(inP.filter((x) => x.k === "h").length), "جلسات تسميع (مع الإخفاء)"); card(ar(streak), "أيام متتالية"); card(ar(rawAct.kh.n || 0), "ختمات مكتملة");
+    const week = acEl("div", "ac-week"), mins = []; for (let i = 6; i >= 0; i--) { const day = acDay(now - i * 864e5); mins.push([now - i * 864e5, Math.round(all.filter((x) => acDay(x.t) === day).reduce((t, x) => t + x.d, 0) / 60)]); }
+    const top = Math.max(1, ...mins.map((x) => x[1]));
+    mins.forEach(([t, m]) => { const col = acEl("div"), bar = acEl("i"); bar.style.height = Math.round((m / top) * 78) + "%"; col.append(acEl("span", "", m ? ar(m) + " د" : "—"), bar, acEl("span", "", new Intl.DateTimeFormat("ar", { weekday: "short" }).format(t))); week.append(col); });
+    body.append(seg, acEl("h3", "", "في هذه المدة"), cards, acEl("h3", "", "دقائق التلاوة في آخر سبعة أيام"), week);
+    return;
+  }
+  if (acTab === "log") {
+    const seg = acEl("div", "seg"); [["all", "الكل"], ["h", "تسميع"], ["r", "قراءة"]].forEach(([v, t]) => { const b = acEl("button", "", t); b.type = "button"; b.setAttribute("aria-pressed", v === acKind); b.addEventListener("click", () => { acKind = v; paintActivity(); }); seg.append(b); });
+    const ul = acEl("ul", "ac-list"); ul.style.marginTop = "10px";
+    all.filter((x) => acKind === "all" || x.k === acKind).slice(0, 300).forEach((x) => {
+      const li = acEl("li"), top = acEl("div", "top"), acts = acEl("div", "acts"), open = acEl("button", "btn", "افتح الموضع"), del = acEl("button", "btn", "حذف"), n = spanCount(x.r);
+      const when = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(x.t);
+      top.append(acEl("strong", "", span(x.r)), acEl("span", "ac-kind", x.k === "h" ? "تسميع" : "قراءة"));
+      open.type = del.type = "button"; open.addEventListener("click", () => jump(rows[x.r[0][0]][2], rows[x.r[0][0]][0] + ":" + rows[x.r[0][0]][1]));
+      del.addEventListener("click", () => { rawAct.s[String(x.t)] = { del: true, t: x.t }; saveMine(); paintActivity(); });
+      acts.append(open, del);
+      li.append(top, acEl("small", "", `${ar(n)} ${n > 10 ? "آية" : n > 2 ? "آيات" : n === 2 ? "آيتان" : "آية"} · ${acDur(x.d)} · ${when}` + (x.w ? ` · ${ar(x.w)} تنبيه خروج عن الموضع` : "")), acts); ul.append(li);
+    });
+    body.append(seg, ul); return;
+  }
+  // per ayah: read in this khatma, and how many times recited with the words hidden
+  const inKh = new Uint8Array(rows.length), times = new Uint16Array(rows.length);
+  (rawAct.kh.done || []).forEach(([a, b]) => { for (let g = a; g <= b && g < rows.length; g++) inKh[g] = 1; });
+  if (acTab === "hifz") all.forEach((x) => { if (x.k === "h") x.r.forEach(([a, b]) => { for (let g = a; g <= b && g < rows.length; g++) times[g] += 1; }); });
+  const firstOf = {}; rows.forEach((r, g) => { if (firstOf[r[0]] == null) firstOf[r[0]] = g; });
+  if (acTab === "khatma") {
+    const read = inKh.reduce((t, v) => t + v, 0), pct = Math.round((read / rows.length) * 100), perPage = {}, donePage = {};
+    rows.forEach((r, g) => { perPage[r[2]] = (perPage[r[2]] || 0) + 1; if (inKh[g]) donePage[r[2]] = (donePage[r[2]] || 0) + 1; });
+    const left = Object.keys(perPage).reduce((t, p) => t + 1 - (donePage[p] || 0) / perPage[p], 0), ring = acEl("div", "ac-ring"), C = 2 * Math.PI * 50;
+    ring.innerHTML = `<svg viewBox="0 0 120 120" role="img" aria-label="نسبة الختمة ${pct}٪"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C * read) / rows.length} ${C}" transform="rotate(-90 60 60)"/><text x="60" y="67" text-anchor="middle" font-size="24" font-weight="600" fill="currentColor">${ar(pct)}٪</text></svg>`;
+    const dl = acEl("dl"); [["إجمالي الصفحات", ar(meta.last)], ["الصفحات المتبقية", ar(Math.round(left * 10) / 10)], ["الآيات المقروءة", `${ar(read)} من ${ar(rows.length)}`], ["الختمات المكتملة", ar(rawAct.kh.n || 0)]].forEach(([t, v]) => dl.append(acEl("dt", "", t), acEl("dd", "", v)));
+    ring.append(dl); body.append(ring);
+    const next = rawAct.kh.last >= 0 ? Math.min(rows.length - 1, rawAct.kh.last + 1) : -1;
+    if (next >= 0) { const go = acEl("button", "btn main", `تابع القراءة: ${name(next)} · ص ${ar(rows[next][2])}`); go.type = "button"; go.style.cssText = "margin-top:10px;width:100%;padding:10px"; go.addEventListener("click", () => jump(rows[next][2], rows[next][0] + ":" + rows[next][1])); body.append(go); }
+    const fl = acEl("div", "ac-filter"); [["done", "مكتمل"], ["part", "بدأت"], ["none", "لم تبدأ"]].forEach(([k, t]) => { const lb = acEl("label"), cb = acEl("input"); cb.type = "checkbox"; cb.checked = acShow[k]; cb.addEventListener("change", () => { acShow[k] = cb.checked; paintActivity(); }); lb.append(cb, " " + t); fl.append(lb); });
+    body.append(acEl("h3", "", "الختمة بحسب السورة"), fl);
+  } else body.append(acEl("p", "note", "كل آية خانة في الشريط: الفارغة لم تُسمَّع، وتزداد قتامة الخانة كلما تكرر تسميعها مع إخفاء الكلمات (مرة، مرتان إلى ثلاث، أربع فأكثر)."));
+  const ul = acEl("ul", "ac-list");
+  Object.entries(meta.surahs).forEach(([sn, su]) => {
+    const g0 = firstOf[sn], n = su.ayahs; let read = 0, heard = 0; const gaps = []; let run = null;
+    for (let a = 0; a < n; a++) { const ok = inKh[g0 + a]; read += ok; if (times[g0 + a]) heard += 1; if (!ok) { if (run && run[1] === a) run[1] = a + 1; else { run = [a + 1, a + 1]; gaps.push(run); } } }
+    if (acTab === "khatma") {
+      const state = read === n ? "done" : read ? "part" : "none"; if (!acShow[state]) return;
+      const li = acEl("li"), top = acEl("div", "top"), bar = acEl("div", "ac-bar"), fill = acEl("i"); fill.style.width = (read / n) * 100 + "%"; bar.append(fill);
+      top.append(acEl("strong", "", su.name), acEl("small", "", `${ar(Math.round((read / n) * 100))}٪ (${ar(read)}/${ar(n)})`));
+      li.append(top, acEl("small", "", read === n ? "لم يبقَ شيء" : "المتبقي: " + gaps.slice(0, 4).map((r) => (r[0] === r[1] ? ar(r[0]) : ar(r[0]) + "–" + ar(r[1]))).join("، ") + (gaps.length > 4 ? "…" : "")), bar); ul.append(li);
+    } else {
+      if (!heard) return;
+      const li = acEl("li"), top = acEl("div", "top"), strip = acEl("div", "ac-strip");
+      for (let a = 0; a < n; a++) { const t = times[g0 + a], c = acEl("i", t === 0 ? "n0" : t === 1 ? "n1" : t <= 3 ? "n2" : ""); c.title = `الآية ${a + 1}: ${t} مرة`; strip.append(c); }
+      top.append(acEl("strong", "", su.name), acEl("small", "", `سُمِّع ${ar(heard)} من ${ar(n)} آية`)); li.append(top, strip); ul.append(li);
+    }
+  });
+  if (!ul.children.length) ul.append(acEl("li", "", acTab === "khatma" ? "لا توجد سور بهذه التصفية." : "لم تُسمَّع آيات مع إخفاء الكلمات بعد."));
+  body.append(ul);
+}
+$("#ac-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; acTab = b.dataset.v; paintActivity(); });
+$("#ac-close").addEventListener("click", close);
 $("#ts-jump").addEventListener("click", () => { const hit = FOL.away && FOL.away.hit; if (!hit) return; FOL.pos = hit.pos; FOL.from = hit.from; FOL.walked = 24; folAway(null); folReveal(); });
 
 /* Backup file */
@@ -2709,6 +2846,8 @@ $("#mine-copy").addEventListener("click", async () => copyText(await allText()))
 /* ---------- settings ---------- */
 let setTab = "view";
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-tshide").addEventListener("change", (e) => { tsHide = e.target.checked; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
+$("#set-tsmark").addEventListener("change", (e) => { tsNoMark = e.target.checked; store.set("tsmark", tsNoMark ? "1" : "0"); tsClasses(); });
 $("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
 $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
@@ -2718,6 +2857,7 @@ function paintSettings() {
   $("#view-help").textContent = view === "flow" ? "تُعرض كلمات الصفحة نفسها برسم المصحف في أسطر أكبر، صفحةً صفحة، وتُمرَّر الصفحة إلى أسفل. أرقام الصفحات كما في المطبوع." : "كل صفحة كما هي في المصحف المطبوع، سطرًا بسطر.";
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
+  $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark;
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
   $("#wmark-help").textContent = { "": "لا تُميَّز كلمات.", gharib: "كلمات الغريب بالأحمر.", mut: "العبارات المتشابهة بالأزرق؛ ولمسها يعرض مواضعها الأخرى.", qir: "كلمات الخلاف بين القراءات بالبنفسجي؛ ولمسها يعرض أوجه الخلاف." }[wmark];
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
