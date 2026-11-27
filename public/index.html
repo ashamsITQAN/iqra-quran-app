@@ -1247,6 +1247,14 @@ async function markQir(svg) {
       g.classList.add("qr");
     });
   }));
+  // Ayahs not in the index are read live; the pages ahead (and the one behind) are read in advance so turning stays quick.
+  const n = +(svg.closest(".page") || { dataset: {} }).dataset.page, seen = markQir.seen || (markQir.seen = new Set());
+  if (n && (!idx || idx.missing.size)) [n + 1, n + 2, n + 3, n - 1].forEach(async (pg) => {
+    if (pg < 1 || pg > meta.last || seen.has(pg)) return;
+    seen.add(pg);
+    const rows = await loadCorpus().catch(() => null);
+    if (rows && showQir) rows.filter((r) => r.page === pg).forEach((r) => { const k = r.s + ":" + r.a; if (!idx || idx.missing.has(k)) wordsOfAyah(p, k).catch(() => {}); });
+  });
 }
 function remarkQir() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markQir(svg)); }
 // Where a project's entries come from: its file for the page (content pulled from Fanar at build time), or, for the

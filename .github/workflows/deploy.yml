@@ -31,16 +31,18 @@ jobs:
           curl -fsSL --retry 3 "https://s3.us-east-1.wasabisys.com/static-cdn.tarteel.ai/qul-exports/mutashabihat/1722613172-vnm9h-mutashabihat.zip" -o /tmp/mutashabihat.zip \
             && python3 scripts/mutashabihat.py /tmp/mutashabihat.zip public \
             || echo "::warning::mutashabihat export not available; the app is built without it"
-      # The index of words the readings differ on takes one request per ayah, so it is rebuilt once a week and cached.
-      - id: week
-        run: echo "week=$(date +%G-%V)" >> "$GITHUB_OUTPUT"
+      # The index of words the readings differ on takes one request per ayah. It is kept between builds, and each build
+      # spends at most five minutes reading the ayahs it still lacks.
       - uses: actions/cache@v4
         with:
           path: qiraat-index.json
-          key: qiraat-index-${{ steps.week.outputs.week }}
+          key: qiraat-index-${{ github.run_id }}
+          restore-keys: qiraat-index-
       - name: Readings index (Surah API)
+        timeout-minutes: 8
+        continue-on-error: true
         run: |
-          [ -f qiraat-index.json ] || python3 scripts/qiraat.py public qiraat-index.json || true
+          python3 scripts/qiraat.py public qiraat-index.json 5 || true
           if [ -f qiraat-index.json ]; then cp qiraat-index.json public/data/qiraat.json; else echo "::warning::readings index not built; the app reads the readings live"; fi
       - name: Stamp the build version
         run: |
