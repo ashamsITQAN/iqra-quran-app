@@ -625,7 +625,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 <section id="hifz" class="modal" role="dialog" aria-label="جلسة الحفظ" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big plain">الحفظ بالتكرار المتقاطع</p><p class="sub">تلقين كل مقطع منفردًا، ثم وصله بما قبله، ثم سرد الكل.</p></div>
-    <button class="sh-close" id="hz-close" type="button" aria-label="إغلاق">×</button>
+    <button class="sh-close" id="hz-help" type="button" aria-label="كيف أستفيد من التكرار المتقاطع؟" title="كيف أستفيد من التكرار المتقاطع؟">؟</button><button class="sh-close" id="hz-close" type="button" aria-label="إغلاق">×</button>
   </div>
   <div class="sh-body hz">
     <fieldset><legend>المقطع</legend>
@@ -676,6 +676,33 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
 </section>
 
+<section id="hzguide" class="modal" role="dialog" aria-label="كيف أستفيد من التكرار المتقاطع" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">الحفظ بالتكرار المتقاطع</p><p class="sub">كيف تعمل الطريقة وكيف تستفيد منها</p></div>
+    <button class="sh-close" id="hzg-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <p style="margin:0 0 8px"><b>الفكرة:</b> لا تحفظ الآيات متفرقة ثم تجمعها في النهاية، بل كلما حفظت مقطعًا جديدًا وصلته فورًا بما قبله، فيثبت الجديد ويُراجَع القديم في الوقت نفسه، ولا تنقطع عندك مواضع الانتقال بين الآيات.</p>
+    <p style="margin:0 0 4px"><b>مثال على ثلاث آيات:</b></p>
+    <ol class="tsg">
+      <li>الآية ١ وحدها، مرات (تلقين).</li>
+      <li>الآية ٢ وحدها، مرات، ثم الآيتان ١–٢ معًا (وصل).</li>
+      <li>الآية ٣ وحدها، مرات، ثم الآيات ١–٣ معًا (وصل).</li>
+      <li>في الختام: سرد المقطع كله من أوله إلى آخره.</li>
+    </ol>
+    <p style="margin:10px 0 4px"><b>الخطوات:</b></p>
+    <ol class="tsg">
+      <li><b>اختر المقطع:</b> السورة، ومن أي آية إلى أي آية، والقارئ.</li>
+      <li><b>حدّد مقدار التلقين:</b> آية آية للمبتدئ أو للآيات الطويلة، وآيتان أو أكثر للآيات القصيرة.</li>
+      <li><b>اضبط عدد المرات</b> لكل مرحلة: التلقين منفردًا، الوصل بما قبله، سرد الكل. زدها إن كان الحفظ جديدًا عليك، وضع صفرًا لمرحلة لا تريدها.</li>
+      <li><b>اختر طريقة الوصل:</b> «تراكمي» يعيد من أول المقطع كل مرة وهو الأثبت، و«بالمقطع السابق فقط» أسرع للمقاطع الطويلة.</li>
+      <li><b>اختر «أستمع ثم أردّد»:</b> يتلو القارئ ثم يترك لك مهلة لتردّد بصوتك. فعّل «إخفاء الآيات وقت الترديد» لتختبر نفسك من غير نظر.</li>
+      <li><b>اضغط «ابدأ الحفظ»</b> وتابع؛ المدة التقديرية للجلسة تظهر بجانب الزر.</li>
+    </ol>
+    <p class="note" style="margin:10px 0 0">نصائح: ابدأ بمقطع قصير (خمس آيات مثلًا)، وردّد بصوت مسموع لا في نفسك، ولا تنتقل إلى مقطع جديد حتى تسرد الحالي من غير نظر، وأعد جلسة الأمس قبل البدء بجديد اليوم.</p>
+  </div>
+  <div class="sh-nav"><button type="button" class="btn main" id="hzg-ok">فهمت، لنبدأ</button></div>
+</section>
 <section id="tsguide" class="modal" role="dialog" aria-label="كيف أستعمل التسميع" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big plain">كيف أستعمل التسميع؟</p><p class="sub">اقرأ والتطبيق يتابعك ويُظهر ما قرأت</p></div>
@@ -1355,7 +1382,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); show($("#fb"), false); show($("#tsguide"), false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); show($("#fb"), false); show($("#tsguide"), false); show($("#hzguide"), false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -1957,7 +1984,9 @@ async function openHifz(preset) {
   estimate();
 }
 hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.startsWith("hz-")) return; if (e.target.id === "hz-surah") { hz.surah = +e.target.value; hz.from = 1; hz.to = meta.surahs[hz.surah].ayahs; F("from").value = 1; F("to").value = hz.to; } readForm(); writeForm(); estimate(); });
-$("#hifz-open").addEventListener("click", () => openHifz());
+$("#hifz-open").addEventListener("click", () => { openHifz(); if (store.get("hzguide", "0") !== "1" && !navigator.webdriver /* not under an automated test */) { store.set("hzguide", "1"); show($("#hzguide"), true); } });
+$("#hz-help").addEventListener("click", () => show($("#hzguide"), true));
+["#hzg-close", "#hzg-ok"].forEach((s) => $(s).addEventListener("click", () => show($("#hzguide"), false)));
 $("#hz-close").addEventListener("click", close);
 F("start").addEventListener("click", () => { readForm(); show(hifzBox, false); startSession({ ...hz }); });
 F("listen").addEventListener("click", () => { readForm(); show(hifzBox, false); startSession({ ...hz, from: 1, to: meta.surahs[hz.surah].ayahs, mode: "listen", hide: false, listen: true }); });
