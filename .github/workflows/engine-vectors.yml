@@ -1,0 +1,37 @@
+name: Fetch Quran Lab engine vectors
+# Saves the published engine vectors (what the documented feedback engine gives on the model's sample clips) as test
+# fixtures, each file checked against the SHA-256 the index gives.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/engine-vectors.yml']
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify
+        run: |
+          set -e
+          mkdir -p tests/fixtures/engine-vectors
+          curl -fsSL https://sdk.quranlab.ai/engine-vectors/index.json -o tests/fixtures/engine-vectors/index.json
+          python3 - <<'PY'
+          import json,hashlib,urllib.request
+          idx=json.load(open('tests/fixtures/engine-vectors/index.json'))
+          for f in idx['files']:
+              assert f['url'].startswith('https://sdk.quranlab.ai/engine-vectors/'), f['url']
+              data=urllib.request.urlopen(urllib.request.Request(f['url'],headers={'User-Agent':'curl/8'})).read()
+              assert hashlib.sha256(data).hexdigest()==f['sha256'].lower(), 'sha256 mismatch '+f['url']
+              open('tests/fixtures/engine-vectors/'+f['calibration_sha256']+'.json','wb').write(data)
+              print(f['model_id'],len(data))
+          PY
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/fixtures/engine-vectors
+          git diff --cached --quiet || git commit -m "Quran Lab engine vectors, as published"
+          git push
