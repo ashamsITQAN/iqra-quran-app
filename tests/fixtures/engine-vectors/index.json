@@ -1,0 +1,41 @@
+{
+ "format": "quranlab.engine-vectors-index/1",
+ "about": "Engine vectors: what the documented feedback engine (https://sdk.quranlab.ai/docs/engine) gives on each model's sample clips. One file per model calibration; pick the one whose calibration_sha256 equals the sha256 of model.calibration.",
+ "files": [
+  {
+   "model_id": "v4.0",
+   "version": "4.0.0",
+   "builds": [
+    "33638dc8dcbbbb51010ee502cb48e1e43beab19a"
+   ],
+   "contexts": [
+    "c16_l64",
+    "c24_l72",
+    "c24_l256",
+    "c8_l64"
+   ],
+   "calibration_sha256": "747b7b4cff040efbd46b2ef709f9344c35771b109a4ca1bee1e52b65a5bd991c",
+   "url": "https://sdk.quranlab.ai/engine-vectors/747b7b4cff040efbd46b2ef709f9344c35771b109a4ca1bee1e52b65a5bd991c.json",
+   "sha256": "b4a4f6b9b78cfd11d91009ef5f953de97adba03f8f4eae6c1860ba2d337199a2",
+   "bytes": 1841377
+  },
+  {
+   "model_id": "v4.1",
+   "version": "4.1.5",
+   "builds": [
+    "fd9109e08fa9b61520f99f532854794d107a2407"
+   ],
+   "contexts": [
+    "c8_l256",
+    "c16_l128",
+    "c16_l256",
+    "c24_l256",
+    "c16_l64"
+   ],
+   "calibration_sha256": "aa1680f3aadb1183d4cc79cb4820e0b4c7b6199356d3491f4e5d7a3452f9f1b1",
+   "url": "https://sdk.quranlab.ai/engine-vectors/aa1680f3aadb1183d4cc79cb4820e0b4c7b6199356d3491f4e5d7a3452f9f1b1.json",
+   "sha256": "052ca3e1e44a06f57efeebd30c07cfb7d049cb925224223185c79714c0ab72bc",
+   "bytes": 1980674
+  }
+ ]
+}
