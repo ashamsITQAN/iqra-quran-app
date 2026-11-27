@@ -54,6 +54,13 @@ button{cursor:pointer}
 #spread{display:flex;gap:6px;align-items:flex-start;justify-content:center;margin:auto}
 .page{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;flex:none;box-shadow:0 1px 6px rgba(0,0,0,.08)}
 .page.blank{visibility:hidden}
+/* a phone held upright: the page reaches the edges of the screen */
+body.fit #stage{padding:3px 4px}body.fit.full #stage{padding:1px 2px}
+body.fit .page{border-radius:6px;box-shadow:none}
+body.fit .art{margin-inline:3px}
+body.fit .head{height:24px;font-size:13px;padding:0 8px}body.fit .foot{height:30px}
+body.fit .foot button{font-size:14px;padding:1px 8px;min-width:40px}
+body.fit.full .head{padding-inline-end:40px}body.fit.full #full-exit{top:2px;left:3px;width:30px;height:30px;font-size:15px}
 /* a small floating square beside a page, clear of it, level with the line: a quarter, half or three quarters of a hizb,
    a new hizb or juz, a prostration; dressed like the surah banner, in the page number's typeface */
 .mtab{position:absolute;transform:translateY(-50%);width:54px;height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--panel);background-image:linear-gradient(var(--banner),var(--banner));border:1px solid var(--mark);border-radius:9px;box-shadow:0 2px 8px rgba(0,0,0,.16);font-family:var(--naskh);color:var(--ink);pointer-events:none;z-index:1;line-height:1.15;text-align:center}
@@ -761,19 +768,23 @@ function measure() {
   if (mode === "2" && w >= 700 && h - FURN >= 400) return { cols: 2, artH: Math.min(fitTwo, h - FURN) };
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
+  // a phone held upright: the page takes the whole screen, its side margins trimmed and its lines spread down the height
+  if (w < 700 && h > w * 1.25) { const fw = stage.clientWidth - (full ? 4 : 8), fh = stage.clientHeight - (full ? 2 : 6) - furn(); return { cols: 1, artH: fh, artW: fw - 6, fit: true }; }
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
   return { cols: 1, artH: one };
 }
+const furn = () => (matchMedia("(max-width:700px) and (orientation:portrait)").matches ? 24 + 30 + 4 : FURN);   // the height of a page's head and foot
 function firstOfSpread(n) { return cols === 2 && n % 2 === 0 ? n - 1 : n; }
 
 async function render() {
   const m = measure();
-  cols = m.cols; render.artH = m.artH;
+  cols = m.cols; render.artH = m.artH; render.fit = !!m.fit; render.artW = m.artW || 0;
+  document.body.classList.toggle("fit", render.fit);
   if (view !== "print" && render.last !== cur) stage.scrollTop = 0;
   cur = Math.max(meta.first, Math.min(meta.last, cur));
   const start = firstOfSpread(cur);
   const want = cols === 2 ? [start, start + 1] : [cur];
-  spread.replaceChildren(...want.map((n) => pageShell(n, m.artH)));
+  spread.replaceChildren(...want.map((n) => pageShell(n, m.artH, m.artW)));
   if (render.last != null && render.last !== start) {   // a visible cue that the page has turned
     spread.classList.remove("turn-next", "turn-prev"); void spread.offsetWidth; spread.classList.add(start > render.last ? "turn-next" : "turn-prev");
     const fw = $("#full-where"); fw.textContent = cols === 2 && start + 1 <= meta.last ? `${ar(start)}–${ar(start + 1)}` : ar(cur); fw.classList.add("on"); clearTimeout(render.fw); render.fw = setTimeout(() => fw.classList.remove("on"), 1300);
@@ -791,10 +802,10 @@ async function render() {
   [start - 1, start - 2, start + cols, start + cols + 1].forEach((n) => { if (n >= meta.first && n <= meta.last) getSVG(n).catch(() => {}); });
 }
 
-function pageShell(n, artH) {
+function pageShell(n, artH, artW) {
   const el = document.createElement("article");
   el.className = "page";
-  el.style.width = Math.round(artH * RATIO + 14) + "px";
+  el.style.width = Math.round(artW ? artW + 6 : artH * RATIO + 14) + "px";
   if (n > meta.last) { el.classList.add("blank"); el.style.height = Math.round(artH + FURN) + "px"; return el; }
   const pm = pageMeta(n), s = pm.surahs[0];
   el.dataset.page = n; el.classList.add(n % 2 ? "rt" : "lt");   // odd pages sit on the right of the open mushaf
@@ -819,6 +830,7 @@ async function fillPage(n) {
   if (view === "tafsir") return fillTafsir(n, art, svg);
   art.replaceChildren(svg);
   if (view === "flow") { keepInk(n, svg); reflow(svg, art); }
+  else if (render.fit) { keepInk(n, svg); fitPage(svg, art, render.artH); }
   decorate(svg);
   markTopics(svg);
   markGharib(n, svg);
@@ -1033,6 +1045,31 @@ function decorate(svg) {
   }
 }
 
+/* A phone held upright. The printed page is narrower than the screen is tall, so it is shown without its side margins,
+   which makes the writing bigger, and its lines, each kept exactly as printed, are set further apart to reach down the screen. */
+function fitPage(svg, art, room) {
+  const inv = DOMMatrix.fromMatrix(svg.getScreenCTM()).inverse();
+  const box = (el) => { const r = el.getBoundingClientRect(), a = new DOMPoint(r.left, r.top).matrixTransform(inv), b = new DOMPoint(r.right, r.bottom).matrixTransform(inv); return { x0: a.x, y0: a.y, x1: b.x, y1: b.y, cy: (a.y + b.y) / 2, w: b.x - a.x, h: b.y - a.y }; };
+  const lines = [...svg.querySelectorAll("g.line")].map((el) => ({ el, n: +el.dataset.line, b: box(el) })).filter((L) => L.b.w > 0).sort((a, b) => a.n - b.n);
+  if (!lines.length) return;
+  const marks = [...svg.querySelectorAll("g.ayah-mark,g.division-mark,g.sajdah-mark path")].map((el) => ({ el, b: box(el) })).filter((t) => t.b.w > 0);
+  const all = lines.concat(marks), x0 = Math.min(...all.map((t) => t.b.x0)), x1 = Math.max(...all.map((t) => t.b.x1)), y0 = Math.min(...all.map((t) => t.b.y0)), y1 = Math.max(...all.map((t) => t.b.y1));
+  const padX = 3.5, padY = 5, W = x1 - x0 + 2 * padX, s = art.clientWidth / W;   // screen px per drawing unit once the margins are trimmed
+  const first = lines[0], last = lines[lines.length - 1], span = last.b.cy - first.b.cy;
+  let H = y1 - y0 + 2 * padY, f = 1;
+  // only a full page is spread; a short one (the Fatiha, the last pages) keeps its printed spacing
+  if (lines.length >= 12 && span > 0 && H * s < room) { f = Math.min(1.6, 1 + (room / s - H) / span); H += span * (f - 1); }
+  if (f > 1.002) {
+    const dy = (cy) => (cy - first.b.cy) * (f - 1), moves = lines.map((L) => [L.el, dy(L.b.cy)]);
+    marks.forEach((t) => { const L = lines.reduce((best, x) => (Math.abs(x.b.cy - t.b.cy) < Math.abs(best.b.cy - t.b.cy) ? x : best), first); moves.push([t.el, dy(L.b.cy)]); });
+    moves.forEach(([el, d]) => {
+      const P = inv.multiply(DOMMatrix.fromMatrix(el.parentNode.getScreenCTM())), M = P.inverse().multiply(new DOMMatrix().translate(0, d)).multiply(P);
+      el.setAttribute("transform", `matrix(${[M.a, M.b, M.c, M.d, M.e, M.f].map((v) => +v.toFixed(5)).join(" ")}) ` + (el.getAttribute("transform") || ""));
+    });
+  }
+  svg.setAttribute("viewBox", `${(x0 - padX).toFixed(3)} ${(y0 - padY).toFixed(3)} ${W.toFixed(3)} ${H.toFixed(3)}`);
+  art.style.height = Math.round(Math.min(room, H * s)) + "px";
+}
 /* The enlarged view. The words of the page keep their printed drawing; each is moved to a new place so that the same
    text runs in fewer words per line, at "zoom" times the printed size. Nothing is redrawn and the page keeps its number. */
 function reflow(svg, art) {
@@ -1385,7 +1422,7 @@ async function step(dir) {
 /* The ayah exactly as printed: its ink is copied from the page, line by line. Each line keeps the size
    it has in the mushaf and is centred in the block. */
 function ayahBlock(key, activeWord, root) {
-  if (!root && view !== "print" && inkBox.querySelector(`g.ayah-fragment[data-ayah-key="${key}"]`)) {   // the printed copy, wearing the colours of the page on screen
+  if (!root && (view !== "print" || render.fit) && inkBox.querySelector(`g.ayah-fragment[data-ayah-key="${key}"]`)) {   // the printed copy, wearing the colours of the page on screen
     root = inkBox;
     inkBox.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"] g.word`).forEach((w) => { const live = spread.querySelector(`g.word[data-word-key="${w.dataset.wordKey}"]`); if (live) ["gh", "mt", "qr"].forEach((c) => w.classList.toggle(c, live.classList.contains(c))); });
   }
@@ -2490,8 +2527,8 @@ const stageClip = document.createElement("div"), stageBox = document.createEleme
 stageClip.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none"; stageClip.setAttribute("aria-hidden", "true");
 stageBox.style.cssText = "position:absolute;left:0;top:0;width:520px"; stageClip.append(stageBox); document.body.append(stageClip);
 async function rootOfPage(n) {   // the page as shown, or an unseen copy of it laid out off screen
-  if (view !== "print" && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
-  if (view === "print" && spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
+  if ((view !== "print" || render.fit) && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
+  if (view === "print" && !render.fit && spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
   const box = document.createElement("div"), doc = new DOMParser().parseFromString(await getSVG(n), "image/svg+xml"), svg = document.importNode(doc.documentElement, true);
   svg.removeAttribute("width"); svg.removeAttribute("height"); svg.style.cssText = "display:block;width:100%;height:100%";
   box.style.cssText = "width:420px;height:" + 420 / RATIO + "px"; box.append(svg); stageBox.append(box);
@@ -3344,7 +3381,7 @@ stage.addEventListener("pointerup", (e) => {
 stage.addEventListener("pointercancel", () => { down = null; });
 
 let rz;
-window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2) render(); }, 120); });
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
