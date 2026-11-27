@@ -46,8 +46,9 @@ button{cursor:pointer}
 .bar h1{font-size:17px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-width:520px){.bar h1{display:none}.bar .grow{display:none}.bar{justify-content:space-between}}
 /* a narrow screen: every button of the bar stays in view; the sync reminder becomes a sign */
-@media (max-width:520px){.bar{gap:4px;padding-inline:6px}.bar .btn{padding:6px 8px;flex:0 1 auto;min-width:0;white-space:nowrap}
+@media (max-width:520px){.bar{gap:4px;padding-inline:6px}.bar .btn.ico{padding:5px 7px}.bar .btn{padding:6px 8px;flex:0 1 auto;min-width:0;white-space:nowrap}
   #sync-chip{font-size:0;padding:6px 9px}#sync-chip::before{content:"⟳";font-size:15px;line-height:1}}
+#theme-go .sun,#theme-go.dark .moon{display:none}#theme-go.dark .sun{display:inline}
 .bar .btn.ico{padding:5px 9px;display:inline-grid;place-items:center}.bar .btn.ico svg{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media (max-width:640px){.bar .chip{display:none}.bar h1{font-size:15px}.bar select{max-width:34vw}.bar{gap:6px;padding-inline:10px}}
 .chip{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;white-space:nowrap}
@@ -495,11 +496,12 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <span class="grow"></span>
   <button type="button" id="sync-chip" class="btn" hidden title="المزامنة مع Google Drive تحتاج ضغطة">مزامنة</button>
   <button type="button" id="full-open" class="btn" aria-label="ملء الشاشة" title="ملء الشاشة">⛶</button>
+  <button type="button" id="theme-go" class="btn ico" aria-label="الوضع الليلي" title="التبديل بين الوضع الليلي والنهاري"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.500A8 8 0 0 1 9.500 4a8 8 0 1 0 10.500 10.500z"/><g class="sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.500v2M12 19.500v2M2.500 12h2M19.500 12h2M5.300 5.300l1.400 1.400M17.300 17.300l1.400 1.400M5.300 18.700l1.400-1.400M17.300 6.700l1.400-1.400"/></g></svg></button>
   <button type="button" id="find-open" class="btn ico" aria-label="بحث" title="بحث"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button>
   <button type="button" id="set-open" class="btn ico" aria-label="الإعدادات" title="الإعدادات"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.900 2.900l-.1-.1a1.7 1.7 0 0 0-1.800-.3 1.700 1.700 0 0 0-1 1.500V21a2 2 0 1 1-4 0v-.1a1.700 1.700 0 0 0-1.100-1.500 1.700 1.700 0 0 0-1.800.3l-.1.1a2 2 0 1 1-2.900-2.900l.1-.1a1.700 1.700 0 0 0 .3-1.800 1.700 1.700 0 0 0-1.500-1H3a2 2 0 1 1 0-4h.1a1.700 1.700 0 0 0 1.500-1.100 1.700 1.700 0 0 0-.3-1.800l-.1-.1a2 2 0 1 1 2.900-2.900l.1.1a1.700 1.700 0 0 0 1.800.3h.1a1.700 1.700 0 0 0 1-1.500V3a2 2 0 1 1 4 0v.1a1.700 1.700 0 0 0 1 1.500 1.700 1.700 0 0 0 1.800-.3l.1-.1a2 2 0 1 1 2.900 2.900l-.1.1a1.700 1.700 0 0 0-.3 1.800v.1a1.700 1.700 0 0 0 1.500 1H21a2 2 0 1 1 0 4h-.1a1.700 1.700 0 0 0-1.500 1z"/></svg></button>
-  <button type="button" id="hifz-open" class="btn">الحفظ</button>
+  <button type="button" id="hifz-open" class="btn ico" aria-label="الحفظ" title="الحفظ: التلقين والترديد"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.500a3 3 0 0 0-5.600-1.500A3.200 3.200 0 0 0 4 8.500a3.500 3.500 0 0 0-.500 5.500A3.400 3.400 0 0 0 7 18.500a3 3 0 0 0 5-1.500z"/><path d="M12 5.500a3 3 0 0 1 5.600-1.500A3.200 3.200 0 0 1 20 8.500a3.500 3.500 0 0 1 .500 5.500 3.400 3.400 0 0 1-3.500 4.500 3 3 0 0 1-5-1.500z"/><path d="M8.500 9.500a2.500 2.500 0 0 0 3.500 2M15.500 9.500a2.500 2.500 0 0 1-3.500 2M7.500 14.500a2.500 2.500 0 0 1 2-1.500M16.500 14.500a2.500 2.500 0 0 0-2-1.500"/></svg></button>
   <button type="button" id="ts-go" class="btn ico" aria-pressed="false" aria-label="تسميع" title="التسميع: اقرأ والتطبيق يتابعك ويُظهر ما قرأت"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.500 6.500 0 0 0 13 0M12 17.500V21M8.500 21h7"/></svg></button>
-  <button type="button" id="idx-open" class="btn">الفهرس</button>
+  <button type="button" id="idx-open" class="btn ico" aria-label="الفهرس" title="الفهرس"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h11M4 12h11M4 18h11"/><circle cx="19.500" cy="6" r=".6"/><circle cx="19.500" cy="12" r=".6"/><circle cx="19.500" cy="18" r=".6"/></svg></button>
 </header>
 
 <main id="stage"><div id="spread"></div></main>
@@ -773,7 +775,10 @@ document.body.dataset.tpi = tpi;
 let wmark = store.get("wmark", null);
 if (wmark == null) wmark = store.get("qir", "0") === "1" ? "qir" : store.get("mut", "0") === "1" ? "mut" : store.get("gharib", "1") === "1" ? "gharib" : "";
 let showGharib = wmark === "gharib", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1", showMut = wmark === "mut", showQir = wmark === "qir";
-function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
+const darkMQ = matchMedia("(prefers-color-scheme:dark)"), isDark = () => theme === "dark" || (theme === "auto" && darkMQ.matches);
+function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme);
+  const b = document.getElementById("theme-go"); if (b) { b.classList.toggle("dark", isDark()); b.setAttribute("aria-label", isDark() ? "الوضع النهاري" : "الوضع الليلي"); } }
+darkMQ.addEventListener("change", () => applyTheme());
 applyTheme();
 let found = [];
 let meta, projects, cur = 1, cols = 1, ctx = null, level = null, swiped = false;
@@ -1242,7 +1247,7 @@ function marginTabs(n, svg) {
   if (!pr.height || size < 40) return;
   (meta.rub || []).filter((r) => r.page === n).forEach((r) => {
     const w = svg.querySelector(`g.word[data-word-key="${r.ayah}:1"]`); if (!w) return;
-    items.push(r.n === 1 ? { el: w, small: r.juz ? "الجزء" : "الحزب", big: ar(r.juz || r.hizb), first: "small" } : { el: w, big: ["", "", "ربع", "نصف", "ثلاثة أرباع"][r.n], small: "الحزب", cls: r.n === 4 ? " word w3" : " word" });
+    items.push(r.n === 1 ? { el: w, small: r.juz ? "الجزء" : "الحزب", big: ar(r.juz || r.hizb), first: "small" } : { el: w, big: ["", "", "١/٤", "١/٢", "٣/٤"][r.n], small: "الحزب" });
   });
   svg.querySelectorAll("g.sajdah-mark").forEach((g) => items.push({ el: g, big: "سجدة", cls: " word" }));
   let last = -1e9;
@@ -3349,6 +3354,7 @@ const setZoom = (z) => { zoom = Math.max(1.2, Math.min(3, Math.round(z * 5) / 5)
 $("#zoom").addEventListener("change", (e) => setZoom(+e.target.value));
 $("#zoom-out").addEventListener("click", () => setZoom(zoom - 0.2)); $("#zoom-in").addEventListener("click", () => setZoom(zoom + 0.2));
 $("#seg-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; mode = b.dataset.v; store.set("mode", mode); paintSettings(); render(); });
+$("#theme-go").addEventListener("click", () => { theme = isDark() ? "light" : "dark"; store.set("theme", theme); applyTheme(); if (settings.classList.contains("open")) paintSettings(); });
 $("#seg-theme").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; theme = b.dataset.v; store.set("theme", theme); applyTheme(); paintSettings(); });
 $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(indexBox, false); applySelection(); paintSettings(); show(settings, true); });
 $("#set-close").addEventListener("click", close);
