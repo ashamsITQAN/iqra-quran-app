@@ -264,10 +264,16 @@ body[data-tpi="3"]{--tpo:52%}
 #settings{width:min(520px,calc(100% - 24px));height:min(70%,560px)}
 .sh-body[hidden],.opt[hidden]{display:none}
 #set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
-#ts-prog{width:100%;height:8px;accent-color:var(--accent)}
-.ts-h{font-size:14px;font-weight:600;color:var(--muted);margin:10px 0 6px}
-#ts-heard{min-height:110px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px 14px;font-family:var(--naskh);font-size:20px;line-height:2;overflow-wrap:anywhere}
-#ts-heard .tail{color:var(--muted)}   /* heard, but may still change */
+/* Recitation following: the page's words are faint until they are recited */
+#ts-bar{position:fixed;inset-inline:0;bottom:calc(58px + env(safe-area-inset-bottom));margin:0 auto;width:min(560px,calc(100% - 20px));z-index:3;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.2);font-size:14.5px}
+#ts-bar[hidden]{display:none}
+#ts-status{flex:1;min-width:140px}
+#ts-bar a{color:var(--muted);font-size:12.5px}
+#ts-prog{width:90px;height:8px;accent-color:var(--accent)}
+#ts-go[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+body.ts-on .art svg g.word:not(.rd) path{opacity:0}
+body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
+@media (max-width:480px){header .btn{padding-inline:8px}}
 .zoomer{display:flex;align-items:center;gap:8px;flex:1;min-width:220px;max-width:360px}
 .zoomer input{flex:1;min-width:0;accent-color:var(--accent)}
 .zoomer button{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;font-size:22px;line-height:1;color:var(--ink);background:var(--panel);flex:none}
@@ -426,6 +432,7 @@ body[data-tpi="3"]{--tpo:52%}
   <button type="button" id="find-open" class="btn">بحث</button>
   <button type="button" id="set-open" class="btn">الإعدادات</button>
   <button type="button" id="hifz-open" class="btn">الحفظ</button>
+  <button type="button" id="ts-go" class="btn" aria-pressed="false" title="التسميع: اقرأ والتطبيق يتابعك ويُظهر ما قرأت">تسميع</button>
   <button type="button" id="idx-open" class="btn">الفهرس</button>
 </header>
 
@@ -465,6 +472,7 @@ body[data-tpi="3"]{--tpo:52%}
   <ol id="results"></ol>
 </section>
 
+<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -554,7 +562,7 @@ body[data-tpi="3"]{--tpo:52%}
       <label for="hz-speed">سرعة التلاوة في الحفظ</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
     </fieldset>
   </div>
-  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-tasmee" class="btn">سمِّع ما حفظت</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
+  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
 </section>
 
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
@@ -580,22 +588,6 @@ body[data-tpi="3"]{--tpo:52%}
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
-</section>
-
-<section id="tasmee" class="modal" role="dialog" aria-label="التسميع" aria-hidden="true">
-  <div class="sh-top">
-    <div class="sh-title"><p class="big plain">التسميع</p><p class="sub" id="ts-what"></p></div>
-    <button class="sh-close" id="ts-close" type="button" aria-label="إغلاق">×</button>
-  </div>
-  <div class="sh-body">
-    <p class="note" id="ts-status" role="status" style="margin:0 0 8px"></p>
-    <progress id="ts-prog" max="1" value="0" hidden></progress>
-    <h3 class="ts-h">ما سمعه النموذج</h3>
-    <div id="ts-heard" dir="auto" aria-live="polite"></div>
-    <p class="note" style="margin:10px 0 0">يعمل النموذج على جهازك، ويعرض ما سمعه من تلاوتك كما هو ولا يحكم عليها. قد يخطئ، ولا يغني عن معلّم متقن. أول استعمال ينزّل النموذج مرة واحدة (نحو ٥٦ ميغابايت). من Quran Lab.</p>
-    <p class="note" style="margin:6px 0 0"><a href="privacy.html" target="_blank" rel="noopener">الخصوصية ومشاركة التسجيلات</a></p>
-  </div>
-  <div class="sh-nav"><button type="button" id="ts-sample" class="btn" hidden>مقطع تجريبي</button><button type="button" id="ts-stop" class="btn" hidden>إنهاء التلاوة</button><button type="button" id="ts-start" class="btn main">ابدأ التلاوة</button></div>
 </section>
 
 <section id="share" class="modal" role="dialog" aria-label="مشاركة المحتوى" aria-hidden="true">
@@ -755,6 +747,7 @@ async function fillPage(n) {
   markQir(svg);
   marginTabs(n, svg);
   paintMarks();
+  if (typeof FOL !== "undefined" && FOL.on) folPaint(false);
 }
 
 /* Thematic division (data/topics.json): each surah is a list of [first ayah, last ayah, title]. */
@@ -1116,7 +1109,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); if (typeof tsBox !== "undefined") closeTasmee(); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -2415,70 +2408,171 @@ async function shareAs(kind) {
 $("#shr-close").addEventListener("click", () => show(shareBox, false));
 $("#sh-share").addEventListener("click", () => openShare(docShown()));
 
-/* Recitation (Quran Lab TajweedFormer SDK). The model runs in the reader's own browser, inside Quran Lab's frame: it hears
-   the recitation and reports what it heard. It judges nothing; this screen shows its output as it is. */
-const tsBox = $("#tasmee"), QL_KEY = window.QURANLAB_KEY || store.get("qlkey", "");   // the web key comes from quranlab-key.js, written at deploy time and kept out of the repository
-let qlClient = null, qlModel = null, qlSession = null, tsRange = null;
+/* Recitation following (Quran Lab TajweedFormer SDK). The model runs in the reader's own browser, inside Quran Lab's frame:
+   it hears the recitation and reports what it heard. This app only follows the reader's place with that output: it finds
+   where in the mushaf the reading is, turns to that page and shows the words as they are read. It judges nothing and never
+   marks a word right or wrong. */
+const QL_KEY = window.QURANLAB_KEY || store.get("qlkey", "");   // the web key comes from quranlab-key.js, written at deploy time and kept out of the repository
+const tsDev = new URLSearchParams(location.search).has("quranlab-sample");   // for checks: a sample clip of the model in place of the microphone
+let qlClient = null, qlModel = null, qlSession = null;
 function qlLoader() {
   return qlLoader.p || (qlLoader.p = new Promise((res, rej) => {
     const sc = document.createElement("script"); sc.src = "https://web.quranlab.ai/4/loader.js"; sc.crossOrigin = "anonymous";
     sc.onload = res; sc.onerror = () => { qlLoader.p = null; rej(Object.assign(new Error("loader"), { code: "needs_connection" })); }; document.head.append(sc);
   }));
 }
-const qlWords = { needs_connection: "اتصل بالإنترنت ثم حاول مرة أخرى.", download_failed: "تعذّر التنزيل الآن؛ حاول لاحقًا.", microphone_denied: "لم يُسمح باستعمال الميكروفون. اسمح به من إعدادات المتصفح ثم حاول.", microphone_unavailable: "لا يوجد ميكروفون متاح على هذا الجهاز.", storage_full: "لا توجد مساحة كافية لتنزيل النموذج.", runtime_unsupported: "هذا المتصفح لا يدعم تشغيل النموذج؛ جرّب متصفحًا أحدث.", interrupted: "انقطعت التلاوة؛ ابدأ من جديد.", invalid_key: "مفتاح التسميع غير مقبول.", server_rejected: "رفض خادم Quran Lab هذا الموقع." };
+const qlWords = { needs_connection: "اتصل بالإنترنت ثم حاول مرة أخرى.", download_failed: "تعذّر التنزيل الآن؛ حاول لاحقًا.", microphone_denied: "لم يُسمح باستعمال الميكروفون. اسمح به من إعدادات المتصفح ثم حاول.", microphone_unavailable: "لا يوجد ميكروفون متاح على هذا الجهاز.", storage_full: "لا توجد مساحة كافية لتنزيل النموذج.", runtime_unsupported: "هذا المتصفح لا يدعم تشغيل النموذج؛ جرّب متصفحًا أحدث.", interrupted: "انقطعت التلاوة؛ ابدأ من جديد.", invalid_key: "التسميع غير مفعّل في هذه النسخة.", server_rejected: "رفض خادم Quran Lab هذا الموقع." };
 const qlSay = (e) => (e && qlWords[e.code]) || "تعذّر تشغيل التسميع" + (e && e.code ? " (" + e.code + ")." : ".");
-async function qlReady() {   // the client and the open model, made once; the first time downloads the model
+const tsSay = (t) => { $("#ts-status").textContent = t; };
+async function qlReady() {   // the client and the open model, made once; the first time downloads the model (about 56 MB)
   if (qlModel) return qlModel;
-  const st = $("#ts-status"), pr = $("#ts-prog");
+  const pr = $("#ts-prog");
   if (!QL_KEY) throw Object.assign(new Error("no key"), { code: "invalid_key" });
-  st.textContent = "جارٍ تجهيز النموذج…";
+  tsSay("جارٍ تجهيز النموذج…");
   await qlLoader();
   if (!qlClient) qlClient = await QuranLab.TajweedClient.create({ key: QL_KEY });
   pr.hidden = false;
-  await qlClient.prefetch({ onProgress: (p) => { if (p.bytesTotal) { pr.value = p.bytesDone / p.bytesTotal; st.textContent = `جارٍ تنزيل النموذج… ${ar(Math.round((p.bytesDone / p.bytesTotal) * 100))}٪`; } } });
-  pr.hidden = true; st.textContent = "جارٍ فتح النموذج…";
+  await qlClient.prefetch({ onProgress: (p) => { if (p.bytesTotal) { pr.value = p.bytesDone / p.bytesTotal; tsSay(`تنزيل النموذج لأول مرة… ${ar(Math.round((p.bytesDone / p.bytesTotal) * 100))}٪`); } } });
+  pr.hidden = true; tsSay("جارٍ فتح النموذج…");
   qlModel = await qlClient.model();
   return qlModel;
 }
-function tsPaint(d) {   // settled words as they are; the tail, which may still change, in a lighter ink
-  const box = $("#ts-heard"), kids = []; let seen = 0;
-  (d.words || []).forEach((w) => { seen += (w.tokens || []).length; const sp = document.createElement("span"); sp.textContent = w.text + " "; if (seen > d.settled && !d.isFinal) sp.className = "tail"; kids.push(sp); });
-  if (!kids.length && d.text) kids.push(d.text);
-  box.replaceChildren(...kids);
+/* The whole mushaf as one run of the model's sound units (from the SDK's reference: the expected units of every ayah),
+   with the ayah and the word of each unit, and a table of every run of six units for finding a place quickly. */
+const FOL = { on: false, K: 6 };
+async function folIndex(model) {
+  if (FOL.U) return;
+  tsSay("جارٍ تجهيز فهرس المواضع…");
+  const rows = await getJSON("data/search.json"), ref = model.reference;
+  if (!ref) throw Object.assign(new Error("no reference"), { code: "reference_missing" });
+  if (!ref.isDownloaded) await ref.fetch();
+  const bar = model.tokens.wordBar, got = [];
+  for (let i = 0; i < rows.length; i += 400) got.push(...await Promise.all(rows.slice(i, i + 400).map((r) => ref.units(r[0], r[1]))));
+  const total = got.reduce((t, u) => t + u.units.length, 0), U = new Uint8Array(total), ug = new Uint16Array(total), uw = new Uint8Array(total), start = new Int32Array(rows.length + 1);
+  let n = 0;
+  got.forEach((u, g) => {
+    start[g] = n;
+    const extra = Math.max(0, u.wordCount - rows[g][3].length);   // opening letters are several spoken words but one written word
+    u.units.forEach((id, k) => { if (id === bar) return; U[n] = id; ug[n] = g; uw[n] = Math.max(0, u.words[k] - extra); n += 1; });
+  });
+  start[rows.length] = n;
+  const idx = new Map(), K = FOL.K;
+  for (let p = 0; p + K <= n; p++) { let key = 0; for (let k = 0; k < K; k++) key = key * 38 + U[p + k]; const l = idx.get(key); if (l) l.push(p); else idx.set(key, [p]); }
+  Object.assign(FOL, { U, ug, uw, start, n, idx, rows, blank: model.tokens.blank, bar });
 }
-async function tsTake(from) {   // one take: the microphone, or a sample clip of the model
-  const st = $("#ts-status"), start = $("#ts-start"), stop = $("#ts-stop");
-  start.disabled = true; $("#ts-heard").replaceChildren();
-  try {
-    const model = await qlReady();
-    qlSession = await model.listen(from ? { from } : {});
-    st.textContent = from ? "يُشغَّل المقطع التجريبي…" : "أسمعك الآن… اقرأ، ثم اضغط «إنهاء التلاوة».";
-    start.hidden = true; stop.hidden = !!from;
-    let last = null;
-    for await (const chunk of qlSession.chunks) { last = chunk.decoded; tsPaint(last); }
-    if (!from && tsRange && last && last.text) { try { qlSession.reportRecited(tsRange.surah, tsRange.from, tsRange.to); } catch (e) {} }
-    st.textContent = last && last.text ? "انتهت التلاوة. هذا ما سمعه النموذج." : "لم يُسمع شيء.";
-    if (from) { const dg = await qlClient.diagnose(); console.log("[quranlab] sample heard:", last && last.text); console.log("[quranlab] diagnose:", JSON.stringify(dg)); window.__quranlab = { heard: last && last.text, diagnose: dg }; }
-  } catch (e) {
-    if (!e || e.code !== "cancelled") { st.textContent = qlSay(e); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
+// Where is this being read? The last heard units vote, six at a time, for the places of the mushaf that hold the same run.
+function folLocate(H) {
+  const { K, idx, n } = FOL, L = Math.min(H.length, 36), off = H.length - L, votes = new Map();
+  if (L < 12) return null;
+  for (let i = 0; i + K <= L; i++) {
+    let key = 0; for (let k = 0; k < K; k++) key = key * 38 + H[off + i + k];
+    const list = idx.get(key); if (!list || list.length > 600) continue;
+    for (const p of list) votes.set(p - i, (votes.get(p - i) || 0) + 1);
   }
-  qlSession = null; $("#ts-prog").hidden = true; start.hidden = false; start.disabled = false; stop.hidden = true;
+  const cands = [];
+  votes.forEach((v, d) => { const sc = v + (votes.get(d - 1) || 0) + (votes.get(d + 1) || 0) + (votes.get(d - 2) || 0) + (votes.get(d + 2) || 0); if (sc >= 5 && v >= (votes.get(d - 1) || 0) && v >= (votes.get(d + 1) || 0)) cands.push([d, sc]); });
+  if (!cands.length) return null;
+  const best = Math.max(...cands.map((c) => c[1])), top = cands.filter((c) => c[1] >= best * 0.8);
+  // the same words occur in many places: wait for more of the reading, then take the place nearest the open page
+  const far = top.some((c) => Math.abs(c[0] - top[0][0]) > 40);
+  if (far && H.length < 44) return null;
+  const home = FOL.start[Math.max(0, FOL.rows.findIndex((r) => r[2] >= cur))] || 0;
+  top.sort((a, b) => Math.abs(a[0] - home) - Math.abs(b[0] - home));
+  const d = top[0][0];
+  return { from: Math.max(0, d), pos: Math.min(n, d + L) };
 }
-function openTasmee() {
-  readForm(); tsRange = { surah: +hz.surah, from: +hz.from, to: +hz.to };
-  show(hifzBox, false); show(tsBox, true);
-  $("#ts-what").textContent = `${surahName(tsRange.surah)} · ${tsRange.from === tsRange.to ? "الآية " + ar(tsRange.from) : "الآيات " + ar(tsRange.from) + "–" + ar(tsRange.to)}`;
-  $("#ts-status").textContent = QL_KEY ? "اضغط «ابدأ التلاوة» واسمح بالميكروفون." : "التسميع غير مفعّل في هذه النسخة بعد.";
-  $("#ts-start").disabled = !QL_KEY; $("#ts-sample").hidden = !tsDev;
-  if (QL_KEY) qlReady().then(() => { if (!qlSession) $("#ts-status").textContent = "النموذج جاهز. اضغط «ابدأ التلاوة» واسمح بالميكروفون."; }).catch((e) => { $("#ts-status").textContent = qlSay(e); $("#ts-prog").hidden = true; window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; });
+// Follow on from a known place: the latest heard units are laid along the text around it, allowing for sounds the model
+// missed, added or heard differently; where they end is the new place.
+function folTrack(H, fresh) {
+  const { U, n } = FOL, T = H.slice(-28), a = Math.max(0, FOL.pos - 26), b = Math.min(n, FOL.pos + 52), m = b - a, N = T.length;
+  let prev = new Float32Array(m + 1), row = new Float32Array(m + 1);
+  for (let i = 1; i <= N; i++) {
+    row[0] = i; const x = T[i - 1];
+    for (let j = 1; j <= m; j++) {
+      const y = U[a + j - 1], sub = x === y ? 0 : (x > 30 && y > 30 && Math.abs(x - y) === 3 ? 0.4 : 1);   // a short vowel for its long one is a near match
+      row[j] = Math.min(prev[j - 1] + sub, prev[j] + 1, row[j - 1] + 1);
+    }
+    [prev, row] = [row, prev];
+  }
+  let bj = 0, bc = Infinity; const want = FOL.pos + fresh - a;
+  for (let j = 1; j <= m; j++) if (prev[j] < bc - 1e-6 || (Math.abs(prev[j] - bc) < 1e-6 && Math.abs(j - want) < Math.abs(bj - want))) { bc = prev[j]; bj = j; }
+  if (bc / N > 0.42) return false;
+  FOL.pos = a + bj;
+  return true;
 }
-function closeTasmee() { if (qlSession) { try { qlSession.cancel(); } catch (e) {} } show(tsBox, false); }
-const tsDev = new URLSearchParams(location.search).has("quranlab-sample");   // for checks: plays a sample clip of the model, with no microphone
-$("#hz-tasmee").addEventListener("click", openTasmee);
-$("#ts-close").addEventListener("click", close);
-$("#ts-start").addEventListener("click", () => tsTake());   // the microphone needs a tap
-$("#ts-stop").addEventListener("click", () => { if (qlSession) qlSession.finish().catch(() => {}); });
-$("#ts-sample").addEventListener("click", () => tsTake(qlModel.sampleClips[0]));
+function folHeard(d) {   // one chunk of the take: the settled units so far
+  const H = []; for (let i = 0; i < d.settled && i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
+  if (d.isFinal) for (let i = d.settled; i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
+  const fresh = H.length - (FOL.seen || 0); if (fresh <= 0) return; FOL.seen = H.length;
+  if (FOL.pos == null) {
+    const hit = folLocate(H.slice(FOL.cut || 0)); if (!hit) return;
+    FOL.pos = hit.pos; FOL.from = hit.from; FOL.bad = 0;
+  } else if (folTrack(H, fresh)) FOL.bad = 0;
+  else if ((FOL.bad += 1) >= 4) { FOL.pos = null; FOL.cut = Math.max(0, H.length - 14); return; }   // lost: find the place again from what comes next
+  else return;
+  folReveal();
+}
+function folReveal() {   // the words between where this stretch began and the place reached
+  const { ug, uw, rows, n } = FOL, to = FOL.pos; if (to <= FOL.from) return;
+  const last = to - 1, endsWord = to >= n || ug[to] !== ug[last] || uw[to] !== uw[last];
+  for (let g = ug[FOL.from]; g <= ug[last]; g++) {
+    const key = rows[g][0] + ":" + rows[g][1], lo = g === ug[FOL.from] ? uw[FOL.from] + 1 : 1, hi = g < ug[last] ? rows[g][3].length : uw[last] + (endsWord ? 1 : 0);
+    const r = FOL.done.get(key); FOL.done.set(key, r ? [Math.min(r[0], lo), Math.max(r[1], hi)] : [lo, hi]);
+    if (FOL.g1 == null || g < FOL.g1) FOL.g1 = g; if (FOL.g2 == null || g > FOL.g2) FOL.g2 = g;
+  }
+  const g = ug[last]; FOL.now = rows[g][0] + ":" + rows[g][1] + ":" + Math.max(1, uw[last] + (endsWord ? 1 : 0));
+  folPaint(true);
+}
+function folPaint(move) {
+  if (!FOL.on) return;
+  spread.querySelectorAll(".art svg g.word").forEach((w) => {
+    const k = w.dataset.wordKey, i = k.lastIndexOf(":"), r = FOL.done.get(k.slice(0, i)), num = +k.slice(i + 1);
+    w.classList.toggle("rd", !!r && num >= r[0] && num <= r[1]); w.classList.toggle("rdnow", k === FOL.now);
+  });
+  if (!move || !FOL.now || FOL.turning) return;
+  const el = spread.querySelector(`.art svg g.word[data-word-key="${FOL.now}"]`);
+  if (el) { if (stage.scrollHeight > stage.clientHeight + 4) { const r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect(); if (r.top < sr.top + 20 || r.bottom > sr.bottom - 90) el.scrollIntoView({ block: "center", behavior: "smooth" }); } return; }
+  // the reading is on another page: turn to it (an ayah may run on to the page after the one it starts on)
+  const [s, a] = FOL.now.split(":").map(Number), row = FOL.rows.find((x) => x[0] === s && x[1] === a), shown = [...spread.querySelectorAll(".page[data-page]")].map((x) => +x.dataset.page);
+  const target = row && !shown.includes(row[2]) ? row[2] : Math.min(meta.last, Math.max(...shown, cur) + 1);
+  FOL.turning = true; cur = target; render().then(() => { FOL.turning = false; folPaint(false); const e2 = spread.querySelector(`.art svg g.word[data-word-key="${FOL.now}"]`); if (e2 && stage.scrollHeight > stage.clientHeight + 4) e2.scrollIntoView({ block: "center" }); });
+}
+async function folTake() {   // one take: the microphone until the reader ends it
+  const model = qlModel; $("#ts-begin").hidden = true;
+  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0 });
+  try {
+    qlSession = await model.listen(tsDev ? { from: model.sampleClips[0] } : {});
+    tsSay("أسمعك… اقرأ من أي موضع في المصحف.");
+    let said = false, last = null;
+    for await (const chunk of qlSession.chunks) { last = chunk.decoded; folHeard(last); if (!said && FOL.pos != null) { said = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); } }
+    if (tsDev) { const dg = await qlClient.diagnose(); window.__quranlab = { heard: last && last.text, now: FOL.now, done: [...FOL.done], diagnose: dg }; console.log("[quranlab]", JSON.stringify(window.__quranlab)); }
+    if (FOL.on) { tsSay(FOL.g1 != null ? "انتهت التلاوة." : "انتهت التلاوة ولم أتعرّف على موضع."); $("#ts-begin").hidden = false; }
+  } catch (e) {
+    if (!e || e.code !== "cancelled") { tsSay(qlSay(e)); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; $("#ts-begin").hidden = !qlModel; }
+  }
+  qlSession = null;
+}
+async function folStart() {
+  if (FOL.on) return folStop();
+  close(); FOL.on = true; FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null;
+  document.body.classList.add("ts-on"); $("#ts-go").setAttribute("aria-pressed", "true"); $("#ts-bar").hidden = false; $("#ts-begin").hidden = true; folPaint(false);
+  const ready = !!(qlModel && FOL.U);
+  try {
+    const model = await qlReady(); await folIndex(model);
+    if (!FOL.on) return;
+    // the microphone must start from a tap: when the model had to be prepared first, the reader taps once more
+    if (ready) folTake(); else { tsSay("جاهز. اضغط «ابدأ التلاوة» واسمح بالميكروفون."); $("#ts-begin").hidden = false; }
+  } catch (e) { $("#ts-prog").hidden = true; tsSay(qlSay(e)); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
+}
+function folStop() {
+  const ses = qlSession;
+  if (ses) { try { if (FOL.g1 != null && FOL.rows[FOL.g1][0] === FOL.rows[FOL.g2][0]) ses.reportRecited(FOL.rows[FOL.g1][0], FOL.rows[FOL.g1][1], FOL.rows[FOL.g2][1]); } catch (e) {} ses.finish().catch(() => {}); }
+  FOL.on = false; document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
+  spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow").forEach((w) => w.classList.remove("rd", "rdnow"));
+}
+$("#ts-go").addEventListener("click", folStart);
+$("#ts-begin").addEventListener("click", () => { if (FOL.on && qlModel && !qlSession) { FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null; folPaint(false); folTake(); } });   // the microphone needs a tap
+$("#ts-end").addEventListener("click", folStop);
 
 /* Backup file */
 function backupSave(note) { download("iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(exportObj(), null, 1), "application/json"); note.textContent = "نُزّلت النسخة الاحتياطية."; }
