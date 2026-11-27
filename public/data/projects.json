@@ -40,6 +40,17 @@
     "short": "الصرف"
   },
   {
+    "id": "qiraat-word",
+    "level": "word",
+    "groupName": "القراءات",
+    "name": "بيان القراءات (على مستوى الكلمة)",
+    "kind": "نصي",
+    "source": "سورة",
+    "credit": "بيان القراءات على مستوى الكلمة، من موقع سورة",
+    "surah": "word-qeraat",
+    "qiraat": true
+  },
+  {
     "id": "al-mokhtasar",
     "level": "ayah",
     "group": "mokhtasar",

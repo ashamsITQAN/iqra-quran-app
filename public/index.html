@@ -12,7 +12,7 @@
 :root{
   --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
   --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.26); --tint-soft:rgba(13,104,88,.06);
-  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --mut:#0b5cad; --tpA:#e69f00; --tpB:#0072b2; --tpbar:#1b2321;
+  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --mut:#0b5cad; --qir:#7a35b5; --tpA:#e69f00; --tpB:#0072b2; --tpbar:#1b2321;
   --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
   --naskh:"Amiri","Traditional Arabic",serif;
   --quran:"Amiri Quran","Amiri",serif;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
     --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --qir:#cfa3ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
   --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --qir:#cfa3ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
@@ -110,6 +110,12 @@ body[data-tpi="3"]{--tpo:52%}
 .art svg g.word.gh path{fill:var(--gharib)}
 .art svg g.word.mt path,.ayah-block g.word.mt path{fill:var(--mut)}   /* a phrase that recurs elsewhere: blue ink, and a line beneath it */
 .art svg .mtu{fill:var(--mut);pointer-events:none}
+.art svg g.word.qr path,.ayah-block g.word.qr path{fill:var(--qir)}   /* a word the readings differ on: purple ink, and a line above it */
+.art svg .qru{fill:var(--qir);pointer-events:none}
+.qir h4{font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 2px}
+.qir p{font-family:var(--naskh);font-size:17px;line-height:1.9;margin:0 0 4px;text-align:justify}
+.qir p b{color:var(--qir);font-weight:700}
+.wrow .wt.qir p{font-size:16px}
 .proj p.mut-ph{font-family:var(--quran);font-size:22px;line-height:2;color:var(--mut);margin:0}
 .mut-list{list-style:none;margin:6px 0 14px;padding:0}
 .mut-list li{border-top:1px solid var(--line)}
@@ -466,6 +472,7 @@ body[data-tpi="3"]{--tpo:52%}
       </div></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div class="opt"><h3><label for="set-mut">تمييز المتشابهات في صفحة المصحف</label><p>العبارات المتكررة بالأزرق وتحتها خط؛ ولمسها يعرض مواضعها الأخرى.</p></h3><input id="set-mut" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
+    <div class="opt"><h3><label for="set-qir">تمييز كلمات الخلاف بين القراءات</label><p>الكلمات التي اختلف فيها القراء بالبنفسجي وفوقها خط؛ ولمسها يعرض أوجه الخلاف.</p></h3><input id="set-qir" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -584,7 +591,7 @@ function applyTouch() { document.body.classList.toggle("by-ayah", touch === "aya
 applyTouch();
 let showTopics = store.get("topics", "0") === "1", tpi = store.get("tpi", "2");
 document.body.dataset.tpi = tpi;
-let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1", showMut = store.get("mut", "0") === "1";
+let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1", showMut = store.get("mut", "0") === "1", showQir = store.get("qir", "0") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -675,6 +682,7 @@ async function fillPage(n) {
   markTopics(svg);
   markGharib(n, svg);
   markMut(svg);
+  markQir(svg);
   // marginTabs(n, svg);   // switched off until a better way to show quarter and prostration labels is settled
   paintMarks();
 }
@@ -935,6 +943,7 @@ spread.addEventListener("click", (e) => {
   const w = e.target.closest("g.word");
   if (w) {
     const k = w.dataset.wordKey, a = k.split(":").slice(0, 2).join(":");
+    if (showQir && w.classList.contains("qr")) { activeTab.word = "qiraat-word"; return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word"); }
     if (showMut && w.classList.contains("mt")) { mutFocus = k; activeTab.ayah = "mutashabihat"; return open({ page, surah: +k.split(":")[0], ayah: a }, "ayah"); }
     if (touch === "ayah") return open({ page, surah: +k.split(":")[0], ayah: a }, "ayah");
     return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word");
@@ -1120,7 +1129,7 @@ function ayahBlock(key, activeWord, root) {
   box.setAttribute("aria-label", "نص الآية برسم المصحف");
   const strip = (n) => {
     n.classList.remove("sel", "found"); n.querySelectorAll(".sel,.found").forEach((x) => x.classList.remove("sel", "found"));
-    n.querySelectorAll(".mtu").forEach((x) => x.remove());
+    n.querySelectorAll(".mtu,.qru").forEach((x) => x.remove());
     if (activeWord) n.querySelectorAll(`g.word[data-word-key="${activeWord}"]`).forEach((x) => x.classList.add("sel"));
     return n;
   };
@@ -1177,19 +1186,64 @@ async function wordsCard(p, quote) {
   };
   (row ? row.words : []).forEach((imlai, i) => {
     const k = `${ctx.ayah}:${i + 1}`, g = spread.querySelector(`g.word[data-word-key="${k}"]`), entry = data[k];
+    if (p.qiraat && !(entry && hasKhilaf(entry["النص"]))) return;   // readings: only the words they differ on are listed
     const r = document.createElement("button"), w = document.createElement("span"), t = document.createElement("span");
     r.type = "button"; r.className = "wrow"; w.className = "ww"; t.className = "wt";
     w.textContent = g ? g.dataset.rasmUthmani : imlai;
-    t.textContent = entry && entry["النص"] ? entry["النص"] : "—";
+    if (p.qiraat) { t.classList.add("qir"); t.append(...qirNode(entry["النص"]).childNodes); }
+    else t.textContent = entry && entry["النص"] ? entry["النص"] : "—";
     r.append(w, t); r.addEventListener("click", () => mark(k, false));
     rows[k] = r; list.append(r);
   });
-  if (!list.children.length) list.append(para("لا يوجد محتوى لهذه الآية."));
+  if (!list.children.length) list.append(para(p.qiraat ? "لا خلاف بين القراء في كلمات هذه الآية." : "لا يوجد محتوى لهذه الآية."));
+  else if (p.qiraat) el.append(Object.assign(para("تُعرض الكلمات التي فيها خلاف فقط؛ وبقية كلمات الآية لا خلاف فيها."), { className: "note" }));
   if (quote) { quote.classList.add("pick"); quote.addEventListener("click", (e) => { const g = e.target.closest("g.word"); if (g) mark(g.dataset.wordKey, true); }); }
   el.append(list);
   return el;
 }
 
+/* Readings (qiraat), word by word, from the Surah site: "@readers/what they read@readers/…", then the same again under
+   "---{عند الوصل}---" for what changes when the word is joined to the next. "لا خلاف…" means all read it alike. */
+const qirParts = (raw) => { const a = String(raw || "").split(/\n?---\{([^}]*)\}---\n?/), out = []; for (let i = 0; i < a.length; i += 2) { const t = a[i].trim(); if (t && !/^لا خلاف/.test(t)) out.push({ label: i ? a[i - 1] : "", items: t.split("@").map((x) => x.trim()).filter(Boolean) }); } return out; };
+const hasKhilaf = (raw) => qirParts(raw).length > 0;
+function qirNode(raw) {
+  const box = document.createElement("div"), parts = qirParts(raw);
+  box.className = "qir";
+  if (!parts.length) { const p = document.createElement("p"); p.textContent = "لا خلاف بين القراء في هذه الكلمة."; box.append(p); return box; }
+  parts.forEach((part) => {
+    if (part.label) { const h = document.createElement("h4"); h.textContent = part.label; box.append(h); }
+    part.items.forEach((it) => { const p = document.createElement("p"), cut = it.indexOf("/"); if (cut > 0) { const b = document.createElement("b"); b.textContent = it.slice(0, cut).trim() + ": "; p.append(b, it.slice(cut + 1).trim()); } else p.textContent = it; box.append(p); });
+  });
+  return box;
+}
+function wordsOfAyah(p, key) {   // the word entries of one ayah of a Surah-site word project, whatever is on screen
+  const [s, a] = key.split(":"), saved = ctx; let r;
+  try { ctx = { ayah: key, page: 0, surah: +s }; r = entriesOf(p); } finally { ctx = saved; }
+  return r;
+}
+async function markQir(svg) {
+  svg.querySelectorAll("g.word.qr").forEach((g) => g.classList.remove("qr"));
+  svg.querySelectorAll(".qru").forEach((n) => n.remove());
+  const p = projects.find((x) => x.qiraat);
+  if (!showQir || !p || hidden.has(p.id)) return;
+  const unit = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+  await Promise.all([...new Set([...svg.querySelectorAll("g.ayah-fragment")].map((f) => f.dataset.ayahKey))].map(async (k) => {
+    let data; try { data = await wordsOfAyah(p, k); } catch (e) { return; }
+    if (!svg.isConnected || !showQir) return;
+    Object.entries(data).forEach(([wk, entry]) => {
+      if (!hasKhilaf(entry["النص"])) return;
+      const g = svg.querySelector(`g.word[data-word-key="${wk}"]`), hit = g && g.querySelector(".hit");
+      if (!g || g.classList.contains("qr")) return;
+      g.classList.add("qr");
+      if (!hit || !unit) return;
+      const hr = hit.getBoundingClientRect(), box = toLocal(g, hr.left, hr.top + 1.0 * unit, hr.right, hr.top + 1.8 * unit);
+      if (!box) return;
+      const u = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      ["x", "y", "width", "height"].forEach((a) => u.setAttribute(a, box[a])); u.setAttribute("class", "qru"); g.append(u);
+    });
+  }));
+}
+function remarkQir() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markQir(svg)); }
 // Where a project's entries come from: its file for the page (content pulled from Fanar at build time), or, for the
 // projects of the Surah site, its public API read live: one ayah, or all the words of one ayah, per call.
 const SURAH_API = store.get("surah-api", "") || "https://dev.surahapp.com", surahCache = new Map();
@@ -1199,7 +1253,7 @@ function entriesOf(p) {
   const [s, a] = ctx.ayah.split(":"), url = p.level === "word" ? `${SURAH_API}/api/v1/word/${p.surah}/${s}/${a}/1/300` : `${SURAH_API}/api/v1/aya/${p.surah}/${s}/${a}`;
   if (!surahCache.has(url)) surahCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); }).then((j) => {
     const out = {};
-    if (Array.isArray(j)) j.forEach((w) => { if (w && w.content) out[`${s}:${a}:${w.word_number}`] = { "النص": surahText(w.content).replace(/^\{[^{}]*\}:\s*/, "") }; });
+    if (Array.isArray(j)) j.forEach((w) => { if (w && w.content) out[`${s}:${a}:${w.word_number}`] = { "النص": p.qiraat ? String(w.content).replace(/\r\n?/g, "\n").trim() : surahText(w.content).replace(/^\{[^{}]*\}:\s*/, "") }; });
     else if (j && j.content) out[`${s}:${a}`] = { "النص": surahText(j.content) };
     return out;
   }).catch((e) => { surahCache.delete(url); throw e; }));
@@ -1226,6 +1280,7 @@ async function card(p, key) {
   if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
   const dl = document.createElement("dl");
   for (const [k, v] of Object.entries(entry)) {
+    if (k === "النص" && p.qiraat) { el.append(qirNode(v)); continue; }
     if (k === "النص") { el.append(...richText(v, entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : null, p.marksWords)); continue; }
     if (k === "الهامش" || (p.marksWords && k === "الكلمات")) continue;
     if (k === "الربط" && !showRabt) continue;
@@ -1928,7 +1983,7 @@ function sortedNotes() {
 }
 function svgImage(svg, f) {
   const r = svg.getBoundingClientRect(), c = svg.cloneNode(true);
-  c.querySelectorAll(".hit,.tpbar,.banner,.mtu").forEach((n) => n.remove());
+  c.querySelectorAll(".hit,.tpbar,.banner,.mtu,.qru").forEach((n) => n.remove());
   c.querySelectorAll("path").forEach((n) => n.setAttribute("fill", n.dataset.kind === "ayah_mark_ornament" ? "#a67c2e" : "#1b2421"));
   c.removeAttribute("style"); c.setAttribute("width", r.width * f); c.setAttribute("height", r.height * f);
   return new Promise((res, rej) => { const im = new Image(); im.onload = () => res({ im, w: r.width * f, h: r.height * f }); im.onerror = rej; im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(c)); });
@@ -2238,6 +2293,7 @@ $("#mine-copy").addEventListener("click", async () => copyText(await allText()))
 let setTab = "view";
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
 $("#set-mut").addEventListener("change", (e) => { showMut = e.target.checked; store.set("mut", showMut ? "1" : "0"); remarkMut(); });
+$("#set-qir").addEventListener("change", (e) => { showQir = e.target.checked; store.set("qir", showQir ? "1" : "0"); remarkQir(); });
 $("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
 $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
@@ -2245,7 +2301,7 @@ function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
-  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; $("#set-mut").checked = showMut;
+  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; $("#set-mut").checked = showMut; $("#set-qir").checked = showQir;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
   $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view" || setTab === "mine"; $("#set-mine").hidden = setTab !== "mine";
   if (setTab === "mine") { paintMine(); return; }
