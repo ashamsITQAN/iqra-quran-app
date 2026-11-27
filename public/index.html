@@ -2464,8 +2464,10 @@ async function deliver(blob, name, type, text) {
   return "saved";
 }
 /* Several consecutive ayahs in one share (ayah, its text, the link, the next ayah, its text…), for short per-ayah content. */
-const stageBox = document.createElement("div");
-stageBox.style.cssText = "position:absolute;left:-99999px;top:0;width:520px;visibility:hidden;pointer-events:none"; stageBox.setAttribute("aria-hidden", "true"); document.body.append(stageBox);
+// (laid out unseen inside a clipped box of no size: a box parked far off the side would widen the page on a phone)
+const stageClip = document.createElement("div"), stageBox = document.createElement("div");
+stageClip.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none"; stageClip.setAttribute("aria-hidden", "true");
+stageBox.style.cssText = "position:absolute;left:0;top:0;width:520px"; stageClip.append(stageBox); document.body.append(stageClip);
 async function rootOfPage(n) {   // the page as shown, or an unseen copy of it laid out off screen
   if (view !== "print" && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
   if (view === "print" && spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
