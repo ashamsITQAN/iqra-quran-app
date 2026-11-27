@@ -279,6 +279,18 @@ body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
 body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word.fb .hit{fill:var(--tint-strong)}   /* a place to look at again */
 #fb-list small{display:block;margin-top:2px}
 .ac-list audio{width:100%;margin-top:6px;height:34px}
+/* ayah and tafsir */
+#tv-row[hidden],#zoom-row[hidden],#mode-row[hidden]{display:none}
+.tv{display:flex;flex-direction:column;gap:14px;padding:10px 6px 14px}
+.tv-surah{align-self:center;font-family:var(--naskh);font-size:20px;background:var(--banner);border:1px solid var(--mark);border-radius:8px;padding:4px 26px;color:var(--ink)}
+.tv-ayah{display:flex;flex-direction:column;gap:8px}
+.tv-quote{display:block;width:100%;background:none;border:0;padding:0;text-align:inherit;cursor:pointer}
+.tv-quote .ayah-block{width:100%}
+.tv-card{border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.tv-card h4{margin:0 0 2px;font-size:12.5px;font-weight:600;color:var(--accent)}
+.tv-body p.text{font-size:17.5px;line-height:1.95;margin:0}.tv-body .notes{font-size:13px}.tv-body .rabt{margin-top:8px}
+.tv-body .wrow{display:flex;gap:10px;align-items:baseline;padding:2px 0;border:0;background:none;width:100%;text-align:start}.tv-body .ww{font-family:var(--quran);font-size:19px;flex:none;min-width:4.5em}
+#tv-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 12px;font-size:14px}#tv-list input{accent-color:var(--accent)}
 /* my activity */
 #ac-body h3{font-size:14px;font-weight:600;color:var(--muted);margin:14px 0 6px}
 .ac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -507,7 +519,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
   </div>
   <div class="tabs" id="set-tabs" role="tablist">
-    <button type="button" role="tab" data-v="view">العرض</button><button type="button" role="tab" data-v="mokhtasar">المختصر</button><button type="button" role="tab" data-v="word">الكلمة</button><button type="button" role="tab" data-v="ayah">الآية</button><button type="button" role="tab" data-v="page">الصفحة</button><button type="button" role="tab" data-v="surah">السورة</button><button type="button" role="tab" data-v="mine">تعليقاتي وعلاماتي</button>
+    <button type="button" role="tab" data-v="mushaf">عرض المصحف</button><button type="button" role="tab" data-v="look">المظهر والتلوين</button><button type="button" role="tab" data-v="recite">التسميع والتلاوة</button><button type="button" role="tab" data-v="content">المحتوى</button><button type="button" role="tab" data-v="mine">بياناتي</button>
   </div>
   <div class="sh-body" id="set-mine" hidden>
     <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
@@ -524,14 +536,15 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
       <ul id="mine-list"></ul>
     </fieldset>
   </div>
-  <div class="sh-body" id="set-view">
+  <div class="sh-body" id="set-mushaf">
     <div class="opt"><h3>طريقة عرض المصحف</h3>
       <div class="seg" id="seg-view" role="group" aria-label="طريقة عرض المصحف">
-        <button type="button" data-v="print">مطابق للمطبوع</button><button type="button" data-v="flow">تكبير وتصغير النص</button>
+        <button type="button" data-v="print">مطابق للمطبوع</button><button type="button" data-v="flow">تكبير وتصغير النص</button><button type="button" data-v="tafsir">آية وتفسير</button>
       </div></div>
     <div class="opt" id="zoom-row" hidden><h3>حجم النص</h3>
       <div class="zoomer"><button type="button" id="zoom-out" aria-label="تصغير النص">−</button><input type="range" id="zoom" min="1.2" max="3" step="0.2" aria-label="حجم النص"><button type="button" id="zoom-in" aria-label="تكبير النص">+</button><output id="zoom-val"></output></div></div>
     <p class="note" id="view-help" style="margin:0 0 6px"></p>
+    <fieldset class="mine" id="tv-row" hidden><legend>ما يظهر تحت كل آية</legend><div id="tv-list"></div><p class="note">لغة المختصر تُختار من قسم «المحتوى». التفاسير الطويلة تبقى في نافذة الآية.</p></fieldset>
     <div class="opt" id="mode-row"><h3>عرض الصفحات</h3>
       <div class="seg" id="seg-mode" role="group" aria-label="عدد الصفحات المعروضة">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="1">صفحة</button><button type="button" data-v="2">صفحتان</button>
@@ -541,24 +554,31 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
         <button type="button" data-v="ayah">بالآية</button><button type="button" data-v="word">بالكلمة</button>
       </div></div>
     <p class="note" id="touch-hint"></p>
+  </div>
+  <div class="sh-body" id="set-look" hidden>
     <div class="opt"><h3>المظهر</h3>
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
+    <div class="opt"><h3>تمييز الكلمات في صفحة المصحف<p id="wmark-help"></p></h3>
+      <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
     <div class="opt"><h3><label for="set-topics">التفصيل الموضوعي: تظليل الآيات التي تتناول موضوعًا واحدًا</label></h3><input id="set-topics" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3>وضوح ألوان التفصيل الموضوعي</h3>
       <div class="seg" id="seg-tpi" role="group" aria-label="وضوح ألوان التفصيل الموضوعي">
         <button type="button" data-v="1">هادئ</button><button type="button" data-v="2">واضح</button><button type="button" data-v="3">قوي</button>
       </div></div>
-    <div class="opt"><h3>تمييز الكلمات في صفحة المصحف<p id="wmark-help"></p></h3>
-      <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
-    <div class="opt"><h3><label for="set-tshide">التسميع: إخفاء الكلمات حتى تُقرأ</label></h3><input id="set-tshide" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
-    <div class="opt"><h3><label for="set-tsmark">التسميع: إخفاء أرقام الآيات أيضًا</label></h3><input id="set-tsmark" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
-    <div class="opt"><h3><label for="set-tsfb">التسميع: بيان مواضع تحتاج مراجعة بعد كل آية</label></h3><input id="set-tsfb" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
-    <div class="opt"><h3><label for="set-tsrec">التسميع: الاحتفاظ بتسجيل صوتي لجلساتي على هذا الجهاز</label></h3><input id="set-tsrec" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
+  <div class="sh-body" id="set-recite" hidden>
+    <p class="note" style="margin:0 0 6px">زر «تسميع» في الشريط العلوي يشغّل اللاقط ويتابع قراءتك في المصحف.</p>
+    <div class="opt"><h3><label for="set-tshide">إخفاء الكلمات حتى تُقرأ</label></h3><input id="set-tshide" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsmark">إخفاء أرقام الآيات أيضًا</label></h3><input id="set-tsmark" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsfb">بيان مواضع تحتاج مراجعة بعد كل آية</label></h3><input id="set-tsfb" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsrec">الاحتفاظ بتسجيل صوتي لجلساتي على هذا الجهاز</label></h3><input id="set-tsrec" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <p class="note">سجل جلساتك وختمتك في «نشاطي» من الفهرس. وإعدادات التلقين والقرّاء في نافذة «الحفظ».</p>
+  </div>
   <div class="sh-body" id="set-content" hidden>
+    <div class="seg" id="set-sub" role="group" aria-label="نوع المحتوى" style="margin-bottom:8px"><button type="button" data-v="mokhtasar">المختصر</button><button type="button" data-v="word">الكلمة</button><button type="button" data-v="ayah">الآية</button><button type="button" data-v="page">الصفحة</button><button type="button" data-v="surah">السورة</button></div>
     <p class="note" id="set-hint"></p>
     <div class="opt" id="set-lang-row" hidden><h3><label for="set-lang">لغة المختصر</label></h3><select id="set-lang"></select></div>
     <div class="opt" id="set-rabt-row" hidden><h3><label for="set-rabt">إظهار الربط بين الآيات</label></h3><input id="set-rabt" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
@@ -726,6 +746,7 @@ const surahName = (s) => "سورة " + meta.surahs[s].name;
 /* ---------- layout: one page on a phone, two on a tablet or desktop ---------- */
 function measure() {
   const full = document.body.classList.contains("full"), w = stage.clientWidth - (full ? 18 : 32), h = stage.clientHeight - (full ? 14 : 20);
+  if (view === "tafsir") return { cols: 1, artH: (Math.min(w, 760) - 14) / RATIO };
   if (view === "flow") return { cols: 1, artH: (Math.min(w, 640) - 14) / RATIO };   // one page, as wide as is comfortable; its height follows the text
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
   const fitTwo = ((w - 6) / 2 - 14) / RATIO;
@@ -741,7 +762,7 @@ function firstOfSpread(n) { return cols === 2 && n % 2 === 0 ? n - 1 : n; }
 async function render() {
   const m = measure();
   cols = m.cols; render.artH = m.artH;
-  if (view === "flow" && render.last !== cur) stage.scrollTop = 0;
+  if (view !== "print" && render.last !== cur) stage.scrollTop = 0;
   cur = Math.max(meta.first, Math.min(meta.last, cur));
   const start = firstOfSpread(cur);
   const want = cols === 2 ? [start, start + 1] : [cur];
@@ -788,6 +809,7 @@ async function fillPage(n) {
   svg.removeAttribute("width"); svg.removeAttribute("height");
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-label", "صفحة المصحف " + n);
+  if (view === "tafsir") return fillTafsir(n, art, svg);
   art.replaceChildren(svg);
   if (view === "flow") { keepInk(n, svg); reflow(svg, art); }
   decorate(svg);
@@ -1067,6 +1089,56 @@ function reflow(svg, art) {
   svg.setAttribute("viewBox", `0 0 ${W.toFixed(3)} ${H.toFixed(3)}`);
   art.style.height = Math.round((art.clientWidth * H) / W) + "px";
 }
+/* "Ayah and tafsir": the page as one long column, each ayah as printed with the short content chosen under it. */
+const TV_ALL = ["al-mokhtasar", "tafseer-muyassar", "tafsir-alsaadi", "al-jami-al-wajeez", "ghareeb", "word-meanings", "irab-word", "irab-nahj", "sarf-word", "qiraat-word"];
+let tvSet = (() => { try { const a = JSON.parse(store.get("tvset", "")); return Array.isArray(a) ? a : null; } catch (e) { return null; } })() || ["al-mokhtasar", "tafseer-muyassar", "ghareeb"];
+const tvProj = (id) => (id === "al-mokhtasar" && projects.find((p) => p.group === "mokhtasar" && p.lang === store.get("lang", "ar"))) || projects.find((p) => p.id === id);
+const tvName = (p) => (p.group === "mokhtasar" ? "المختصر في التفسير" : { "tafseer-muyassar": "التفسير الميسر", "tafsir-alsaadi": "تفسير السعدي", "al-jami-al-wajeez": "الجامع الوجيز", ghareeb: "غريب القرآن", "word-meanings": "معاني المفردات", "irab-word": "الإعراب", "irab-nahj": "إعراب النهج القويم", "sarf-word": "الصرف", "qiraat-word": "القراءات" }[p.id] || p.short || p.name);
+function tvPaintSet() {
+  const box = $("#tv-list"); box.replaceChildren();
+  TV_ALL.forEach((id) => { const p = tvProj(id); if (!p) return; const lb = document.createElement("label"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = tvSet.includes(id);
+    cb.addEventListener("change", () => { tvSet = TV_ALL.filter((x) => (x === id ? cb.checked : tvSet.includes(x))); store.set("tvset", JSON.stringify(tvSet)); render(); }); lb.append(cb, " " + tvName(p)); box.append(lb); });
+}
+const withCtx = (c, fn) => { const saved = ctx; try { ctx = c; return fn(); } finally { ctx = saved; } };   // content is fetched by the place in "ctx"
+async function fillTafsir(n, art, svg) {
+  keepInk(n, svg);
+  const ink = inkBox.querySelector(`[data-page="${n}"]`), keys = [...new Set([...svg.querySelectorAll("g.ayah-fragment")].map((f) => f.dataset.ayahKey))];
+  const list = document.createElement("div"); list.className = "tv"; art.style.height = "auto"; art.replaceChildren(list);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  for (const key of keys) {
+    const [s, a] = key.split(":").map(Number), c = { ayah: key, page: n, surah: s }, sec = el("section", "tv-ayah");
+    if (a === 1 && svg.querySelector(`g.word[data-word-key="${key}:1"]`)) { const b = el("button", "tv-surah", surahName(s)); b.type = "button"; b.dataset.surah = s; list.append(b); }
+    const quote = ayahBlock(key, null, ink), tap = el("button", "tv-quote"); tap.type = "button"; tap.dataset.tvAyah = key; tap.title = "افتح نافذة الآية";
+    if (quote) tap.append(quote); else tap.textContent = `${surahName(s)} · الآية ${ar(a)}`;
+    sec.append(tap);
+    tvSet.forEach((id) => {
+      const p = tvProj(id); if (!p) return;
+      const box = el("div", "tv-card"), body = el("div", "tv-body", "…"); box.append(el("h4", "", tvName(p)), body); sec.append(box);
+      (async () => {
+        try {
+          if (p.level === "ayah") {
+            const cardEl = await withCtx(c, () => card(p, key)); cardEl.querySelectorAll(":scope > h3, :scope > p.note").forEach((x) => x.remove());
+            if (/^(لا يوجد محتوى|تعذّر تحميل|لم يُربط بعد)/.test(cardEl.textContent.trim())) { box.remove(); return; }   // nothing to show here
+            body.replaceChildren(...cardEl.childNodes);
+          } else {   // a word project: the words of the ayah that have an entry, each with it
+            const data = await withCtx(c, () => entriesOf(p)), rows = await getJSON("data/search.json"), row = rows.find((r) => r[0] === s && r[1] === a), out = [];
+            (row ? row[3] : []).forEach((imlai, i) => {
+              const k = `${key}:${i + 1}`, entry = data[k], g = ink.querySelector(`g.word[data-word-key="${k}"]`);
+              if (!entry || !entry["النص"] || (p.qiraat && !hasKhilaf(entry["النص"]))) return;
+              const r = el("div", "wrow"), w = el("span", "ww", g ? g.dataset.rasmUthmani : imlai), t = el("span", "wt");
+              if (p.qiraat) { t.classList.add("qir"); t.append(...qirNode(entry["النص"]).childNodes); } else t.textContent = entry["النص"];
+              r.append(w, t); out.push(r);
+            });
+            if (!out.length) { box.remove(); return; }
+            body.replaceChildren(...out);
+          }
+        } catch (e) { box.remove(); }
+      })();
+    });
+    list.append(sec);
+  }
+  paintMarks();
+}
 // In the enlarged view the printed page is also kept, unseen, so that an ayah can still be shown as printed in the content window.
 const inkBox = document.createElement("div");
 inkBox.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none"; inkBox.setAttribute("aria-hidden", "true"); document.body.append(inkBox);
@@ -1116,6 +1188,9 @@ spread.addEventListener("click", (e) => {
   const page = +pageEl.dataset.page;
   const pnum = e.target.closest("[data-pnum]");
   if (pnum) return open(ctxAt(page), "page");
+  const tv = e.target.closest("[data-tv-ayah]");
+  if (tv) { const k = tv.dataset.tvAyah; return open({ page, surah: +k.split(":")[0], ayah: k }, "ayah"); }
+  if (e.target.closest(".tv")) return;
   const head = e.target.closest("[data-surah]");
   if (head) return open(ctxAt(page, +head.dataset.surah), "surah");
   const banner = e.target.closest(".banner, g.surah-name");
@@ -1303,7 +1378,7 @@ async function step(dir) {
 /* The ayah exactly as printed: its ink is copied from the page, line by line. Each line keeps the size
    it has in the mushaf and is centred in the block. */
 function ayahBlock(key, activeWord, root) {
-  if (!root && view === "flow" && inkBox.querySelector(`g.ayah-fragment[data-ayah-key="${key}"]`)) {   // the printed copy, wearing the colours of the page on screen
+  if (!root && view !== "print" && inkBox.querySelector(`g.ayah-fragment[data-ayah-key="${key}"]`)) {   // the printed copy, wearing the colours of the page on screen
     root = inkBox;
     inkBox.querySelectorAll(`g.ayah-fragment[data-ayah-key="${key}"] g.word`).forEach((w) => { const live = spread.querySelector(`g.word[data-word-key="${w.dataset.wordKey}"]`); if (live) ["gh", "mt", "qr"].forEach((c) => w.classList.toggle(c, live.classList.contains(c))); });
   }
@@ -2391,8 +2466,8 @@ async function deliver(blob, name, type, text) {
 const stageBox = document.createElement("div");
 stageBox.style.cssText = "position:absolute;left:-99999px;top:0;width:520px;visibility:hidden;pointer-events:none"; stageBox.setAttribute("aria-hidden", "true"); document.body.append(stageBox);
 async function rootOfPage(n) {   // the page as shown, or an unseen copy of it laid out off screen
-  if (view === "flow" && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
-  if (view !== "flow" && spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
+  if (view !== "print" && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
+  if (view === "print" && spread.querySelector(`.page[data-page="${n}"] .art svg g.word`)) return spread;
   const box = document.createElement("div"), doc = new DOMParser().parseFromString(await getSVG(n), "image/svg+xml"), svg = document.importNode(doc.documentElement, true);
   svg.removeAttribute("width"); svg.removeAttribute("height"); svg.style.cssText = "display:block;width:100%;height:100%";
   box.style.cssText = "width:420px;height:" + 420 / RATIO + "px"; box.append(svg); stageBox.append(box);
@@ -2933,7 +3008,7 @@ async function syncNow(interactive) {
   }
   syncing = false;
   if (driveLinked() && gToken) $("#sync-chip").hidden = true;
-  if (settings.classList.contains("open") && setTab === "mine") paintMine();
+  if (settings.classList.contains("open") && setSec === "mine") paintMine();
 }
 function queueSync() { if (!GOOGLE_CLIENT_ID || !driveLinked()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); }
 function driveUnlink() { store.set("drive", ""); store.set("drive-file", ""); driveFile = ""; if (gToken && window.google) { try { google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} } gToken = ""; $("#sync-chip").hidden = true; setSync("أُلغي الربط. بياناتك باقية على هذا الجهاز، ونسختها في Drive لم تُحذف."); paintMine(); }
@@ -2974,7 +3049,7 @@ $("#mine-text").addEventListener("click", async () => { download("iqra-notes-" +
 $("#mine-copy").addEventListener("click", async () => copyText(await allText()));
 
 /* ---------- settings ---------- */
-let setTab = "view";
+let setSec = "mushaf", setTab = "mokhtasar";   // the section of the panel, and inside "content" the kind of content
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
 $("#set-tsfb").addEventListener("change", (e) => { tsFb = e.target.checked; store.set("tsfb", tsFb ? "1" : "0"); });
 $("#set-tsrec").addEventListener("change", (e) => { tsRec = e.target.checked; store.set("tsrec", tsRec ? "1" : "0"); });
@@ -2982,22 +3057,23 @@ $("#set-tshide").addEventListener("change", (e) => { tsHide = e.target.checked; 
 $("#set-tsmark").addEventListener("change", (e) => { tsNoMark = e.target.checked; store.set("tsmark", tsNoMark ? "1" : "0"); tsClasses(); });
 $("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
 $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
-$("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
+$("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setSec = b.dataset.v; paintSettings(); });
+$("#set-sub").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
 function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
-  press("seg-view", view); $("#zoom-row").hidden = view !== "flow"; $("#mode-row").hidden = view === "flow"; $("#zoom").value = zoom; $("#zoom-val").textContent = ar(Math.round(zoom * 100)) + "٪";
-  $("#view-help").textContent = view === "flow" ? "تُعرض كلمات الصفحة نفسها برسم المصحف في أسطر أكبر، صفحةً صفحة، وتُمرَّر الصفحة إلى أسفل. أرقام الصفحات كما في المطبوع." : "كل صفحة كما هي في المصحف المطبوع، سطرًا بسطر.";
+  press("seg-view", view); press("set-sub", setTab); $("#zoom-row").hidden = view !== "flow"; $("#mode-row").hidden = view !== "print"; $("#tv-row").hidden = view !== "tafsir"; if (view === "tafsir") tvPaintSet(); $("#zoom").value = zoom; $("#zoom-val").textContent = ar(Math.round(zoom * 100)) + "٪";
+  $("#view-help").textContent = view === "tafsir" ? "صفحة طولية: كل آية برسم المصحف وتحتها ما تختاره من التفاسير المختصرة ومعاني الكلمات. لمس الآية يفتح نافذتها الكاملة." : view === "flow" ? "تُعرض كلمات الصفحة نفسها برسم المصحف في أسطر أكبر، صفحةً صفحة، وتُمرَّر الصفحة إلى أسفل. أرقام الصفحات كما في المطبوع." : "كل صفحة كما هي في المصحف المطبوع، سطرًا بسطر.";
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark;
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
   $("#wmark-help").textContent = { "": "لا تُميَّز كلمات.", gharib: "كلمات الغريب بالأحمر.", mut: "العبارات المتشابهة بالأزرق؛ ولمسها يعرض مواضعها الأخرى.", qir: "كلمات الخلاف بين القراءات بالبنفسجي؛ ولمسها يعرض أوجه الخلاف." }[wmark];
-  document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
-  $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view" || setTab === "mine"; $("#set-mine").hidden = setTab !== "mine";
-  if (setTab === "mine") { paintMine(); return; }
+  document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setSec));
+  ["mushaf", "look", "recite", "content", "mine"].forEach((k) => { $("#set-" + k).hidden = setSec !== k; });
+  if (setSec === "mine") { paintMine(); return; }
   const box = $("#set-projects"); box.replaceChildren();
-  if (setTab === "view") return;
+  if (setSec !== "content") return;
   $("#set-hint").textContent = `اختر ما يظهر في النافذة عند لمس ${{ word: "كلمة", ayah: "رأس آية", page: "رقم صفحة", surah: "ترويسة سورة" }[setTab]}.`;
   const fam = setTab === "mokhtasar";
   $("#set-lang-row").hidden = !fam; $("#set-rabt-row").hidden = !fam;
