@@ -2334,7 +2334,10 @@ $("#set-open").addEventListener("click", () => { ctx = null; show(sheet, false);
 $("#set-close").addEventListener("click", close);
 $("#seg-touch").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; touch = b.dataset.v; store.set("touch", touch); applyTouch(); paintSettings(); });
 $("#seg-tpi").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; tpi = b.dataset.v; store.set("tpi", tpi); document.body.dataset.tpi = tpi; paintSettings(); });
-$("#set-topics").addEventListener("change", (e) => { showTopics = e.target.checked; store.set("topics", showTopics ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(markTopics); });
+$("#set-topics").addEventListener("change", (e) => {
+  showTopics = e.target.checked; store.set("topics", showTopics ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(markTopics);
+  if (showTopics && wmark) $('#seg-wmark button[data-v=""]').click();   // subject shading takes the page: word marking steps aside
+});
 $("#seg-wmark").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-v]"); if (!b) return;
   wmark = b.dataset.v; store.set("wmark", wmark);
