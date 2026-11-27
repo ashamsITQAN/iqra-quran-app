@@ -96,7 +96,8 @@ body.full .fs{display:grid}
 .head button,.foot button{background:none;border:0;padding:4px 8px;border-radius:6px;color:inherit}
 .head button:hover,.foot button:hover{background:var(--tint)}
 .art{position:relative;border-block:1px solid var(--mark);margin-inline:6px}
-.art svg{display:block;width:100%;height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.art svg{display:block;width:100%;height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.art svg g.prs .hit,.art svg g.ayah-fragment.prs g.word .hit{fill:var(--tint)}.art svg .banner.prs{fill:var(--tint)}
 .art .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
 .foot{height:38px;display:flex;align-items:center;justify-content:center;padding:0 14px;flex:none}
 .page.rt .foot{justify-content:flex-start}.page.lt .foot{justify-content:flex-end}   /* the number sits on the outer side, as in the printed mushaf */
@@ -278,16 +279,29 @@ body[data-tpi="3"]{--tpo:52%}
 .sh-body[hidden],.opt[hidden]{display:none}
 #set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
 /* Recitation following: the page's words are faint until they are recited */
-#ts-bar{position:fixed;inset-inline:0;bottom:calc(58px + env(safe-area-inset-bottom));margin:0 auto;width:min(560px,calc(100% - 20px));z-index:3;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.2);font-size:14.5px}
+#ts-bar{order:1;flex:none;margin:4px auto 6px;width:min(560px,calc(100% - 16px));box-sizing:border-box;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.2);font-size:14.5px}
 #ts-bar[hidden]{display:none}
 #ts-bar.away{border-color:var(--gharib);border-width:2px}
-#ts-status{flex:1;min-width:140px}
-#ts-bar a{color:var(--muted);font-size:12.5px}
-#ts-prog{width:90px;height:8px;accent-color:var(--accent)}
+.pager{order:2}
+#ts-status{flex:1 1 100%;min-height:2.9em}
+#ts-bar.live #ts-status::before{content:"";display:inline-block;width:.7em;height:.7em;border-radius:50%;background:#c62828;margin-inline-end:.45em;animation:tsPulse 1.2s ease-in-out infinite}
+@keyframes tsPulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#ts-bar.live #ts-status::before{animation:none}}
+/* the record button: red, with the round sign of recording and a microphone; a square for stopping */
+#ts-begin{display:inline-flex;align-items:center;gap:6px;background:#c62828;border-color:#c62828;color:#fff;font-weight:600}
+#ts-begin[hidden]{display:none}
+#ts-begin:disabled{background:var(--paper);border-color:var(--line);color:var(--muted);cursor:progress}
+#ts-begin svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#ts-begin .dot{width:11px;height:11px;border-radius:50%;background:currentColor;box-shadow:0 0 0 2px #c62828,0 0 0 3.5px currentColor;margin-inline:3px 4px}
+#ts-begin:disabled .dot{box-shadow:none;opacity:.5}
+#ts-end{display:inline-flex;align-items:center;gap:7px}#ts-end .sq{width:10px;height:10px;background:currentColor;border-radius:2px}
+#ts-help{margin-inline-start:auto;border-radius:50%;width:32px;height:32px;padding:0;font-weight:700}
+.tsg{margin:0;padding-inline-start:22px;line-height:1.9}.tsg li{margin-bottom:6px}
+#ts-prog{flex:1 1 100%;width:100%;height:10px;accent-color:var(--accent)}
 #ts-go[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
 body.ts-on.ts-hide .art svg g.word:not(.rd) path{opacity:0}
 body.ts-on.ts-nomark .art svg g.ayah-mark:not(.rdm){opacity:0}
-body.ts-on:not(.ts-hide) .art svg g.word.rd .hit{fill:var(--tint-soft)}   /* words shown: what has been read is tinted, the word reached more strongly */
+body.ts-on:not(.ts-hide) .art svg g.ayah-fragment.rda g.word .hit,body.ts-on:not(.ts-hide) .art svg g.ayah-mark.rda .hit{fill:var(--tint)}   /* words shown: what has been read is tinted, the word reached more strongly */
 body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
 body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word.fb .hit{fill:var(--tint-strong)}   /* a place to look at again */
 #fb-list small{display:block;margin-top:2px}
@@ -524,7 +538,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <ol id="results"></ol>
 </section>
 
-<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-fb" class="btn" hidden></button><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
+<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><button type="button" id="ts-fb" class="btn" hidden></button><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn" hidden><i class="dot" aria-hidden="true"></i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><span id="ts-begin-t">ابدأ التلاوة</span></button><button type="button" id="ts-end" class="btn"><i class="sq" aria-hidden="true"></i>إيقاف</button><button type="button" id="ts-help" class="btn" aria-label="كيف أستعمل التسميع؟ والخصوصية" title="كيف أستعمل التسميع؟ والخصوصية">؟</button></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -660,6 +674,25 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
 </section>
 
+<section id="tsguide" class="modal" role="dialog" aria-label="كيف أستعمل التسميع" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">كيف أستعمل التسميع؟</p><p class="sub">اقرأ والتطبيق يتابعك ويُظهر ما قرأت</p></div>
+    <button class="sh-close" id="tsg-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <ol class="tsg">
+      <li><b>انتظر تنزيل النموذج في أول مرة.</b> حجمه نحو ٥٦ ميغابايت ويُنزَّل مرة واحدة فقط. يظهر شريط ونسبة التنزيل، وزر «ابدأ التلاوة» يبقى معطّلًا حتى يكتمل. لا تغلق التطبيق أثناءه.</li>
+      <li><b>اضغط الزر الأحمر «ابدأ التلاوة»</b> ووافق على استعمال الميكروفون حين يسألك المتصفح.</li>
+      <li><b>اقرأ بصوت واضح من أي موضع في المصحف.</b> يتعرّف التطبيق على الموضع ويفتح صفحته ويُظهر الكلمات كلما قرأتها.</li>
+      <li><b>قف وقفة قصيرة على رأس كل آية.</b> بعدها قد تظهر «مواضع للمراجعة» إن وُجدت.</li>
+      <li><b>«أخفِ الآيات»</b> لاختبار الحفظ، و<b>«أظهر الآيات»</b> للقراءة مع المتابعة.</li>
+      <li><b>اضغط «إيقاف»</b> عند الانتهاء، وتجد جلساتك في «نشاطي».</li>
+    </ol>
+    <p class="note" style="margin:10px 0 0">يعمل أفضل في Chrome و Edge وفي مكان هادئ. التقييم الآلي قد يخطئ، ولا يغني عن معلّم متقن.</p>
+    <p class="note" style="margin:8px 0 0">التعرّف على التلاوة يجري على جهازك. التفاصيل في <a href="privacy.html" target="_blank" rel="noopener">صفحة الخصوصية</a>.</p>
+  </div>
+  <div class="sh-nav"><button type="button" class="btn main" id="tsg-ok">فهمت</button></div>
+</section>
 <section id="fb" class="modal" role="dialog" aria-label="مواضع للمراجعة" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big plain">مواضع للمراجعة</p><p class="sub">ما سمعه النموذج مقابل ما في الآية</p></div>
@@ -1235,14 +1268,23 @@ function ctxAt(page, surah) {
 // writing does nothing; a mouse opens it by a click. Buttons (page number, surah name) answer a plain tap either way.
 let lastTouch = 0, press = null;
 const onInk = (el) => !!(el.closest && el.closest(".art svg"));
-const pressEnd = () => { if (press) { clearTimeout(press.t); press = null; } };
+const pressEnd = () => { spread.querySelectorAll(".prs").forEach((n) => n.classList.remove("prs")); if (press) { clearTimeout(press.t); press = null; } };
+const pressMark = (target) => {   // shade what the press will open: the whole ayah, or the one word
+  const w = target.closest("g.word"), mk = target.closest("g.ayah-mark"), bn = target.closest(".banner");
+  if (bn) return bn.classList.add("prs");
+  const byWord = w && (touch !== "ayah" || (showQir && w.classList.contains("qr")));
+  if (byWord) return w.classList.add("prs");
+  const key = mk ? mk.dataset.ayahKey : w ? w.dataset.wordKey.split(":").slice(0, 2).join(":") : "";
+  if (key) spread.querySelectorAll(`.art svg g.ayah-fragment[data-ayah-key="${key}"],.art svg g.ayah-mark[data-ayah-key="${key}"]`).forEach((n) => n.classList.add("prs"));
+};
 spread.addEventListener("pointerdown", (e) => {
   pressEnd();
   if (e.pointerType === "mouse") return;
   lastTouch = Date.now();
   if (!onInk(e.target) || !e.target.closest("g.word, g.ayah-mark, .banner, g.surah-name")) return;
   const target = e.target, x = e.clientX, y = e.clientY;
-  press = { x, y, t: setTimeout(() => { press = null; try { navigator.vibrate && navigator.vibrate(12); } catch (err) {} down = null; tapAt(target); }, 450) };
+  pressMark(target);
+  press = { x, y, t: setTimeout(() => { pressEnd(); try { navigator.vibrate && navigator.vibrate(12); } catch (err) {} down = null; tapAt(target); }, 450) };
 });
 spread.addEventListener("pointermove", (e) => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) pressEnd(); });
 ["pointerup", "pointercancel", "pointerleave"].forEach((n) => spread.addEventListener(n, pressEnd));
@@ -1308,7 +1350,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); show($("#fb"), false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); show($("#fb"), false); show($("#tsguide"), false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -2654,7 +2696,7 @@ async function qlReady() {   // the client and the open model, made once; the fi
   await qlLoader();
   if (!qlClient) qlClient = await QuranLab.TajweedClient.create({ key: QL_KEY });
   pr.hidden = false;
-  await qlClient.prefetch({ onProgress: (p) => { if (p.bytesTotal) { pr.value = p.bytesDone / p.bytesTotal; tsSay(`تنزيل النموذج لأول مرة… ${ar(Math.round((p.bytesDone / p.bytesTotal) * 100))}٪`); } } });
+  await qlClient.prefetch({ onProgress: (p) => { if (p.bytesTotal) { pr.value = p.bytesDone / p.bytesTotal; tsSay(`تنزيل نموذج التسميع لأول مرة (مرة واحدة فقط): ${ar(Math.round((p.bytesDone / p.bytesTotal) * 100))}٪ — انتظر حتى يكتمل.`); } } });
   pr.hidden = true; tsSay("جارٍ فتح النموذج…");
   qlModel = await qlClient.model();
   return qlModel;
@@ -2783,6 +2825,8 @@ function folPaint(move) {
     const k = w.dataset.wordKey, i = k.lastIndexOf(":"), r = FOL.done.get(k.slice(0, i)), num = +k.slice(i + 1);
     w.classList.toggle("rd", !!r && num >= r[0] && num <= r[1]); w.classList.toggle("rdnow", k === FOL.now);
   });
+  const nowAyah = FOL.now ? FOL.now.slice(0, FOL.now.lastIndexOf(":")) : "";   // the ayah that holds the word reached
+  spread.querySelectorAll(".art svg g.ayah-fragment,.art svg g.ayah-mark").forEach((f) => f.classList.toggle("rda", !!nowAyah && f.dataset.ayahKey === nowAyah));
   if (!move || !FOL.now || FOL.turning) return;
   const el = spread.querySelector(`.art svg g.word[data-word-key="${FOL.now}"]`);
   if (el) { if (stage.scrollHeight > stage.clientHeight + 4) { const r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect(); if (r.top < sr.top + 20 || r.bottom > sr.bottom - 90) el.scrollIntoView({ block: "center", behavior: "smooth" }); } return; }
@@ -2887,13 +2931,13 @@ function fbOpen() {
   show($("#fb"), true);
 }
 async function folTake() {   // one sitting: the microphone until the reader ends it, as a run of takes
-  const model = qlModel; $("#ts-begin").hidden = true;
+  const model = qlModel; tsBegin("");
   Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, judged: 0, full: new Set(), gs: new Set(), fb: new Map(), take: null, kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true; fbPaint();
   const id = String(FOL.t0);
   try {
     const context = (await qlClient.diagnose()).context || model.defaultContext;
     if (!tsDev) mic = await micOpen();
-    tsSay("أسمعك… اقرأ من أي موضع في المصحف.");
+    tsSay("أسمعك… اقرأ من أي موضع في المصحف."); $("#ts-bar").classList.add("live");
     let said = false, last = null;
     while (FOL.on) {
       const ses = tsDev ? await model.listen({ from: model.sampleClips[0], context }) : model.session({ sampleRate: mic.rate, context });
@@ -2908,31 +2952,36 @@ async function folTake() {   // one sitting: the microphone until the reader end
       if (tsDev) break;
     }
     if (tsDev) { const dg = await qlClient.diagnose(); window.__quranlab = { heard: last && last.text, now: FOL.now, done: [...FOL.done], judged: FOL.judged, flags: [...FOL.fb], diagnose: dg }; console.log("[quranlab]", JSON.stringify(window.__quranlab)); }
-    if (FOL.on) { tsSay(FOL.g1 != null ? "انتهت التلاوة." : "انتهت التلاوة ولم أتعرّف على موضع."); $("#ts-begin").hidden = false; }
+    if (FOL.on) { tsSay(FOL.g1 != null ? "انتهت التلاوة." : "انتهت التلاوة ولم أتعرّف على موضع."); tsBegin("go"); }
   } catch (e) {
-    if (!e || e.code !== "cancelled") { tsSay(qlSay(e)); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; $("#ts-begin").hidden = !qlModel; }
+    if (!e || e.code !== "cancelled") { tsSay(qlSay(e)); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; tsBegin(qlModel ? "go" : ""); $("#ts-bar").classList.remove("live"); }
   }
   qlSession = null; FOL.take = null; const kept = FOL.gs && FOL.gs.size; await micClose(kept ? id : null); actSave();
 }
+// the record button: "wait" while the model is made ready (shown, but not yet to be pressed), "go", or "" for hidden
+function tsBegin(st) { const b = $("#ts-begin"); b.hidden = !st; b.disabled = st === "wait"; $("#ts-begin-t").textContent = st === "wait" ? "انتظر التجهيز…" : "ابدأ التلاوة"; if (st) $("#ts-bar").classList.remove("live"); }
 async function folStart() {
   if (FOL.on) return folStop();
   close(); FOL.on = true; FOL.done = new Map(); FOL.full = new Set(); FOL.gs = new Set(); FOL.now = ""; FOL.g1 = FOL.g2 = null;
-  document.body.classList.add("ts-on"); $("#ts-go").setAttribute("aria-pressed", "true"); $("#ts-bar").hidden = false; $("#ts-begin").hidden = true; folPaint(false);
+  document.body.classList.add("ts-on"); $("#ts-go").setAttribute("aria-pressed", "true"); $("#ts-bar").hidden = false; tsBegin("wait"); folPaint(false);
+  if (store.get("tsguide", "0") !== "1" && !navigator.webdriver /* not under an automated test */) { store.set("tsguide", "1"); show($("#tsguide"), true); }   // the first time: how it works
   const ready = !!(qlModel && FOL.U);
   try {
     const model = await qlReady(); await folIndex(model);
     if (!FOL.on) return;
     // the microphone must start from a tap: when the model had to be prepared first, the reader taps once more
-    if (ready) folTake(); else { tsSay("جاهز. اضغط «ابدأ التلاوة» واسمح بالميكروفون."); $("#ts-begin").hidden = false; }
-  } catch (e) { $("#ts-prog").hidden = true; tsSay(qlSay(e)); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
+    if (ready) folTake(); else { tsSay("جاهز. اضغط الزر الأحمر «ابدأ التلاوة» واسمح بالميكروفون."); tsBegin("go"); }
+  } catch (e) { $("#ts-prog").hidden = true; tsBegin(""); tsSay(qlSay(e)); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
 }
 function folStop() {
-  FOL.on = false; if (qlSession && FOL.take && !FOL.take.fin) { if (tsDev) qlSession.cancel().catch(() => {}); else takeEnd(true); } FOL.away = null; $("#ts-bar").classList.remove("away"); document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
-  spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow,.art svg g.word.fb").forEach((w) => w.classList.remove("rd", "rdnow", "fb"));
+  FOL.on = false; if (qlSession && FOL.take && !FOL.take.fin) { if (tsDev) qlSession.cancel().catch(() => {}); else takeEnd(true); } FOL.away = null; $("#ts-bar").classList.remove("away"); document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true; $("#ts-bar").classList.remove("live");
+  spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow,.art svg g.word.fb").forEach((w) => w.classList.remove("rd", "rdnow", "fb")); spread.querySelectorAll(".rda").forEach((f) => f.classList.remove("rda"));
 }
 $("#ts-go").addEventListener("click", folStart);
 $("#ts-begin").addEventListener("click", () => { if (FOL.on && qlModel && !qlSession) { FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null; folPaint(false); folTake(); } });   // the microphone needs a tap
 $("#ts-end").addEventListener("click", folStop);
+$("#ts-help").addEventListener("click", () => show($("#tsguide"), true));
+["#tsg-close", "#tsg-ok"].forEach((s) => $(s).addEventListener("click", () => show($("#tsguide"), false)));
 $("#ts-fb").addEventListener("click", fbOpen);
 $("#fb-close").addEventListener("click", () => show($("#fb"), false));
 $("#ts-eye").addEventListener("click", () => { tsHide = !tsHide; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
@@ -3411,6 +3460,7 @@ stage.addEventListener("pointerup", (e) => {
 stage.addEventListener("pointercancel", () => { down = null; });
 
 let rz;
+if (window.ResizeObserver) new ResizeObserver(() => window.dispatchEvent(new Event("resize"))).observe(stage);
 window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
