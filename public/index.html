@@ -283,10 +283,10 @@ body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word
 #tv-row[hidden],#zoom-row[hidden],#mode-row[hidden]{display:none}
 .tv{display:flex;flex-direction:column;gap:14px;padding:10px 6px 14px}
 .tv-surah{align-self:center;font-family:var(--naskh);font-size:20px;background:var(--banner);border:1px solid var(--mark);border-radius:8px;padding:4px 26px;color:var(--ink)}
-.tv-ayah{display:flex;flex-direction:column;gap:8px}
+.tv-ayah{display:flex;flex-direction:column;gap:8px;width:100%;max-width:560px;margin-inline:auto}   /* the ayah and what is under it share one measure */
 .tv-quote{display:block;width:100%;background:none;border:0;padding:0;text-align:inherit;cursor:pointer}
-.tv-quote .ayah-block{width:100%}
-.tv-card{border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.tv-quote .ayah-block{width:100%;max-width:none;margin:0;box-sizing:border-box}
+.tv-card{border:1px solid var(--line);border-inline-start:3px solid var(--accent);border-radius:10px;background:var(--panel);padding:8px 14px 10px;box-sizing:border-box}
 .tv-card h4{margin:0 0 2px;font-size:12.5px;font-weight:600;color:var(--accent)}
 .tv-body{font-family:var(--naskh);font-size:17px;line-height:1.9}
 .tv-body p.text{font-family:var(--naskh);font-size:18px;line-height:2;margin:0;color:var(--ink);white-space:pre-line;text-align:justify}.tv-body dd,.tv-body .wt{font-family:var(--naskh);font-size:17px;line-height:1.9;text-align:justify}.tv-body dt{font-family:var(--ui);font-size:12.5px;color:var(--muted)}.tv-body .notes{font-size:13px}.tv-body .rabt{margin-top:8px}
@@ -747,7 +747,7 @@ const surahName = (s) => "سورة " + meta.surahs[s].name;
 /* ---------- layout: one page on a phone, two on a tablet or desktop ---------- */
 function measure() {
   const full = document.body.classList.contains("full"), w = stage.clientWidth - (full ? 18 : 32), h = stage.clientHeight - (full ? 14 : 20);
-  if (view === "tafsir") return { cols: 1, artH: (Math.min(w, 760) - 14) / RATIO };
+  if (view === "tafsir") return { cols: 1, artH: (Math.min(w, 620) - 14) / RATIO };
   if (view === "flow") return { cols: 1, artH: (Math.min(w, 640) - 14) / RATIO };   // one page, as wide as is comfortable; its height follows the text
   const two = Math.min(h - FURN, ((w - 6) / 2 - 14) / RATIO);
   const fitTwo = ((w - 6) / 2 - 14) / RATIO;
