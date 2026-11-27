@@ -60,6 +60,7 @@ button{cursor:pointer}
 .page.blank{visibility:hidden}
 /* a phone held upright: the page reaches the edges of the screen */
 body.fit #stage,body.fit.full #stage{padding:0 4px;background:var(--paper)}
+body.fit #stage{overflow:hidden}   /* the page is cut to fit, so nothing scrolls and no scrollbar shows at the edge */
 body.fit .page{border:0;border-radius:0;box-shadow:none;background:none}
 body.fit .art{margin-inline:3px;border-block:0}
 body.fit .head{height:28px;font-size:14px;padding:0 10px}body.fit .foot{height:30px;padding:0 12px}
@@ -774,7 +775,7 @@ function measure() {
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
   // a phone held upright: the page takes the whole screen, its side margins trimmed and its lines spread down the height
-  if (w < 700 && h > w * 1.25) { const fw = stage.clientWidth - 8, fh = stage.clientHeight - furn(); return { cols: 1, artH: fh, artW: fw - 6, fit: true }; }
+  if (w < 700 && h > w * 1.25) { const fw = stage.clientWidth - 8, fh = stage.clientHeight - furn() - 2; return { cols: 1, artH: fh, artW: fw - 6, fit: true }; }
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
   return { cols: 1, artH: one };
 }
