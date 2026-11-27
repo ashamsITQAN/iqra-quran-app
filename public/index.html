@@ -12,7 +12,7 @@
 :root{
   --bg:#e4ebe8; --paper:#fbfcf8; --ink:#1b2321; --muted:#5d6b67; --line:#cfd9d5;
   --accent:#0d6858; --mark:#a17a22; --tint:rgba(13,104,88,.13); --tint-strong:rgba(13,104,88,.26); --tint-soft:rgba(13,104,88,.06);
-  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --tpA:#e69f00; --tpB:#0072b2; --tpbar:#1b2321;
+  --panel:#ffffff; --banner:rgba(161,122,34,.10); --gharib:#b0362b; --mut:#0b5cad; --tpA:#e69f00; --tpB:#0072b2; --tpbar:#1b2321;
   --ui:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;
   --naskh:"Amiri","Traditional Arabic",serif;
   --quran:"Amiri Quran","Amiri",serif;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
     --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
+    --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0e1413; --paper:#171f1d; --ink:#e7ece8; --muted:#9aa9a4; --line:#2b3835;
   --accent:#62cdb6; --mark:#d3b067; --tint:rgba(98,205,182,.16); --tint-strong:rgba(98,205,182,.32); --tint-soft:rgba(98,205,182,.07);
-  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
+  --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
@@ -108,6 +108,17 @@ body[data-tpi="3"]{--tpo:52%}
 .art svg g.word.tpB .hit,.art svg g.ayah-mark.tpB .hit{fill:color-mix(in srgb,var(--tpB) calc(var(--tpo) * .8),transparent)}
 .art svg .tpbar{fill:var(--tpbar);pointer-events:none}
 .art svg g.word.gh path{fill:var(--gharib)}
+.art svg g.word.mt path,.ayah-block g.word.mt path{fill:var(--mut)}   /* a phrase that recurs elsewhere: blue ink, and a line beneath it */
+.art svg .mtu{fill:var(--mut);pointer-events:none}
+.proj p.mut-ph{font-family:var(--quran);font-size:22px;line-height:2;color:var(--mut);margin:0}
+.mut-list{list-style:none;margin:6px 0 14px;padding:0}
+.mut-list li{border-top:1px solid var(--line)}
+.mut-list button{display:block;width:100%;text-align:start;background:none;border:0;padding:8px 2px;color:var(--ink)}
+.mut-list button:hover{background:var(--tint-soft)}
+.mut-list small{display:block;font-size:12px;color:var(--muted)}
+.mut-list .tx{font-family:var(--naskh);font-size:17px;line-height:1.9}
+.mut-list .tx b{color:var(--mut);font-weight:700;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px}
+.mut-list li.here button{background:var(--tint-soft)}
 .art svg g.ayah-fragment.sel g.word .hit{fill:var(--tint)}
 .art svg g.ayah-mark.sel .hit{fill:var(--tint-strong)}
 .art svg g.word.sel .hit{fill:var(--tint-strong)}
@@ -454,6 +465,7 @@ body[data-tpi="3"]{--tpo:52%}
         <button type="button" data-v="1">هادئ</button><button type="button" data-v="2">واضح</button><button type="button" data-v="3">قوي</button>
       </div></div>
     <div class="opt"><h3><label for="set-gharib">تلوين غريب القرآن في صفحة المصحف</label></h3><input id="set-gharib" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
+    <div class="opt"><h3><label for="set-mut">تمييز المتشابهات في صفحة المصحف</label><p>العبارات المتكررة بالأزرق وتحتها خط؛ ولمسها يعرض مواضعها الأخرى.</p></h3><input id="set-mut" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -572,7 +584,7 @@ function applyTouch() { document.body.classList.toggle("by-ayah", touch === "aya
 applyTouch();
 let showTopics = store.get("topics", "0") === "1", tpi = store.get("tpi", "2");
 document.body.dataset.tpi = tpi;
-let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1";
+let showGharib = store.get("gharib", "1") === "1", showRabt = store.get("rabt", "1") === "1", showAyat = store.get("ayat", "1") === "1", showMut = store.get("mut", "0") === "1";
 function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); }
 applyTheme();
 let found = [];
@@ -662,6 +674,7 @@ async function fillPage(n) {
   decorate(svg);
   markTopics(svg);
   markGharib(n, svg);
+  markMut(svg);
   // marginTabs(n, svg);   // switched off until a better way to show quarter and prostration labels is settled
   paintMarks();
 }
@@ -742,6 +755,67 @@ async function markGharib(n, svg) {
       nums.forEach((w) => { const g = svg.querySelector(`g.word[data-word-key="${ayah}:${w}"]`); if (g) g.classList.add("gh"); });
     });
   }
+}
+/* Similar phrases (mutashabihat): phrases that recur in other ayahs, from the QUL export converted at build time. */
+let mutData = null;
+function loadMut() {
+  return mutData || (mutData = getJSON("data/mutashabihat.json").then((j) => {
+    const by = {};   // ayah -> [{ id, f, t }]
+    Object.entries(j.p).forEach(([id, p]) => Object.entries(p[3]).forEach(([k, rs]) => rs.forEach(([f, t]) => (by[k] = by[k] || []).push({ id, f, t }))));
+    return { p: j.p, by };
+  }).catch(() => { mutData = null; jsonCache.delete("data/mutashabihat.json"); return null; }));
+}
+async function markMut(svg) {
+  svg.querySelectorAll("g.word.mt").forEach((g) => g.classList.remove("mt"));
+  svg.querySelectorAll(".mtu").forEach((n) => n.remove());
+  if (!showMut) return;
+  const d = await loadMut();
+  if (!d || !svg.isConnected || !showMut) return;
+  const unit = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+  new Set([...svg.querySelectorAll("g.ayah-fragment")].map((f) => f.dataset.ayahKey)).forEach((k) => (d.by[k] || []).forEach((r) => {
+    for (let i = r.f; i <= r.t; i++) {
+      const g = svg.querySelector(`g.word[data-word-key="${k}:${i}"]`), hit = g && g.querySelector(".hit");
+      if (!g || g.classList.contains("mt")) continue;
+      g.classList.add("mt");
+      if (!hit || !unit) continue;
+      const hr = hit.getBoundingClientRect(), box = toLocal(g, hr.left, hr.bottom - 2.2 * unit, hr.right, hr.bottom - 1.4 * unit);
+      if (!box) continue;
+      const u = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      ["x", "y", "width", "height"].forEach((a) => u.setAttribute(a, box[a])); u.setAttribute("class", "mtu"); g.append(u);
+    }
+  }));
+}
+function remarkMut() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markMut(svg)); }
+// The phrases of an ayah, with every other place each occurs; the ones holding the tapped word come first.
+let mutFocus = "";
+async function mutCard(key) {
+  const el = document.createElement("div"), h = document.createElement("h3");
+  el.className = "proj"; h.append(tag("نصي"), tag("QUL", "src")); el.append(h);
+  const d = await loadMut(), rows = await loadCorpus().catch(() => null);
+  if (!d || !rows) { el.append(para("تعذّر تحميل بيانات المتشابهات.")); return el; }
+  const here = d.by[key] || [];
+  if (!here.length) { el.append(para("لا متشابهات مسجّلة لهذه الآية.")); return el; }
+  const rowOf = {}; rows.forEach((r) => { rowOf[r.s + ":" + r.a] = r; });
+  const focusWord = mutFocus && mutFocus.startsWith(key + ":") ? +mutFocus.split(":")[2] : 0;
+  const order = [...new Map(here.map((r) => [r.id, r])).values()].sort((a, b) => (focusWord >= b.f && focusWord <= b.t) - (focusWord >= a.f && focusWord <= a.t) || a.f - b.f);
+  order.forEach((r) => {
+    const p = d.p[r.id], src = rowOf[key], title = document.createElement("p"), info = document.createElement("p"), ul = document.createElement("ul");
+    title.className = "mut-ph"; title.textContent = "﴿" + src.words.slice(r.f - 1, r.t).join(" ") + "﴾";
+    info.className = "note"; info.textContent = `وردت هذه العبارة أو ما يشبهها ${ar(p[0])} مرة في ${ar(p[1])} آية.`;
+    ul.className = "mut-list";
+    Object.keys(p[3]).sort((a, b) => { const [s1, a1] = a.split(":").map(Number), [s2, a2] = b.split(":").map(Number); return s1 - s2 || a1 - a2; }).forEach((k) => {
+      const row = rowOf[k]; if (!row) return;
+      const li = document.createElement("li"), b = document.createElement("button"), sm = document.createElement("small"), tx = document.createElement("span"), inP = (i) => p[3][k].some(([f, t]) => i >= f && i <= t);
+      b.type = "button"; tx.className = "tx"; tx.dir = "rtl";
+      sm.textContent = `${surahName(row.s)} · الآية ${ar(row.a)} · الصفحة ${ar(row.page)}` + (k === key ? " (هذه الآية)" : "");
+      row.words.forEach((w, i) => { if (i) tx.append(" "); if (inP(i + 1)) { const m = document.createElement("b"); m.textContent = w; tx.append(m); } else tx.append(w); });
+      if (k === key) li.className = "here"; else b.addEventListener("click", () => jump(row.page, k));
+      b.append(sm, tx); li.append(b); ul.append(li);
+    });
+    el.append(title, info, ul);
+  });
+  const c = para("المصدر: متشابهات القرآن (العبارات)، المكتبة القرآنية الشاملة QUL من ترتيل"); c.className = "note"; el.append(c);
+  return el;
 }
 function remarkGharib() { spread.querySelectorAll(".page[data-page] .art svg").forEach((svg) => markGharib(+svg.closest(".page").dataset.page, svg)); }
 
@@ -861,6 +935,7 @@ spread.addEventListener("click", (e) => {
   const w = e.target.closest("g.word");
   if (w) {
     const k = w.dataset.wordKey, a = k.split(":").slice(0, 2).join(":");
+    if (showMut && w.classList.contains("mt")) { mutFocus = k; activeTab.ayah = "mutashabihat"; return open({ page, surah: +k.split(":")[0], ayah: a }, "ayah"); }
     if (touch === "ayah") return open({ page, surah: +k.split(":")[0], ayah: a }, "ayah");
     return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word");
   }
@@ -1044,6 +1119,7 @@ function ayahBlock(key, activeWord, root) {
   box.setAttribute("aria-label", "نص الآية برسم المصحف");
   const strip = (n) => {
     n.classList.remove("sel", "found"); n.querySelectorAll(".sel,.found").forEach((x) => x.classList.remove("sel", "found"));
+    n.querySelectorAll(".mtu").forEach((x) => x.remove());
     if (activeWord) n.querySelectorAll(`g.word[data-word-key="${activeWord}"]`).forEach((x) => x.classList.add("sel"));
     return n;
   };
@@ -1137,6 +1213,7 @@ async function card(p, key) {
   if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (p.player) return recitationCard(p);
   if (p.notes) return notesCard(p.level, key);
+  if (p.mut) return mutCard(key);
   if (p.topics) return topicsCard();
   if (!p.file && !p.surah) {
     el.classList.add("empty");
@@ -1850,7 +1927,7 @@ function sortedNotes() {
 }
 function svgImage(svg, f) {
   const r = svg.getBoundingClientRect(), c = svg.cloneNode(true);
-  c.querySelectorAll(".hit,.tpbar,.banner").forEach((n) => n.remove());
+  c.querySelectorAll(".hit,.tpbar,.banner,.mtu").forEach((n) => n.remove());
   c.querySelectorAll("path").forEach((n) => n.setAttribute("fill", n.dataset.kind === "ayah_mark_ornament" ? "#a67c2e" : "#1b2421"));
   c.removeAttribute("style"); c.setAttribute("width", r.width * f); c.setAttribute("height", r.height * f);
   return new Promise((res, rej) => { const im = new Image(); im.onload = () => res({ im, w: r.width * f, h: r.height * f }); im.onerror = rej; im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(c)); });
@@ -2159,6 +2236,7 @@ $("#mine-copy").addEventListener("click", async () => copyText(await allText()))
 /* ---------- settings ---------- */
 let setTab = "view";
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-mut").addEventListener("change", (e) => { showMut = e.target.checked; store.set("mut", showMut ? "1" : "0"); remarkMut(); });
 $("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
 $("#set-rabt").addEventListener("change", (e) => { showRabt = e.target.checked; store.set("rabt", showRabt ? "1" : "0"); });
 $("#set-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; setTab = b.dataset.v; paintSettings(); });
@@ -2166,7 +2244,7 @@ function paintSettings() {
   const press = (id, v) => document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
-  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat;
+  $("#set-gharib").checked = showGharib; $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; $("#set-mut").checked = showMut;
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setTab));
   $("#set-view").hidden = setTab !== "view"; $("#set-content").hidden = setTab === "view" || setTab === "mine"; $("#set-mine").hidden = setTab !== "mine";
   if (setTab === "mine") { paintMine(); return; }
@@ -2186,7 +2264,7 @@ function paintSettings() {
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
-    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics || p.surah || p.notes ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics || p.surah || p.notes || p.mut ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
     if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {

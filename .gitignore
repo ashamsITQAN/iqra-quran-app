@@ -11,3 +11,5 @@ public/data/fanar-report.json
 .env.*
 node_modules/
 dist/
+# متشابهات QUL تُنزَّل وقت البناء
+public/data/mutashabihat.json

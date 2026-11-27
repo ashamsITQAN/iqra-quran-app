@@ -475,6 +475,16 @@
     "surah": "eerab-aya"
   },
   {
+    "id": "mutashabihat",
+    "level": "ayah",
+    "groupName": "المتشابهات",
+    "name": "متشابهات القرآن (العبارات المتكررة)",
+    "kind": "نصي",
+    "source": "QUL",
+    "credit": "متشابهات القرآن (العبارات)، المكتبة القرآنية الشاملة QUL من ترتيل",
+    "mut": true
+  },
+  {
     "id": "ayah-audio",
     "level": "ayah",
     "groupName": "التلاوة",
