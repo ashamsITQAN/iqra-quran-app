@@ -1792,6 +1792,8 @@ const api = (path, lang) => fetch(API + path, lang ? { headers: { "Accept-Langua
 // Every complete Hafs recitation in Fanar, each marked as timed (ayah timings present) or not.
 // Checked once, then remembered for a week.
 let recitersP = null;
+// In a list of reciters the riwayah is left out: every recitation offered is Hafs, and the list reads as short names.
+const recLabel = (r) => r.name.replace(/ · حفص عن عاصم/, "") + (r.timed ? "" : " (غير مزمّنة)");
 function loadReciters() {
   if (recitersP) return recitersP;
   try { const c = JSON.parse(store.get("reciters2", "null")); if (c && Date.now() - c.t < 7 * 864e5 && c.list.length) return (recitersP = Promise.resolve(c.list)); } catch (e) {}
@@ -1939,7 +1941,7 @@ async function openHifz(preset) {
     F("est").textContent = "جارٍ جلب قائمة القرّاء من فنار…"; F("start").disabled = true;
     try {
       const list = await loadReciters();
-      sel.replaceChildren(...list.map((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name + (r.timed ? "" : " (غير مزمّنة)"); return o; }));
+      sel.replaceChildren(...list.map((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = recLabel(r); return o; }));
       if (!list.some((r) => r.id === hz.reciter)) hz.reciter = list[0].id;
       sel.value = hz.reciter; saveHz();
     } catch (e) { F("est").textContent = "تعذّر الاتصال بفنار لجلب القرّاء. تحقق من الاتصال ثم أعد فتح النافذة."; return; }
@@ -2201,7 +2203,7 @@ async function recitationCard(p) {
   if (!list.some((r) => r.id === hz.reciter)) { hz.reciter = list[0].id; saveHz(); }
   const rec = list.find((r) => r.id === hz.reciter), sel = document.createElement("select"), lab = document.createElement("label");
   sel.id = "card-reciter"; lab.htmlFor = sel.id; lab.textContent = "القارئ";
-  list.forEach((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name + (r.timed ? "" : " (غير مزمّنة)"); o.selected = r === rec; sel.append(o); });
+  list.forEach((r) => { const o = document.createElement("option"); o.value = r.id; o.textContent = recLabel(r); o.selected = r === rec; sel.append(o); });
   sel.addEventListener("change", () => { hz.reciter = sel.value; saveHz(); const opt = F("reciter").querySelector(`option[value="${sel.value}"]`); if (opt) F("reciter").value = sel.value; paintSheet(); });
   pick.append(lab, sel);
   const pace = document.createElement("div"), plab = document.createElement("label"), psel = document.createElement("select");
