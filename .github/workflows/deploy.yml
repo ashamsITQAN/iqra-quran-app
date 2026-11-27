@@ -33,7 +33,7 @@ jobs:
             || echo "::warning::mutashabihat export not available; the app is built without it"
       - name: Stamp the build version
         run: |
-          sed -i "s/__BUILD__/${GITHUB_SHA::10}/" public/index.html
+          sed -i "s/__BUILD__/${GITHUB_SHA::10}/" public/index.html public/sw.js
           echo "{\"v\":\"${GITHUB_SHA::10}\"}" > public/version.json
           du -sh public
       - uses: actions/upload-pages-artifact@v3
