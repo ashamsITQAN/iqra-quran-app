@@ -1225,13 +1225,19 @@ function wordsOfAyah(p, key) {   // the word entries of one ayah of a Surah-site
   try { ctx = { ayah: key, page: 0, surah: +s }; r = entriesOf(p); } finally { ctx = saved; }
   return r;
 }
+// The words the readings differ on come from an index built with the site (instant); an ayah it lacks is asked for live.
+let qirIndex;
+function loadQirIndex() { return qirIndex || (qirIndex = getJSON("data/qiraat.json").then((j) => ({ w: j.w || {}, missing: new Set(j.missing || []) })).catch(() => { jsonCache.delete("data/qiraat.json"); return null; })); }
 async function markQir(svg) {
   svg.querySelectorAll("g.word.qr").forEach((g) => g.classList.remove("qr"));
   svg.querySelectorAll(".qru").forEach((n) => n.remove());
   const p = projects.find((x) => x.qiraat);
   if (!showQir || !p || hidden.has(p.id)) return;
+  const idx = await loadQirIndex();
+  if (!svg.isConnected || !showQir) return;
   const unit = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
   await Promise.all([...new Set([...svg.querySelectorAll("g.ayah-fragment")].map((f) => f.dataset.ayahKey))].map(async (k) => {
+    if (idx && !idx.missing.has(k)) { (idx.w[k] || []).forEach((n) => { const g = svg.querySelector(`g.word[data-word-key="${k}:${n}"]`); if (g) g.classList.add("qr"); }); return; }
     let data; try { data = await wordsOfAyah(p, k); } catch (e) { return; }
     if (!svg.isConnected || !showQir) return;
     Object.entries(data).forEach(([wk, entry]) => {

@@ -13,3 +13,6 @@ node_modules/
 dist/
 # متشابهات QUL تُنزَّل وقت البناء
 public/data/mutashabihat.json
+# فهرس كلمات الخلاف بين القراءات يُبنى وقت النشر
+public/data/qiraat.json
+qiraat-index.json
