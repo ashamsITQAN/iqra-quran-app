@@ -1305,13 +1305,14 @@ async function card(p, key) {
 /* Publisher text is shown unchanged. Editorial footnotes arrive wrapped in ¬ … ¥: each becomes a numbered
    reference in the text and a numbered note under it. Print page markers (ج1 ص109) stay inline as a small tag. */
 // Appends text to a node, wrapping Quranic quotations (﴿…﴾, or {…} holding Arabic letters) in a span of the given class.
+const PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;   // a volume and page mark of the printed book, kept inside the text
 const AYAT = /(﴿[^﴾]*﴾|\{[^{}]*[\u0621-\u064A][^{}]*\})/;
 function withAyat(node, str, cls) {
   if (!cls) { node.append(str); return; }
   String(str).split(AYAT).forEach((x, i) => { if (!x) return; if (i % 2) { const g = document.createElement("span"); g.className = cls; g.textContent = x; node.append(g); } else node.append(x); });
 }
 function richText(v, extraNotes, quoted) {
-  const LIMIT = 700, PAGE_MARK = /^ج\s*\d+\s*ص\s*\d+$/;
+  const LIMIT = 700;
   const p = document.createElement("p"), notes = document.createElement("ol"), wrap = document.createElement("div");
   p.className = "text"; p.dir = "auto"; notes.className = "notes";
   const fill = (str) => {
@@ -2005,14 +2006,19 @@ function docShown() {   // the content the window is showing now
   if (shown.notes) return notes[level + ":" + key] ? docOf(level + ":" + key) : null;
   const el = $("#sh-body .proj"); if (!el) return null;
   el.querySelectorAll("button.more").forEach((b) => b.click());   // long texts are folded on screen; share them whole
+  // footnote numbers and volume/page marks are wrapped in control characters, so they can be set small and apart, as on screen
+  const kept = [...el.querySelectorAll(".pm,.ref")].map((n) => { const t = n.textContent, pm = n.classList.contains("pm"); n.textContent = (pm ? "\u0001" : "\u0003") + t + (pm ? "\u0002" : "\u0004"); return [n, t]; });
   const parts = []; let credit = "";
   [...el.children].forEach((c) => { if (c.tagName === "H3") return;
     const rows = c.matches(".wrow") ? [c] : [...c.querySelectorAll(".wrow")];   // word rows read "word: meaning" on one line
     const t = rows.length ? rows.map((r) => `${(r.querySelector(".ww") || {}).innerText || ""}: ${(r.querySelector(".wt") || {}).innerText || ""}`.replace(/\s*\n\s*/g, " ")).join("\n") : c.innerText.trim(); if (!t) return; if (/^المصدر:/.test(t)) credit = t; else parts.push(t); });
+  kept.forEach(([n, t]) => { n.textContent = t; });
   const title = level === "page" ? "الصفحة " + ar(ctx.page) : level === "surah" ? surahName(ctx.surah) : `${surahName(ctx.surah)} · الآية ${ar(ctx.ayah.split(":")[1])}` + (level === "word" ? " · «" + ctx.text + "»" : "");
   return { name: `iqra-${shown.id}-${String(key).replace(/:/g, "-")}`, title, source: shown.name, body: parts.join("\n"), foot: credit, page: ctx.page, ayah: level === "ayah" || level === "word" ? ctx.ayah : "" };
 }
+const plainMarks = (t) => String(t || "").replace(/\u0001([^\u0002]*)\u0002/g, "[$1]").replace(/\u0003\(?([^\u0004)]*)\)?\u0004/g, "($1)");
 async function docText(d) {
+  d = { ...d, body: plainMarks(d.body), sections: d.sections && d.sections.map((x) => ({ ...x, body: plainMarks(x.body), rabt: plainMarks(x.rabt) })) };
   if (d.sections) {
     const out = [`[${d.title}]`, d.source, ""];
     for (const sec of d.sections) { const t = await ayahPlain(sec.page, sec.key); out.push((t ? `﴿${t}﴾ ` : "") + `(${sec.key.split(":")[1]})`, sec.body, ...(sec.rabt ? ["◂ " + sec.rabt] : []), ""); }
@@ -2025,12 +2031,21 @@ async function paintDoc(d, pageH) {
   await document.fonts.ready;
   const probe = document.createElement("canvas").getContext("2d"); probe.font = FONT; probe.direction = "rtl";
   // Text is set word by word: lines are justified (but for the last of a paragraph), and Quranic quotations keep their colour.
-  const TW = inner - 50, SP = probe.measureText(" ").width;
+  const TW = inner - 50, SP = probe.measureText(" ").width, REFF = "600 21px " + UI, PMF = "20px " + UI;
   const wrap = (text) => {
     const out = [];
     String(text || "").split(/\n/).forEach((par) => {
       const words = []; let cur = null;
-      par.split(AYAT).forEach((seg, i) => seg.split(/(\s+)/).forEach((tok) => { if (!tok) return; if (/^\s+$/.test(tok)) { cur = null; return; } if (!cur) { cur = { runs: [], w: 0 }; words.push(cur); } const w = probe.measureText(tok).width; cur.runs.push({ t: tok, q: i % 2 === 1 && showAyat, w }); cur.w += w; }));
+      par.split(/(\u0001[^\u0002]*\u0002|\u0003[^\u0004]*\u0004)/).forEach((piece) => {
+        const kind = piece[0] === "\u0001" ? "pm" : piece[0] === "\u0003" ? "ref" : "";
+        if (kind) {   // a footnote number hugs the word before it; a volume/page mark stands as a word of its own
+          const t = piece.slice(1, -1); probe.font = kind === "pm" ? PMF : REFF; const w = probe.measureText(t).width + (kind === "pm" ? 18 : 4); probe.font = FONT;
+          if (!cur || kind === "pm") { cur = { runs: [], w: 0 }; words.push(cur); }
+          cur.runs.push({ t, kind, w }); cur.w += w; if (kind === "pm") cur = null;
+          return;
+        }
+        piece.split(AYAT).forEach((seg, i) => seg.split(/(\s+)/).forEach((tok) => { if (!tok) return; if (/^\s+$/.test(tok)) { cur = null; return; } if (!cur) { cur = { runs: [], w: 0 }; words.push(cur); } const w = probe.measureText(tok).width; cur.runs.push({ t: tok, q: i % 2 === 1 && showAyat, w }); cur.w += w; }));
+      });
       const ltr = !/[؀-ۿ]/.test(par);
       let line = [], used = 0;
       const flush = (last) => { out.push({ words: line, used, last, ltr }); line = []; used = 0; };
@@ -2043,7 +2058,15 @@ async function paintDoc(d, pageH) {
     const gaps = ln.words.length - 1, extra = !ln.last && gaps > 0 ? Math.min((TW - ln.used) / gaps, 26) : 0, edge = W - P - 28;
     g.font = FONT; g.direction = ln.ltr ? "ltr" : "rtl"; g.textAlign = ln.ltr ? "left" : "right";
     let x = ln.ltr ? edge - TW : edge;
-    ln.words.forEach((wd) => { wd.runs.forEach((r) => { g.fillStyle = r.q ? "#0f6e56" : ink; g.fillText(r.t, x, y + 46); x += ln.ltr ? r.w : -r.w; }); x += (ln.ltr ? 1 : -1) * (SP + extra); });
+    ln.words.forEach((wd) => { wd.runs.forEach((r) => {
+      if (r.kind === "ref") { g.font = REFF; g.fillStyle = "#0f6e56"; g.fillText(r.t, x + (ln.ltr ? 2 : -2), y + 28); g.font = FONT; }
+      else if (r.kind === "pm") {
+        const left = ln.ltr ? x : x - r.w;
+        g.strokeStyle = "#c9cfc8"; g.lineWidth = 1.5; g.beginPath(); g.roundRect(left + 1, y + 20, r.w - 2, 32, 7); g.stroke();
+        g.font = PMF; g.fillStyle = "#6b7773"; g.textAlign = "center"; g.fillText(r.t, left + r.w / 2, y + 44); g.textAlign = ln.ltr ? "left" : "right"; g.font = FONT;
+      } else { g.fillStyle = r.q ? "#0f6e56" : ink; g.fillText(r.t, x, y + 46); }
+      x += ln.ltr ? r.w : -r.w;
+    }); x += (ln.ltr ? 1 : -1) * (SP + extra); });
     g.direction = "rtl"; g.textAlign = "right";
   };
   const items = [{ h: 64, draw: (g, y) => { g.fillStyle = "#1b2421"; g.font = "600 40px " + UI; g.fillText(d.title, W - P, y + 44); } }];
@@ -2127,7 +2150,7 @@ async function rootOfPage(n) {   // the page as shown, or an unseen copy of it l
 }
 function plainEntry(entry) {   // the text of an entry with its footnotes numbered and listed beneath
   const notesOut = []; let n = 0;
-  const body = String(entry["النص"] || "").replace(/¬([^¥]*)¥?/g, (m, t) => { t = t.trim(); if (!t || /^ج\s*\d+\s*ص\s*\d+$/.test(t)) return ""; n += 1; notesOut.push(`(${ar(n)}) ${t}`); return `(${ar(n)})`; }).trim();
+  const body = String(entry["النص"] || "").replace(/¬([^¥]*)¥?/g, (m, t) => { t = t.trim(); if (!t) return ""; if (PAGE_MARK.test(t)) return ` \u0001${ar(t)}\u0002 `; n += 1; notesOut.push(`\u0003${ar(n)}\u0004 ${t}`); return `\u0003${ar(n)}\u0004`; }).trim();
   const extra = entry["الهامش"] ? String(entry["الهامش"]).split(/\n+/).filter(Boolean) : [];
   return { body: [body, ...notesOut, ...extra].join("\n"), rabt: showRabt && entry["الربط"] ? String(entry["الربط"]).trim() : "" };
 }
