@@ -1042,6 +1042,7 @@ async function paintSheet() {
   // Projects that share a `group` sit under one tab and are switched with the row beneath it.
   const groups = [];
   list.forEach((p) => { const id = p.group || p.id; let g = groups.find((x) => x.id === id); if (!g) groups.push(g = { id, name: p.groupName || p.name, items: [] }); g.items.push(p); });
+  groups.forEach((g) => g.items.sort((a, b) => (a.ord || 0) - (b.ord || 0)));   // a group may set the order of its own sub-tabs
   const group = groups.find((g) => g.id === activeTab[level]) || groups[0];
   // Groups whose items are languages share one choice, so the surah objectives follow the tafsir language.
   const byLang = !!group.items[0].lang;
