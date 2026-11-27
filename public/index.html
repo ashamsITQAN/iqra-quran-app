@@ -276,6 +276,9 @@ body.ts-on.ts-hide .art svg g.word:not(.rd) path{opacity:0}
 body.ts-on.ts-nomark .art svg g.ayah-mark:not(.rdm){opacity:0}
 body.ts-on:not(.ts-hide) .art svg g.word.rd .hit{fill:var(--tint-soft)}   /* words shown: what has been read is tinted, the word reached more strongly */
 body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
+body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word.fb .hit{fill:var(--tint-strong)}   /* a place to look at again */
+#fb-list small{display:block;margin-top:2px}
+.ac-list audio{width:100%;margin-top:6px;height:34px}
 /* my activity */
 #ac-body h3{font-size:14px;font-weight:600;color:var(--muted);margin:14px 0 6px}
 .ac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
@@ -495,7 +498,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <ol id="results"></ol>
 </section>
 
-<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
+<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-fb" class="btn" hidden></button><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -551,6 +554,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
       <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
     <div class="opt"><h3><label for="set-tshide">التسميع: إخفاء الكلمات حتى تُقرأ</label></h3><input id="set-tshide" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsmark">التسميع: إخفاء أرقام الآيات أيضًا</label></h3><input id="set-tsmark" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsfb">التسميع: بيان مواضع تحتاج مراجعة بعد كل آية</label></h3><input id="set-tsfb" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tsrec">التسميع: الاحتفاظ بتسجيل صوتي لجلساتي على هذا الجهاز</label></h3><input id="set-tsrec" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -615,6 +620,15 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
 </section>
 
+<section id="fb" class="modal" role="dialog" aria-label="مواضع للمراجعة" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">مواضع للمراجعة</p><p class="sub">ما سمعه النموذج مقابل ما في الآية</p></div>
+    <button class="sh-close" id="fb-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body"><ul class="ac-list" id="fb-list"></ul>
+    <p class="note" style="margin:10px 0 0">التقييم الآلي قد يخطئ، ولا يغني عن معلّم متقن. يُفحص كل مقطع بعد الوقف على آخر الآية، ولا يُفحص المد ولا الشدة ولا الغنة في هذه النسخة.</p></div>
+</section>
+
 <section id="activity" class="modal" role="dialog" aria-label="نشاطي" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big plain">نشاطي</p><p class="sub" id="ac-sub"></p></div>
@@ -670,6 +684,7 @@ const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
 
 const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("iqra-" + k, v); } catch (e) {} } };
+let tsFb = store.get("tsfb", "1") === "1", tsRec = store.get("tsrec", "0") === "1";   // recitation: places to look at again after each ayah; keep a recording
 let tsHide = store.get("tshide", "1") === "1", tsNoMark = store.get("tsmark", "0") === "1";   // recitation: hide the words until read, and the ayah numbers too
 let view = store.get("view", "print"), zoom = Math.max(1.2, Math.min(3, +store.get("zoom", "1.4") || 1.4));   // "flow": the page's words set again in bigger lines
 let mode = store.get("mode", "auto"), theme = store.get("theme", "auto");
@@ -782,7 +797,7 @@ async function fillPage(n) {
   markQir(svg);
   marginTabs(n, svg);
   paintMarks();
-  if (typeof FOL !== "undefined" && FOL.on) folPaint(false);
+  if (typeof FOL !== "undefined" && FOL.on) { folPaint(false); fbPaint(); }
 }
 
 /* Thematic division (data/topics.json): each surah is a list of [first ayah, last ayah, title]. */
@@ -1144,7 +1159,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); show($("#activity"), false); show($("#fb"), false); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -2553,6 +2568,7 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
     // the basmala opens every surah: away from the first page it does not say where the reading is, so the place is taken from what follows it
     if (FOL.ug[hit.pos - 1] === 0 && cur !== 1) { FOL.cut = H.length; return; }
     FOL.pos = hit.pos; FOL.from = hit.from; FOL.bad = 0;
+    if (FOL.take && FOL.take.startPos == null && !FOL.cut) { const s0 = FOL.start[FOL.ug[hit.from]]; if (hit.from - s0 <= 2) { FOL.take.startPos = s0; FOL.from = s0; } }   // the take began with this ayah
   } else if (FOL.away) {
     // The reading left the place it was following. The place is kept: the reader is told which other place the reading
     // matches and chooses whether to go there. Reading on from the kept place takes the following up again by itself.
@@ -2575,6 +2591,7 @@ function folAway(hit) {   // null: back on track; undefined: off the place, the 
   const bar = $("#ts-bar"), jump = $("#ts-jump");
   if (hit === null) { FOL.away = null; bar.classList.remove("away"); jump.hidden = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); return; }
   const here = folName(FOL.ug[Math.min(FOL.n - 1, FOL.pos)]);   // the ayah to go on from
+  if (FOL.take) FOL.take.away = true;
   if (!bar.classList.contains("away")) { bar.classList.add("away"); FOL.notes = (FOL.notes || 0) + 1; try { navigator.vibrate && navigator.vibrate([90, 60, 90]); } catch (e) {} }
   if (hit) { FOL.away.hit = hit; jump.hidden = false; tsSay(`تنبيه: ما تقرؤه الآن يوافق موضعًا آخر (${folName(FOL.ug[hit.pos - 1])}). موضعك الذي تكمل منه: ${here}.`); }
   else { jump.hidden = true; tsSay(`تنبيه: ما تقرؤه الآن لا يوافق موضعك (${here}). أكمل من موضعك.`); }
@@ -2608,20 +2625,128 @@ function folPaint(move) {
   const target = row && !shown.includes(row[2]) ? row[2] : Math.min(meta.last, Math.max(...shown, cur) + 1);
   FOL.turning = true; cur = target; render().then(() => { FOL.turning = false; folPaint(false); const e2 = spread.querySelector(`.art svg g.word[data-word-key="${FOL.now}"]`); if (e2 && stage.scrollHeight > stage.clientHeight + 4) e2.scrollIntoView({ block: "center" }); });
 }
-async function folTake() {   // one take: the microphone until the reader ends it
-  const model = qlModel; $("#ts-begin").hidden = true;
-  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, full: new Set(), gs: new Set(), kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true;
+/* The microphone is the app's own: the audio is cut into takes at the ends of ayat (where the reader stops), each take is
+   pushed to the model, and its whole heads go to the feedback engine once it has ended. The same audio can be kept as a
+   recording on this device when the reader chose that. */
+let mic = null;
+async function micOpen() {
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false } }); }
+  catch (e) { throw Object.assign(new Error("mic"), { code: e && e.name === "NotFoundError" ? "microphone_unavailable" : "microphone_denied" }); }
+  const ctx = new (window.AudioContext || window.webkitAudioContext)(), src = ctx.createMediaStreamSource(stream);
+  const code = "class P extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0}process(i){const c=i[0][0];if(c){for(let k=0;k<c.length;k++){this.b[this.n++]=c[k];if(this.n===2048){this.port.postMessage(this.b.slice(0));this.n=0}}}return true}}registerProcessor('iqra-tap',P)";
+  await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([code], { type: "text/javascript" })));
+  const node = new AudioWorkletNode(ctx, "iqra-tap"), mute = ctx.createGain(); mute.gain.value = 0; src.connect(node); node.connect(mute); mute.connect(ctx.destination);
+  const m = { stream, ctx, node, rate: ctx.sampleRate, queue: [], sink: null, level: 0, quietMs: 0, spoke: false, rec: null, parts: [] };
+  node.port.onmessage = (e) => {
+    const b = e.data; let sum = 0; for (let k = 0; k < b.length; k++) sum += b[k] * b[k];
+    const rms = Math.sqrt(sum / b.length); m.level = Math.max(m.level * 0.997, rms);
+    if (rms < Math.max(0.004, m.level * 0.1)) m.quietMs += (b.length / m.rate) * 1000; else { m.quietMs = 0; m.spoke = true; }
+    if (m.sink) m.sink.push(b); else if (m.queue.length < 400) m.queue.push(b);
+  };
+  if (tsRec && window.MediaRecorder) { try { m.rec = new MediaRecorder(stream); m.rec.ondataavailable = (e) => { if (e.data && e.data.size) m.parts.push(e.data); }; m.rec.start(1000); } catch (e) { m.rec = null; } }
+  return m;
+}
+async function micClose(id) {
+  const m = mic; mic = null; if (!m) return;
+  if (m.rec) { await new Promise((res) => { m.rec.onstop = res; try { m.rec.stop(); } catch (e) { res(); } }); if (id && m.parts.length) recPut(id, new Blob(m.parts, { type: m.rec.mimeType || "audio/webm" })).catch(() => {}); }
+  try { m.node.disconnect(); m.stream.getTracks().forEach((t) => t.stop()); await m.ctx.close(); } catch (e) {}
+}
+// recordings live in the browser's own database on this device, one per session
+function recDb() { return new Promise((res, rej) => { const r = indexedDB.open("iqra-recordings", 1); r.onupgradeneeded = () => r.result.createObjectStore("rec"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function recDo(mode, fn) { const db = await recDb(); return new Promise((res, rej) => { const tx = db.transaction("rec", mode), q = fn(tx.objectStore("rec")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }); }
+const recPut = (id, blob) => recDo("readwrite", (st) => st.put(blob, id)), recGet = (id) => recDo("readonly", (st) => st.get(id)), recKeys = () => recDo("readonly", (st) => st.getAllKeys()).catch(() => []), recDel = (id) => recDo("readwrite", (st) => st.delete(id)).catch(() => {});
+
+function takeEnd(judge) {   // end the running take here; it is judged only when it holds whole ayat from a start to a stop
+  const tk = FOL.take, ses = qlSession; if (!tk || tk.fin || !ses) return;
+  const { ug, n } = FOL, edge = (p) => p != null && (p === 0 || p >= n || ug[p] !== ug[p - 1]);
+  tk.endPos = FOL.pos; tk.judge = judge && tsFb && !tk.away && edge(tk.startPos) && edge(tk.endPos) && tk.endPos > tk.startPos;
+  if (tk.endPos > (tk.startPos || 0) && tk.startPos != null) { const a = FOL.rows[ug[tk.startPos]], b = FOL.rows[ug[tk.endPos - 1]]; if (a[0] === b[0]) { try { ses.reportRecited(a[0], a[1], b[1]); } catch (e) {} } }
+  if (mic) { mic.sink = null; mic.quietMs = 0; mic.spoke = false; }
+  tk.fin = ses.finish();
+}
+function folCut() {
+  const tk = FOL.take; if (!tk || tk.fin || !mic) return;
+  const atEnd = FOL.pos != null && !FOL.away && FOL.pos > 0 && (FOL.pos >= FOL.n || FOL.ug[FOL.pos] !== FOL.ug[FOL.pos - 1]);
+  if (atEnd && FOL.pos !== tk.startPos && mic.quietMs >= 450) takeEnd(true);
+  else if (mic.spoke && FOL.seen > 0 && mic.quietMs >= 5000) takeEnd(false);   // a long silence in the middle: begin afresh
+}
+let fbWorker = null, fbSeq = 0; const fbWait = new Map();
+function fbRun(job) {   // the documented engine, in a worker of its own so that the page stays responsive
+  if (!fbWorker) {
+    const src = `importScripts(${JSON.stringify(new URL("engine.js" + VQ, location.href).href)});onmessage=(e)=>{try{postMessage({id:e.data.id,r:TajweedEngine.run(e.data.job)})}catch(x){postMessage({id:e.data.id,err:String(x)})}}`;
+    fbWorker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+    fbWorker.onmessage = (e) => { const w = fbWait.get(e.data.id); fbWait.delete(e.data.id); if (w) (e.data.err ? w[1](new Error(e.data.err)) : w[0](e.data.r)); };
+  }
+  return new Promise((res, rej) => { const id = (fbSeq += 1); fbWait.set(id, [res, rej]); fbWorker.postMessage({ id, job }); });
+}
+const FB_NAMES = { vowel_sub: "حركة مكان حركة", vowel_del: "حركة لم تُسمع", vowel_ins: "حركة زائدة", short_to_long: "حركة قصيرة سُمعت ممدودة", long_to_short: "حرف مد سُمع قصيرًا", cons_sub: "حرف مكان حرف", cons_del: "حرف لم يُسمع", word: "الكلمة" };
+const fbTok = (id) => ({ a: "فتحة", i: "كسرة", u: "ضمة", aa: "ألف مد", ii: "ياء مد", uu: "واو مد" })[qlModel.tokens.name(id)] || qlModel.tokens.name(id);
+async function folJudge(tk, heads) {
   try {
-    qlSession = await model.listen(tsDev ? { from: model.sampleClips[0] } : {});
+    const cal = qlModel.calibration, ref = qlModel.reference; if (!cal || !ref) return;   // without the model's own thresholds nothing is judged
+    const g1 = FOL.ug[tk.startPos], g2 = FOL.ug[tk.endPos - 1]; if (g2 - g1 > 7 || tk.endPos - tk.startPos > 520) return;
+    const units = [], words = [], owner = []; let base = 0;   // the units of each ayah in turn, as the reference gives them
+    for (let g = g1; g <= g2; g++) {
+      const u = await ref.units(FOL.rows[g][0], FOL.rows[g][1]), extra = Math.max(0, u.wordCount - FOL.rows[g][3].length);
+      if (units.length) { units.push(FOL.bar); words.push(base - 1); }
+      u.units.forEach((id, k) => { units.push(id); words.push(base + u.words[k]); });
+      for (let w = 0; w < u.wordCount; w++) owner.push({ g, key: FOL.rows[g][0] + ":" + FOL.rows[g][1] + ":" + (Math.max(0, w - extra) + 1), text: FOL.rows[g][3][Math.max(0, w - extra)], joined: g < g2 && w === u.wordCount - 1 });
+      base += u.wordCount;
+    }
+    const hs = {}; for (const name of ["log_probs", "inter1_log_probs", "timing_log_probs", "attr_qalqalah", "gem"]) { const h = heads.get(name); if (!h) return; hs[name] = { frames: h.frames, classes: h.classes, values: Float32Array.from(h.values) }; }
+    if (!hs.log_probs.frames) return;
+    const r = await fbRun({ heads: hs, calibration: JSON.parse(cal.text), context: tk.context, units, words, sets: ["strict"] });
+    const found = [];
+    r.sites.forEach((st) => { const c = st.flagged.strict.site_class, o = owner[st.word]; if (c && o && !o.joined) found.push({ o, cls: c, has: st.window, heard: st.classes[c].alternative }); });   // the last word of an ayah joined to the next is left alone
+    r.words.forEach((w) => { const o = owner[w.word]; if (w.flagged.strict && o && !o.joined && !found.some((f) => f.o === o)) found.push({ o, cls: "word", has: null, heard: null }); });
+    FOL.judged = (FOL.judged || 0) + (g2 - g1 + 1);
+    found.forEach((f) => { const l = FOL.fb.get(f.o.key) || []; l.push({ cls: f.cls, text: f.o.text, where: folName(f.o.g), has: f.has && f.has.map(fbTok).join(" "), heard: f.heard && (f.heard.length ? f.heard.map(fbTok).join(" ") : "لا شيء") }); FOL.fb.set(f.o.key, l); });
+    fbPaint();
+  } catch (e) { console.warn("[engine]", e); }
+}
+function fbPaint() {
+  const n = FOL.fb ? FOL.fb.size : 0, b = $("#ts-fb");
+  b.hidden = !n; b.textContent = n ? `للمراجعة: ${ar(n)}` : "";
+  spread.querySelectorAll(".art svg g.word").forEach((w) => w.classList.toggle("fb", !!FOL.fb && FOL.fb.has(w.dataset.wordKey)));
+}
+function fbOpen() {
+  const ul = $("#fb-list"); ul.replaceChildren();
+  FOL.fb.forEach((list, key) => list.forEach((f) => {
+    const li = acEl("li"), top = acEl("div", "top"), go = acEl("button", "btn", "اذهب إلى الموضع"); go.type = "button";
+    top.append(acEl("strong", "", f.text || ""), acEl("small", "", f.where));
+    li.append(top, acEl("small", "", f.cls === "word" ? "قد تحتاج هذه الكلمة مراجعة: ما سُمع لا يوافقها تمامًا." : `قد يحتاج مراجعة · ${FB_NAMES[f.cls]}: سُمع «${f.heard}» وفي الآية «${f.has}».`));
+    const acts = acEl("div", "acts"); go.addEventListener("click", () => { const [s, a] = key.split(":"), row = FOL.rows.find((x) => x[0] === +s && x[1] === +a); show($("#fb"), false); if (row && !spread.querySelector(`g.word[data-word-key="${key}"]`)) { cur = row[2]; render(); } }); acts.append(go); li.append(acts); ul.append(li);
+  }));
+  show($("#fb"), true);
+}
+async function folTake() {   // one sitting: the microphone until the reader ends it, as a run of takes
+  const model = qlModel; $("#ts-begin").hidden = true;
+  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, judged: 0, full: new Set(), gs: new Set(), fb: new Map(), take: null, kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true; fbPaint();
+  const id = String(FOL.t0);
+  try {
+    const context = (await qlClient.diagnose()).context || model.defaultContext;
+    if (!tsDev) mic = await micOpen();
     tsSay("أسمعك… اقرأ من أي موضع في المصحف.");
     let said = false, last = null;
-    for await (const chunk of qlSession.chunks) { last = chunk.decoded; folHeard(last); if (!said && FOL.pos != null) { said = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); } }
-    if (tsDev) { const dg = await qlClient.diagnose(); window.__quranlab = { heard: last && last.text, now: FOL.now, done: [...FOL.done], diagnose: dg }; console.log("[quranlab]", JSON.stringify(window.__quranlab)); }
+    while (FOL.on) {
+      const ses = tsDev ? await model.listen({ from: model.sampleClips[0], context }) : model.session({ sampleRate: mic.rate, context });
+      qlSession = ses; FOL.seen = 0; FOL.cut = 0;
+      const tk = FOL.take = { startPos: FOL.pos, context, away: false, fin: null };
+      if (mic) { mic.queue.splice(0).forEach((b) => ses.push(b)); mic.sink = ses; }
+      for await (const chunk of ses.chunks) { last = chunk.decoded; folHeard(last); if (!said && FOL.pos != null) { said = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); } folCut(); }
+      if (mic) mic.sink = null;
+      if (tsDev && !tk.fin) { tk.endPos = FOL.pos; tk.judge = tsFb && tk.startPos != null; tk.fin = ses.finish(); }
+      if (!tk.fin) break;   // the take ended by itself: its time limit, or the page was hidden
+      const heads = await tk.fin; if (tk.judge && heads) { const job = folJudge(tk, heads); if (tsDev) await job; }
+      if (tsDev) break;
+    }
+    if (tsDev) { const dg = await qlClient.diagnose(); window.__quranlab = { heard: last && last.text, now: FOL.now, done: [...FOL.done], judged: FOL.judged, flags: [...FOL.fb], diagnose: dg }; console.log("[quranlab]", JSON.stringify(window.__quranlab)); }
     if (FOL.on) { tsSay(FOL.g1 != null ? "انتهت التلاوة." : "انتهت التلاوة ولم أتعرّف على موضع."); $("#ts-begin").hidden = false; }
   } catch (e) {
     if (!e || e.code !== "cancelled") { tsSay(qlSay(e)); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; $("#ts-begin").hidden = !qlModel; }
   }
-  qlSession = null; actSave();
+  qlSession = null; FOL.take = null; const kept = FOL.gs && FOL.gs.size; await micClose(kept ? id : null); actSave();
 }
 async function folStart() {
   if (FOL.on) return folStop();
@@ -2636,14 +2761,14 @@ async function folStart() {
   } catch (e) { $("#ts-prog").hidden = true; tsSay(qlSay(e)); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
 }
 function folStop() {
-  const ses = qlSession;
-  if (ses) { try { if (FOL.g1 != null && FOL.rows[FOL.g1][0] === FOL.rows[FOL.g2][0]) ses.reportRecited(FOL.rows[FOL.g1][0], FOL.rows[FOL.g1][1], FOL.rows[FOL.g2][1]); } catch (e) {} ses.finish().catch(() => {}); }
-  FOL.on = false; FOL.away = null; $("#ts-bar").classList.remove("away"); document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
-  spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow").forEach((w) => w.classList.remove("rd", "rdnow"));
+  FOL.on = false; if (qlSession && FOL.take && !FOL.take.fin) { if (tsDev) qlSession.cancel().catch(() => {}); else takeEnd(true); } FOL.away = null; $("#ts-bar").classList.remove("away"); document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
+  spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow,.art svg g.word.fb").forEach((w) => w.classList.remove("rd", "rdnow", "fb"));
 }
 $("#ts-go").addEventListener("click", folStart);
 $("#ts-begin").addEventListener("click", () => { if (FOL.on && qlModel && !qlSession) { FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null; folPaint(false); folTake(); } });   // the microphone needs a tap
 $("#ts-end").addEventListener("click", folStop);
+$("#ts-fb").addEventListener("click", fbOpen);
+$("#fb-close").addEventListener("click", () => show($("#fb"), false));
 $("#ts-eye").addEventListener("click", () => { tsHide = !tsHide; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
 $("#ts-act").addEventListener("click", () => { if (FOL.on) folStop(); openActivity(); });
 
@@ -2653,7 +2778,7 @@ const spanCount = (rs) => rs.reduce((t, r) => t + r[1] - r[0] + 1, 0);
 function actSave() {   // called when a take ends: one session, if at least one whole ayah was read
   if (!FOL.gs || !FOL.gs.size) return;
   const r = ranges(FOL.gs), id = String(FOL.t0);
-  rawAct.s[id] = { t: FOL.t0, d: Math.max(1, Math.round((Date.now() - FOL.t0) / 1000)), k: FOL.kind, r, w: FOL.notes || 0 };
+  rawAct.s[id] = { t: FOL.t0, d: Math.max(1, Math.round((Date.now() - FOL.t0) / 1000)), k: FOL.kind, r, w: FOL.notes || 0, j: FOL.judged || 0, f: FOL.fb ? [...FOL.fb.keys()] : [] };
   const kh = rawAct.kh, all = new Set(); (kh.done || []).forEach(([a, b]) => { for (let g = a; g <= b; g++) all.add(g); }); FOL.gs.forEach((g) => all.add(g));
   kh.last = r[r.length - 1][1]; kh.t = Date.now();
   if (all.size >= FOL.rows.length) { kh.n = (kh.n || 0) + 1; kh.done = []; } else kh.done = ranges(all);
@@ -2687,15 +2812,20 @@ async function paintActivity() {
   }
   if (acTab === "log") {
     const seg = acEl("div", "seg"); [["all", "الكل"], ["h", "تسميع"], ["r", "قراءة"]].forEach(([v, t]) => { const b = acEl("button", "", t); b.type = "button"; b.setAttribute("aria-pressed", v === acKind); b.addEventListener("click", () => { acKind = v; paintActivity(); }); seg.append(b); });
-    const ul = acEl("ul", "ac-list"); ul.style.marginTop = "10px";
+    const ul = acEl("ul", "ac-list"), recs = (await recKeys()).map(String); ul.style.marginTop = "10px";
     all.filter((x) => acKind === "all" || x.k === acKind).slice(0, 300).forEach((x) => {
       const li = acEl("li"), top = acEl("div", "top"), acts = acEl("div", "acts"), open = acEl("button", "btn", "افتح الموضع"), del = acEl("button", "btn", "حذف"), n = spanCount(x.r);
       const when = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(x.t);
       top.append(acEl("strong", "", span(x.r)), acEl("span", "ac-kind", x.k === "h" ? "تسميع" : "قراءة"));
       open.type = del.type = "button"; open.addEventListener("click", () => jump(rows[x.r[0][0]][2], rows[x.r[0][0]][0] + ":" + rows[x.r[0][0]][1]));
-      del.addEventListener("click", () => { rawAct.s[String(x.t)] = { del: true, t: x.t }; saveMine(); paintActivity(); });
+      del.addEventListener("click", () => { rawAct.s[String(x.t)] = { del: true, t: x.t }; recDel(String(x.t)); saveMine(); paintActivity(); });
       acts.append(open, del);
-      li.append(top, acEl("small", "", `${ar(n)} ${n > 10 ? "آية" : n > 2 ? "آيات" : n === 2 ? "آيتان" : "آية"} · ${acDur(x.d)} · ${when}` + (x.w ? ` · ${ar(x.w)} تنبيه خروج عن الموضع` : "")), acts); ul.append(li);
+      li.append(top, acEl("small", "", `${ar(n)} ${n > 10 ? "آية" : n > 2 ? "آيات" : n === 2 ? "آيتان" : "آية"} · ${acDur(x.d)} · ${when}` + (x.w ? ` · ${ar(x.w)} تنبيه خروج عن الموضع` : "") + (x.j ? ` · فُحصت ${ar(x.j)} آية، ومواضع للمراجعة: ${ar((x.f || []).length)}` : "")), acts);
+      if (recs.includes(String(x.t))) { const play = acEl("button", "btn", "تشغيل التسجيل"), dl = acEl("button", "btn", "تنزيل"); play.type = dl.type = "button";
+        play.addEventListener("click", async () => { const b = await recGet(String(x.t)); if (!b) return; const au = acEl("audio"); au.controls = true; au.src = URL.createObjectURL(b); li.append(au); play.remove(); au.play().catch(() => {}); });
+        dl.addEventListener("click", async () => { const b = await recGet(String(x.t)); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `iqra-recitation-${new Date(x.t).toISOString().slice(0, 16).replace(/[:T]/g, "-")}.${/ogg/.test(b.type) ? "ogg" : /mp4/.test(b.type) ? "m4a" : "webm"}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); });
+        acts.append(play, dl); }
+      ul.append(li);
     });
     body.append(seg, ul); return;
   }
@@ -2846,6 +2976,8 @@ $("#mine-copy").addEventListener("click", async () => copyText(await allText()))
 /* ---------- settings ---------- */
 let setTab = "view";
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-tsfb").addEventListener("change", (e) => { tsFb = e.target.checked; store.set("tsfb", tsFb ? "1" : "0"); });
+$("#set-tsrec").addEventListener("change", (e) => { tsRec = e.target.checked; store.set("tsrec", tsRec ? "1" : "0"); });
 $("#set-tshide").addEventListener("change", (e) => { tsHide = e.target.checked; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
 $("#set-tsmark").addEventListener("change", (e) => { tsNoMark = e.target.checked; store.set("tsmark", tsNoMark ? "1" : "0"); tsClasses(); });
 $("#set-ayat").addEventListener("change", (e) => { showAyat = e.target.checked; store.set("ayat", showAyat ? "1" : "0"); });
@@ -2857,6 +2989,7 @@ function paintSettings() {
   $("#view-help").textContent = view === "flow" ? "تُعرض كلمات الصفحة نفسها برسم المصحف في أسطر أكبر، صفحةً صفحة، وتُمرَّر الصفحة إلى أسفل. أرقام الصفحات كما في المطبوع." : "كل صفحة كما هي في المصحف المطبوع، سطرًا بسطر.";
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
+  $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark;
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
   $("#wmark-help").textContent = { "": "لا تُميَّز كلمات.", gharib: "كلمات الغريب بالأحمر.", mut: "العبارات المتشابهة بالأزرق؛ ولمسها يعرض مواضعها الأخرى.", qir: "كلمات الخلاف بين القراءات بالبنفسجي؛ ولمسها يعرض أوجه الخلاف." }[wmark];
