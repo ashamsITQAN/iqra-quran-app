@@ -3200,12 +3200,14 @@ function setSync(t, bad) { syncMsg = t; syncBad = !!bad; const el = $("#dr-statu
 function loadGis() { return gisP || (gisP = new Promise((res, rej) => { if (window.google && google.accounts) return res(); const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.onload = res; sc.onerror = () => { gisP = null; rej(new Error("gis")); }; document.head.append(sc); })); }
 async function driveToken(interactive) {
   if (gToken && Date.now() < gExp) return gToken;
+  // Google hands a browser app its permission only through a window of its own, so nothing asks for it unless the reader pressed
+  if (!interactive) throw new Error("interaction");
   await loadGis();
   return new Promise((res, rej) => {
     const client = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE,
       callback: (r) => { if (r.error || !r.access_token) return rej(new Error(r.error || "token")); gToken = r.access_token; gExp = Date.now() + ((+r.expires_in || 3600) - 90) * 1000; res(gToken); },
       error_callback: (e) => rej(new Error((e && e.type) || "popup")) });
-    client.requestAccessToken({ prompt: interactive ? "" : "none" });
+    client.requestAccessToken({ prompt: "" });
   });
 }
 async function driveCall(method, url, body, headers) {
@@ -3237,7 +3239,7 @@ async function syncNow(interactive) {
     setSync("آخر مزامنة: الآن" + (got ? ` · وصل ${ar(got)} عنصرًا من أجهزتك الأخرى` : ""));
   } catch (e) {
     const quiet = !interactive && /popup|interaction|login|consent|access_denied|token/.test(e.message);
-    setSync(quiet ? "تحتاج المزامنة إلى ضغطة منك: اضغط «مزامنة الآن»." : e.message === "gis" ? "تعذّر الاتصال بـ Google. تحقق من الاتصال." : "لم تتم المزامنة (" + e.message + ").", true);
+    setSync(quiet ? "للمزامنة اضغط «مزامنة الآن» أو علامة ⟳ في الشريط العلوي." : e.message === "gis" ? "تعذّر الاتصال بـ Google. تحقق من الاتصال." : "لم تتم المزامنة (" + e.message + ").", true);
     $("#sync-chip").hidden = !(quiet && driveLinked());
   }
   syncing = false;
