@@ -96,7 +96,7 @@ body.full .fs{display:grid}
 .head button,.foot button{background:none;border:0;padding:4px 8px;border-radius:6px;color:inherit}
 .head button:hover,.foot button:hover{background:var(--tint)}
 .art{position:relative;border-block:1px solid var(--mark);margin-inline:6px}
-.art svg{display:block;width:100%;height:100%}
+.art svg{display:block;width:100%;height:100%;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .art .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
 .foot{height:38px;display:flex;align-items:center;justify-content:center;padding:0 14px;flex:none}
 .page.rt .foot{justify-content:flex-start}.page.lt .foot{justify-content:flex-end}   /* the number sits on the outer side, as in the printed mushaf */
@@ -1231,8 +1231,32 @@ function ctxAt(page, surah) {
   return { page, surah: +k[0], ayah: k[0] + ":" + k[1] };
 }
 /* ---------- taps ---------- */
+// A finger opens the content of a place on the page by a long press, so that resting or sliding a finger on the
+// writing does nothing; a mouse opens it by a click. Buttons (page number, surah name) answer a plain tap either way.
+let lastTouch = 0, press = null;
+const onInk = (el) => !!(el.closest && el.closest(".art svg"));
+const pressEnd = () => { if (press) { clearTimeout(press.t); press = null; } };
+spread.addEventListener("pointerdown", (e) => {
+  pressEnd();
+  if (e.pointerType === "mouse") return;
+  lastTouch = Date.now();
+  if (!onInk(e.target) || !e.target.closest("g.word, g.ayah-mark, .banner, g.surah-name")) return;
+  const target = e.target, x = e.clientX, y = e.clientY;
+  press = { x, y, t: setTimeout(() => { press = null; try { navigator.vibrate && navigator.vibrate(12); } catch (err) {} down = null; tapAt(target); }, 450) };
+});
+spread.addEventListener("pointermove", (e) => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) pressEnd(); });
+["pointerup", "pointercancel", "pointerleave"].forEach((n) => spread.addEventListener(n, pressEnd));
+spread.addEventListener("contextmenu", (e) => { if (Date.now() - lastTouch < 1500 && onInk(e.target)) e.preventDefault(); });
 spread.addEventListener("click", (e) => {
   if (swiped) { swiped = false; return; }
+  if (Date.now() - lastTouch < 1200 && onInk(e.target)) {   // a finger's short tap on the writing: say how, the first few times
+    const n = +store.get("presshint", "0"); if (n < 3 && !FOL.on && !sheet.classList.contains("open")) { store.set("presshint", String(n + 1)); toast("اضغط مطوّلًا على الآية أو الكلمة لفتح محتواها."); }
+    return;
+  }
+  tapAt(e.target);
+});
+function tapAt(target) {
+  const e = { target };
   const pageEl = e.target.closest(".page");
   if (!pageEl || !pageEl.dataset.page) return;
   const page = +pageEl.dataset.page;
@@ -1256,7 +1280,7 @@ spread.addEventListener("click", (e) => {
     return open({ page, surah: +k.split(":")[0], ayah: a, word: k, text: w.dataset.rasmUthmani }, "word");
   }
   close();
-});
+}
 
 // On wide, short screens the page turner moves into the top bar, so one slim bar is all the chrome there is.
 const shortWide = matchMedia("(orientation:landscape) and (max-height:520px)"), pagerEl = $(".pager"), pagerHome = pagerEl.nextSibling;
