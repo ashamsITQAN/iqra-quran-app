@@ -1290,10 +1290,10 @@ async function paintSheet() {
   paintSheet.token = token;
   let list = projects.filter((p) => p.level === level && !hidden.has(p.id));
   if (touch === "ayah" && level === "ayah") {   // word projects appear here, one row per word of the ayah
-    const words = projects.filter((p) => p.level === "word" && !p.notes && !hidden.has(p.id));
+    const words = projects.filter((p) => p.level === "word" && !p.notes && !p.act && !hidden.has(p.id));
     list = [...list.filter((p) => !p.player), ...words, ...list.filter((p) => p.player)];
   }
-  list = [...list.filter((p) => !p.notes), ...list.filter((p) => p.notes)];   // my notes close the row of tabs
+  list = [...list.filter((p) => !p.notes && !p.act), ...list.filter((p) => p.act), ...list.filter((p) => p.notes)];   // my activity, then my notes, close the row of tabs
   const tabs = $("#tabs"), subs = $("#subtabs");
   const ink = level === "ayah" ? ayahBlock(ctx.ayah) : level === "word" ? ayahBlock(ctx.ayah, ctx.word) : null;
   let quote = ink;
@@ -1539,6 +1539,7 @@ async function card(p, key) {
   if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   if (p.player) return recitationCard(p);
   if (p.notes) return notesCard(p.level, key);
+  if (p.act) return actCard(p.level);
   if (p.mut) return mutCard(key);
   if (p.topics) return topicsCard();
   if (!p.file && !p.surah) {
@@ -2862,6 +2863,36 @@ function actSave() {   // called when a take ends: one session, if at least one 
   if (all.size >= FOL.rows.length) { kh.n = (kh.n || 0) + 1; kh.done = []; } else kh.done = ranges(all);
   FOL.gs = new Set(); saveMine();
 }
+// My recitation of the place in the content window: the sittings that passed over this word, ayah, page or surah.
+function actCard(lv) {
+  const el = acEl("div", "proj"), h = acEl("h3"), body = acEl("div"), c = { ...ctx }; h.append(tag("شخصي"), tag("خاص بك", "src")); el.append(h, body); body.textContent = "…";
+  (async () => {
+    const rows = await getJSON("data/search.json"), recs = (await recKeys()).map(String), inPlace = (r) => (lv === "page" ? r[2] === c.page : lv === "surah" ? r[0] === c.surah : c.ayah === r[0] + ":" + r[1]);
+    let g1 = -1, g2 = -1; rows.forEach((r, g) => { if (inPlace(r)) { if (g1 < 0) g1 = g; g2 = g; } });
+    const mine = acSessions().filter((x) => x.r.some(([a, b]) => a <= g2 && b >= g1)), wkey = lv === "word" ? c.word : null;
+    const here = (k) => (wkey ? k === wkey : (() => { const [s, a] = k.split(":").map(Number), g = rows.findIndex((r) => r[0] === s && r[1] === a); return g >= g1 && g <= g2; })());
+    body.replaceChildren();
+    if (!mine.length) { body.append(acEl("p", "note", "لم تُسجَّل لك تلاوة لهذا الموضع بعد. اضغط «تسميع» في الشريط العلوي واقرأ، فتظهر جلساتك هنا.")); return; }
+    const heard = mine.filter((x) => x.k === "h").length, when = (t) => new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(t);
+    body.append(acEl("p", "text", `مررت بهذا الموضع في ${ar(mine.length)} جلسة: ${ar(heard)} تسميعًا مع الإخفاء و${ar(mine.length - heard)} قراءة. آخرها ${when(mine[0].t)}.`));
+    const ul = acEl("ul", "ac-list"); ul.style.marginTop = "8px";
+    mine.slice(0, 40).forEach((x) => {
+      const li = acEl("li"), top = acEl("div", "top"), acts = acEl("div", "acts"), a = x.r[0][0], b = x.r[x.r.length - 1][1], nm = (g) => `${meta.surahs[rows[g][0]].name} ${ar(rows[g][1])}`, marks = (x.f || []).filter(here);
+      top.append(acEl("strong", "", rows[a][0] === rows[b][0] ? nm(a) + (b > a ? `–${ar(rows[b][1])}` : "") : `${nm(a)} – ${nm(b)}`), acEl("span", "ac-kind", x.k === "h" ? "تسميع" : "قراءة"));
+      li.append(top, acEl("small", "", `${when(x.t)} · ${acDur(x.d)}` + (x.j ? (marks.length ? ` · مواضع للمراجعة هنا: ${ar(marks.length)}` : " · فُحصت ولا مواضع للمراجعة هنا") : "")));
+      if (recs.includes(String(x.t))) {
+        const play = acEl("button", "btn", "تشغيل التسجيل"), dl = acEl("button", "btn", "تنزيل"); play.type = dl.type = "button";
+        play.addEventListener("click", async () => { const bl = await recGet(String(x.t)); if (!bl) return; const au = acEl("audio"); au.controls = true; au.src = URL.createObjectURL(bl); li.append(au); play.remove(); au.play().catch(() => {}); });
+        dl.addEventListener("click", async () => { const bl = await recGet(String(x.t)); if (!bl) return; const l = document.createElement("a"); l.href = URL.createObjectURL(bl); l.download = `iqra-recitation-${new Date(x.t).toISOString().slice(0, 16).replace(/[:T]/g, "-")}.${/ogg/.test(bl.type) ? "ogg" : /mp4/.test(bl.type) ? "m4a" : "webm"}`; l.click(); setTimeout(() => URL.revokeObjectURL(l.href), 3000); });
+        acts.append(play, dl); li.append(acts);
+      }
+      ul.append(li);
+    });
+    const all = acEl("button", "btn", "كل نشاطي"); all.type = "button"; all.style.marginTop = "10px"; all.addEventListener("click", openActivity);
+    body.append(ul, all, acEl("p", "note", "التسجيل يبدأ من أول الجلسة، لا من هذا الموضع. يُحفظ التسجيل فقط إذا فعّلت الاحتفاظ به من الإعدادات ← «التسميع والتلاوة»."));
+  })();
+  return el;
+}
 let acTab = "stats", acPeriod = "week", acKind = "all", acShow = { done: true, part: true, none: false };
 const acEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const acDur = (sec) => { const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h ? `${ar(h)} س ${ar(m)} د` : m ? `${ar(m)} د` : `${ar(sec)} ث`; };
@@ -3091,7 +3122,7 @@ function paintSettings() {
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
-    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics || p.surah || p.notes || p.mut ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics || p.surah || p.notes || p.act || p.mut ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
     if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {
@@ -3234,7 +3265,8 @@ window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() =
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
-  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null })); }
+  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-act-" + l, level: l, name: "تلاوتي وتسميعي", groupName: "نشاطي", kind: "شخصي", source: "خاص بك", act: true, file: null }));
+    Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null })); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
   $("#slider").min = meta.first; $("#slider").max = meta.last;
   $("#idx-num").max = meta.last;
