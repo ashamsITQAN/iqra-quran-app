@@ -1,0 +1,31 @@
+name: Read the Surah site's projects
+# Keeps a copy of the Surah site's projects (i'rab, sarf, the readings) in step with the site, a part at a time: the
+# store lives in the Actions cache, and the deploy job turns it into the app's page files.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */3 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/surah-site.yml', 'scripts/surah_site.py']
+concurrency:
+  group: surah-site
+  cancel-in-progress: false
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: surah-site
+          key: surah-site-store-${{ github.run_id }}
+          restore-keys: surah-site-store-
+      - name: Read within the time budget
+        run: |
+          mkdir -p public/data
+          # the list of ayahs comes from the last deployed site
+          curl -fsSL https://ashamsitqan.github.io/iqra-quran-app/data/search.json -o public/data/search.json
+          python3 scripts/surah_site.py crawl surah-site public 55
+          du -sh surah-site

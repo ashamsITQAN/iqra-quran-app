@@ -20,3 +20,6 @@ qiraat-index.json
 public/quranlab-key.js
 .claude/skills/quranlab-sdk/quranlab-sdk.checked
 public/data/offline.json
+surah-site/
+public/data/surah-site.json
+public/content/surah-*/

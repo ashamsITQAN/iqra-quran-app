@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "17 1 * * *"   # daily 04:17 Riyadh: pick up text corrections made in Fanar
+  workflow_run:   # after each reading of the Surah site, so what it brought reaches the app
+    workflows: ["Read the Surah site's projects"]
+    types: [completed]
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -44,6 +47,15 @@ jobs:
         run: |
           python3 scripts/qiraat.py public qiraat-index.json 5 || true
           if [ -f qiraat-index.json ]; then cp qiraat-index.json public/data/qiraat.json; else echo "::warning::readings index not built; the app reads the readings live"; fi
+      # The Surah site's projects, read a part at a time by their own job, become page files of the app here.
+      - uses: actions/cache/restore@v4
+        with:
+          path: surah-site
+          key: surah-site-store-none
+          restore-keys: surah-site-store-
+      - name: Surah site content
+        continue-on-error: true
+        run: python3 scripts/surah_site.py export surah-site public
       # What a reader may keep for use without a connection, with a hash per file: devices fetch only what changed.
       - name: Offline list
         run: python3 scripts/offline.py public

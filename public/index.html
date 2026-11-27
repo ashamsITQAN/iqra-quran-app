@@ -574,7 +574,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <p class="note" style="margin:0 0 8px">نزّل ما تريد ليعمل بلا إنترنت. ما تنزّله يُحدَّث وحده عند الاتصال كلما تغيّر في مصدره، ولا يُعاد تنزيل إلا ما تغيّر.</p>
     <p class="note" id="off-status" role="status" style="margin:0 0 8px"></p>
     <ul class="ac-list" id="off-list"></ul>
-    <p class="note">ما لا يُنزَّل بعد: التلاوات الصوتية، ومحتوى الإعراب والصرف والقراءات الآتي من موقع سورة. والتسميع يحتاج اتصالًا في أول تشغيل لتنزيل النموذج.</p>
+    <p class="note">ما لا يُنزَّل بعد: التلاوات الصوتية. والتسميع يحتاج اتصالًا في أول تشغيل لتنزيل النموذج. مشاريع موقع سورة (الإعراب، الصرف، القراءات) تُجلب من مصدرها على مراحل، وما لم يكتمل منها يُقرأ مباشرة عند الاتصال.</p>
   </div>
   <div class="sh-body" id="set-recite" hidden>
     <p class="note" style="margin:0 0 6px">زر «تسميع» في الشريط العلوي يشغّل اللاقط ويتابع قراءتك في المصحف.</p>
@@ -1525,16 +1525,30 @@ function remarkQir() { spread.querySelectorAll(".page[data-page] .art svg").forE
 // projects of the Surah site, its public API read live: one ayah, or all the words of one ayah, per call.
 const SURAH_API = store.get("surah-api", "") || "https://dev.surahapp.com", surahCache = new Map();
 const surahText = (t) => String(t || "").replace(/\r\n?/g, "\n").replace(/\*([^*\n]+)\*/g, "﴿$1﴾").trim();
+let surahSite = null;   // which ayahs of the Surah site's projects the app holds as its own files (data/surah-site.json)
+const ayahIndex = (s, a) => { let g = 0; for (let k = 1; k < s; k++) g += meta.surahs[k].ayahs; return g + a - 1; };   // an ayah's place in mushaf order
 function entriesOf(p) {
   if (!p.surah) return getJSON(p.file.replace("{page}", pad(ctx.page)));
-  const [s, a] = ctx.ayah.split(":"), url = p.level === "word" ? `${SURAH_API}/api/v1/word/${p.surah}/${s}/${a}/1/300` : `${SURAH_API}/api/v1/aya/${p.surah}/${s}/${a}`;
-  if (!surahCache.has(url)) surahCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); }).then((j) => {
-    const out = {};
-    if (Array.isArray(j)) j.forEach((w) => { if (w && w.content) out[`${s}:${a}:${w.word_number}`] = { "النص": p.qiraat ? String(w.content).replace(/\r\n?/g, "\n").trim() : surahText(w.content).replace(/^\{[^{}]*\}:\s*/, "") }; });
-    else if (j && j.content) out[`${s}:${a}`] = { "النص": surahText(j.content) };
-    return out;
-  }).catch((e) => { surahCache.delete(url); throw e; }));
-  return surahCache.get(url);
+  const [s, a] = ctx.ayah.split(":"), pre = `${s}:${a}`, word = p.level === "word";
+  const shape = (raw) => ({ "النص": word ? (p.qiraat ? String(raw).replace(/\r\n?/g, "\n").trim() : surahText(raw).replace(/^\{[^{}]*\}:\s*/, "")) : surahText(raw) });
+  const live = () => {
+    const url = word ? `${SURAH_API}/api/v1/word/${p.surah}/${s}/${a}/1/300` : `${SURAH_API}/api/v1/aya/${p.surah}/${s}/${a}`;
+    if (!surahCache.has(url)) surahCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); }).then((j) => {
+      const out = {};
+      if (Array.isArray(j)) j.forEach((w) => { if (w && w.content) out[`${pre}:${w.word_number}`] = shape(w.content); });
+      else if (j && j.content) out[pre] = shape(j.content);
+      return out;
+    }).catch((e) => { surahCache.delete(url); throw e; }));
+    return surahCache.get(url);
+  };
+  // the app's own copy, kept in step with the site by the build, when it holds this ayah: quick, and there without a connection
+  const have = surahSite && surahSite.have && surahSite.have[p.surah];
+  if (!have || !ctx.page || have[ayahIndex(+s, +a)] !== "1") return live();
+  const key = `own:${p.surah}:${ctx.page}:${pre}`;
+  if (!surahCache.has(key)) surahCache.set(key, getJSON(`content/surah-${p.surah}/${pad(ctx.page)}.json`).then((j) => {
+    const out = {}; Object.keys(j).forEach((k) => { if (word ? k.startsWith(pre + ":") : k === pre) out[k] = shape(j[k]); }); return out;
+  }).catch(() => { surahCache.delete(key); return live(); }));
+  return surahCache.get(key);
 }
 async function card(p, key) {
   const el = document.createElement("div");
@@ -2866,7 +2880,11 @@ const offState = async (c, id) => { const r = await c.match("__state/" + id); re
 const offSave = (c, id, files) => c.put("__state/" + id, new Response(JSON.stringify({ files }), { headers: { "Content-Type": "application/json" } }));
 function offUnits(list) {   // what the reader sees: the mushaf with its indexes, then each content project that has files
   const out = [{ id: "mushaf", name: "المصحف: صفحاته وفهارسه والبحث", packs: ["mushaf", "core"].filter((k) => list.packs[k]) }], seen = new Set();
-  projects.forEach((p) => { const m = /^content\/([^/]+)\/\{page\}\.json$/.exec(p.file || ""); if (!m || seen.has(m[1]) || !list.packs[m[1]]) return; seen.add(m[1]); out.push({ id: m[1], name: p.name, packs: [m[1]] }); });
+  projects.forEach((p) => {
+    const m = /^content\/([^/]+)\/\{page\}\.json$/.exec(p.file || ""), dir = m ? m[1] : p.surah ? "surah-" + p.surah : null; if (!dir || seen.has(dir) || !list.packs[dir]) return; seen.add(dir);
+    const have = p.surah && surahSite && surahSite.have[p.surah], part = have ? Math.floor((have.split("1").length - 1) / have.length * 100) : 100;   // a Surah-site project is read from its source a part at a time
+    out.push({ id: dir, name: p.name + (part < 100 ? ` (اكتمل جلبه من المصدر بنسبة ${ar(part)}٪)` : ""), packs: [dir] });
+  });
   return out.map((u) => ({ ...u, bytes: u.packs.reduce((t, k) => t + Object.entries(list.packs[k].files).reduce((x, [f, v]) => x + (/\.svg$/.test(f) && window.CompressionStream ? v[1] / 4 : v[1]), 0), 0) }));
 }
 async function offPut(c, path, hash) {
@@ -3331,7 +3349,8 @@ window.addEventListener("hashchange", () => { const n = +location.hash.replace("
 
 (async function init() {
   try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-act-" + l, level: l, name: "تلاوتي وتسميعي", groupName: "نشاطي", kind: "شخصي", source: "خاص بك", act: true, file: null }));
-    Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null })); }
+    Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null }));
+    getJSON("data/surah-site.json").then((j) => { surahSite = j; }).catch(() => {}); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
   $("#slider").min = meta.first; $("#slider").max = meta.last;
   $("#idx-num").max = meta.last;
