@@ -267,6 +267,7 @@ body[data-tpi="3"]{--tpo:52%}
 /* Recitation following: the page's words are faint until they are recited */
 #ts-bar{position:fixed;inset-inline:0;bottom:calc(58px + env(safe-area-inset-bottom));margin:0 auto;width:min(560px,calc(100% - 20px));z-index:3;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.2);font-size:14.5px}
 #ts-bar[hidden]{display:none}
+#ts-bar.away{border-color:var(--gharib);border-width:2px}
 #ts-status{flex:1;min-width:140px}
 #ts-bar a{color:var(--muted);font-size:12.5px}
 #ts-prog{width:90px;height:8px;accent-color:var(--accent)}
@@ -472,7 +473,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <ol id="results"></ol>
 </section>
 
-<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
+<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><a href="privacy.html" target="_blank" rel="noopener">الخصوصية</a><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn main" hidden>ابدأ التلاوة</button><button type="button" id="ts-end" class="btn">إنهاء</button></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -2486,8 +2487,8 @@ function folLocate(H, force) {
 }
 // Follow on from a known place: the latest heard units are laid along the text around it, allowing for sounds the model
 // missed, added or heard differently; where they end is the new place.
-function folTrack(H, fresh) {
-  const { U, n } = FOL, T = H.slice(-28), a = Math.max(0, FOL.pos - 26), b = Math.min(n, FOL.pos + 52), m = b - a, N = T.length;
+function folTrack(H, fresh, tail, limit) {
+  const { U, n } = FOL, T = tail || H.slice(-28), a = Math.max(0, FOL.pos - 26), b = Math.min(n, FOL.pos + 52), m = b - a, N = T.length;
   let prev = new Float32Array(m + 1), row = new Float32Array(m + 1);
   for (let i = 1; i <= N; i++) {
     row[0] = i; const x = T[i - 1];
@@ -2499,7 +2500,7 @@ function folTrack(H, fresh) {
   }
   let bj = 0, bc = Infinity; const want = FOL.pos + fresh - a;
   for (let j = 1; j <= m; j++) if (prev[j] < bc - 1e-6 || (Math.abs(prev[j] - bc) < 1e-6 && Math.abs(j - want) < Math.abs(bj - want))) { bc = prev[j]; bj = j; }
-  if (bc / N > 0.42) return false;
+  if (bc / N > (limit || 0.42)) return false;
   FOL.pos = a + bj;
   return true;
 }
@@ -2512,10 +2513,31 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
     // the basmala opens every surah: away from the first page it does not say where the reading is, so the place is taken from what follows it
     if (FOL.ug[hit.pos - 1] === 0 && cur !== 1) { FOL.cut = H.length; return; }
     FOL.pos = hit.pos; FOL.from = hit.from; FOL.bad = 0;
-  } else if (folTrack(H, fresh)) FOL.bad = 0;
-  else if ((FOL.bad += 1) >= 4) { FOL.pos = null; FOL.cut = Math.max(0, H.length - 14); return; }   // lost: find the place again from what comes next
-  else return;
+  } else if (FOL.away) {
+    // The reading left the place it was following. The place is kept: the reader is told which other place the reading
+    // matches and chooses whether to go there. Reading on from the kept place takes the following up again by itself.
+    const since = H.slice(FOL.away.cut), back = since.slice(-28);
+    if (back.length >= 9 && folTrack(H, fresh, back, 0.3)) { folAway(null); FOL.bad = 0; }
+    else {
+      const hit = folLocate(since, d.isFinal);
+      if (hit && hit.pos > FOL.pos - 500 && hit.pos < FOL.pos + 70) { FOL.pos = hit.pos; FOL.from = hit.from; folAway(null); FOL.bad = 0; }   // the same passage: a repeat, or a little further on
+      else { if (hit && FOL.ug[hit.pos - 1] !== 0 && (!FOL.away.hit || FOL.ug[FOL.away.hit.pos - 1] !== FOL.ug[hit.pos - 1])) folAway(hit); return; }
+    }
+  } else if (folTrack(H, fresh)) { FOL.bad = 0; FOL.walked = (FOL.walked || 0) + fresh; }
+  else if ((FOL.bad += 1) >= 4) {
+    if ((FOL.walked || 0) < 24) { FOL.pos = null; FOL.cut = Math.max(0, H.length - 14); return; }   // hardly begun: find the place afresh
+    FOL.away = { cut: Math.max(0, H.length - 14), hit: null }; folAway(undefined); return;
+  } else return;
   folReveal();
+}
+const folName = (g) => `${surahName(FOL.rows[g][0])}، الآية ${ar(FOL.rows[g][1])}`;
+function folAway(hit) {   // null: back on track; undefined: off the place, the other place not known yet; else the other place
+  const bar = $("#ts-bar"), jump = $("#ts-jump");
+  if (hit === null) { FOL.away = null; bar.classList.remove("away"); jump.hidden = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); return; }
+  const here = folName(FOL.ug[Math.min(FOL.n - 1, FOL.pos)]);   // the ayah to go on from
+  if (!bar.classList.contains("away")) { bar.classList.add("away"); try { navigator.vibrate && navigator.vibrate([90, 60, 90]); } catch (e) {} }
+  if (hit) { FOL.away.hit = hit; jump.hidden = false; tsSay(`تنبيه: ما تقرؤه الآن يوافق موضعًا آخر (${folName(FOL.ug[hit.pos - 1])}). موضعك الذي تكمل منه: ${here}.`); }
+  else { jump.hidden = true; tsSay(`تنبيه: ما تقرؤه الآن لا يوافق موضعك (${here}). أكمل من موضعك.`); }
 }
 function folReveal() {   // the words between where this stretch began and the place reached
   const { ug, uw, rows, n } = FOL, to = FOL.pos; if (to <= FOL.from) return;
@@ -2544,7 +2566,7 @@ function folPaint(move) {
 }
 async function folTake() {   // one take: the microphone until the reader ends it
   const model = qlModel; $("#ts-begin").hidden = true;
-  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0 });
+  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true;
   try {
     qlSession = await model.listen(tsDev ? { from: model.sampleClips[0] } : {});
     tsSay("أسمعك… اقرأ من أي موضع في المصحف.");
@@ -2572,12 +2594,13 @@ async function folStart() {
 function folStop() {
   const ses = qlSession;
   if (ses) { try { if (FOL.g1 != null && FOL.rows[FOL.g1][0] === FOL.rows[FOL.g2][0]) ses.reportRecited(FOL.rows[FOL.g1][0], FOL.rows[FOL.g1][1], FOL.rows[FOL.g2][1]); } catch (e) {} ses.finish().catch(() => {}); }
-  FOL.on = false; document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
+  FOL.on = false; FOL.away = null; $("#ts-bar").classList.remove("away"); document.body.classList.remove("ts-on"); $("#ts-go").setAttribute("aria-pressed", "false"); $("#ts-bar").hidden = true;
   spread.querySelectorAll(".art svg g.word.rd,.art svg g.word.rdnow").forEach((w) => w.classList.remove("rd", "rdnow"));
 }
 $("#ts-go").addEventListener("click", folStart);
 $("#ts-begin").addEventListener("click", () => { if (FOL.on && qlModel && !qlSession) { FOL.done = new Map(); FOL.now = ""; FOL.g1 = FOL.g2 = null; folPaint(false); folTake(); } });   // the microphone needs a tap
 $("#ts-end").addEventListener("click", folStop);
+$("#ts-jump").addEventListener("click", () => { const hit = FOL.away && FOL.away.hit; if (!hit) return; FOL.pos = hit.pos; FOL.from = hit.from; FOL.walked = 24; folAway(null); folReveal(); });
 
 /* Backup file */
 function backupSave(note) { download("iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(exportObj(), null, 1), "application/json"); note.textContent = "نُزّلت النسخة الاحتياطية."; }
