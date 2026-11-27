@@ -1089,8 +1089,8 @@ async function wordsCard(p, quote) {
   h.append(tag(p.kind), tag(p.source, "src")); el.append(h);
   if (p.credit) { const c = para("المصدر: " + p.credit); c.className = "note"; c.style.marginBottom = "6px"; el.append(c); }
   let data, row;
-  try { [data, row] = await Promise.all([getJSON(p.file.replace("{page}", pad(ctx.page))), loadCorpus().then((rows) => { const [s, a] = ctx.ayah.split(":").map(Number); return rows.find((r) => r.s === s && r.a === a); })]); }
-  catch (e) { el.append(para("تعذّر تحميل محتوى هذا المشروع.")); return el; }
+  try { [data, row] = await Promise.all([entriesOf(p), loadCorpus().then((rows) => { const [s, a] = ctx.ayah.split(":").map(Number); return rows.find((r) => r.s === s && r.a === a); })]); }
+  catch (e) { el.append(para(p.surah ? "تعذّر تحميل هذا المحتوى من موقع سورة. تحقق من الاتصال ثم أعد المحاولة." : "تعذّر تحميل محتوى هذا المشروع.")); return el; }
   const list = document.createElement("div"), rows = {};
   list.className = "wrows";
   const mark = (k, scroll) => {
@@ -1113,6 +1113,21 @@ async function wordsCard(p, quote) {
   return el;
 }
 
+// Where a project's entries come from: its file for the page (content pulled from Fanar at build time), or, for the
+// projects of the Surah site, its public API read live: one ayah, or all the words of one ayah, per call.
+const SURAH_API = store.get("surah-api", "") || "https://dev.surahapp.com", surahCache = new Map();
+const surahText = (t) => String(t || "").replace(/\r\n?/g, "\n").replace(/\*([^*\n]+)\*/g, "﴿$1﴾").trim();
+function entriesOf(p) {
+  if (!p.surah) return getJSON(p.file.replace("{page}", pad(ctx.page)));
+  const [s, a] = ctx.ayah.split(":"), url = p.level === "word" ? `${SURAH_API}/api/v1/word/${p.surah}/${s}/${a}/1/300` : `${SURAH_API}/api/v1/aya/${p.surah}/${s}/${a}`;
+  if (!surahCache.has(url)) surahCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.json(); }).then((j) => {
+    const out = {};
+    if (Array.isArray(j)) j.forEach((w) => { if (w && w.content) out[`${s}:${a}:${w.word_number}`] = { "النص": surahText(w.content).replace(/^\{[^{}]*\}:\s*/, "") }; });
+    else if (j && j.content) out[`${s}:${a}`] = { "النص": surahText(j.content) };
+    return out;
+  }).catch((e) => { surahCache.delete(url); throw e; }));
+  return surahCache.get(url);
+}
 async function card(p, key) {
   const el = document.createElement("div");
   el.className = "proj";
@@ -1123,13 +1138,13 @@ async function card(p, key) {
   if (p.player) return recitationCard(p);
   if (p.notes) return notesCard(p.level, key);
   if (p.topics) return topicsCard();
-  if (!p.file) {
+  if (!p.file && !p.surah) {
     el.classList.add("empty");
     el.append(para("لم يُربط بعد. يُضاف هذا المشروع من فنار."));
     return el;
   }
   let entry;
-  try { entry = (await getJSON(p.file.replace("{page}", pad(ctx.page))))[key]; } catch (e) { el.append(para("تعذّر تحميل محتوى هذا المشروع.")); return el; }
+  try { entry = (await entriesOf(p))[key]; } catch (e) { el.append(para(p.surah ? "تعذّر تحميل هذا المحتوى من موقع سورة. تحقق من الاتصال ثم أعد المحاولة." : "تعذّر تحميل محتوى هذا المشروع.")); return el; }
   if (entry == null) { el.append(para("لا يوجد محتوى لهذا الموضع.")); return el; }
   const dl = document.createElement("dl");
   for (const [k, v] of Object.entries(entry)) {
@@ -2171,7 +2186,7 @@ function paintSettings() {
     if (!list.length) { box.append(para("لا توجد مشروعات لهذا المستوى.")); return; }
     // One switch per project; a project offered in several languages gets a single switch for all of them.
     const units = [];
-    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
+    list.forEach((p) => { if (!p.lang) { units.push({ key: p.id, name: p.name + (p.file || p.player || p.topics || p.surah || p.notes ? "" : " (لم يُربط بعد)"), items: [p] }); return; }
       let u = units.find((x) => x.key === "g-" + p.group); if (!u) units.push(u = { key: "g-" + p.group, name: "", items: [] }); u.items.push(p); u.name = `${p.groupName} (${ar(u.items.length)} لغة)`; });
     if (fam) units.forEach((u) => { const p = u.items[0]; u.name = { mokhtasar: "تفسير المختصر", objectives: "مقاصد السور" }[p.group] || "فوائد الصفحات"; u.name += " · في نافذة " + LEVELS[p.level]; });
     units.forEach((u) => {
