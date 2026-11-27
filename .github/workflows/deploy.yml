@@ -44,6 +44,9 @@ jobs:
         run: |
           python3 scripts/qiraat.py public qiraat-index.json 5 || true
           if [ -f qiraat-index.json ]; then cp qiraat-index.json public/data/qiraat.json; else echo "::warning::readings index not built; the app reads the readings live"; fi
+      # The feedback engine must give Quran Lab's published numbers before anything is deployed.
+      - name: Engine vectors
+        run: node tests/engine.test.js
       # The Quran Lab web key is public by design and works only from this site's origin; it is still kept out of the repository.
       - name: Quran Lab key
         env:
