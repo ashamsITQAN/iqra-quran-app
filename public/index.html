@@ -1766,7 +1766,10 @@ $("#next").addEventListener("click", () => go(1));
 /* Full screen: hides the bars; uses the browser's own full screen where it is offered (not on iPhone). */
 function setFull(on) {
   document.body.classList.toggle("full", on);
-  try { if (on && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+  // On a phone or tablet the browser's own full screen is not asked for: it answers with a notice of its own every time, and
+  // the installed app has no browser bars to hide anyway. There "full screen" only puts the app's bars away.
+  const soft = matchMedia("(pointer:coarse)").matches || matchMedia("(display-mode:standalone)").matches;
+  try { if (on && !soft && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
   window.dispatchEvent(new Event("resize"));
 }
 document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("full")) setFull(false); else window.dispatchEvent(new Event("resize")); });
