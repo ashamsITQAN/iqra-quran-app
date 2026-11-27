@@ -53,14 +53,12 @@ button{cursor:pointer}
 #spread{display:flex;gap:6px;align-items:flex-start;justify-content:center;margin:auto}
 .page{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;flex:none;box-shadow:0 1px 6px rgba(0,0,0,.08)}
 .page.blank{visibility:hidden}
-/* floating labels beside a page, clear of it: a quarter, half or three quarters of a hizb, a new hizb or juz, a prostration */
-.mtab{position:absolute;transform:translateY(-50%);padding:2px 9px;background:var(--panel);background-image:linear-gradient(var(--banner),var(--banner));border:1px solid var(--mark);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.16);font-family:var(--naskh);font-size:14px;line-height:1.6;color:var(--ink);white-space:nowrap;pointer-events:none;z-index:1}
-.page.rt .mtab{left:calc(100% + 16px)}.page.lt .mtab{right:calc(100% + 16px)}
-.mtab.sajda{font-weight:700}
-.foot{position:relative}
-.mtabs-foot{position:absolute;top:50%;transform:translateY(-50%);display:flex;gap:6px;pointer-events:none}
-.page.rt .mtabs-foot{right:8px}.page.lt .mtabs-foot{left:8px}
-.mtabs-foot .mtab{position:static;transform:none;font-size:12.5px;padding:0 8px;box-shadow:none}
+/* a small floating square beside a page, clear of it, level with the line: a quarter, half or three quarters of a hizb,
+   a new hizb or juz, a prostration; dressed like the surah banner, in the page number's typeface */
+.mtab{position:absolute;transform:translateY(-50%);width:54px;height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--panel);background-image:linear-gradient(var(--banner),var(--banner));border:1px solid var(--mark);border-radius:9px;box-shadow:0 2px 8px rgba(0,0,0,.16);font-family:var(--naskh);color:var(--ink);pointer-events:none;z-index:1;line-height:1.15;text-align:center}
+.mtab{font-size:16px}.mtab b{font-size:1.2em;font-weight:700;direction:ltr}.mtab small{font-size:.78em}
+.mtab.word b{font-size:.95em}
+.page.rt .mtab{left:calc(100% + 14px)}.page.lt .mtab{right:calc(100% + 14px)}
 /* turning the page: the new spread comes in from the side it lies on (later pages are to the left) */
 @keyframes turnNext{from{opacity:.15;transform:translateX(-42px)}to{opacity:1;transform:none}}
 @keyframes turnPrev{from{opacity:.15;transform:translateX(42px)}to{opacity:1;transform:none}}
@@ -692,7 +690,7 @@ async function fillPage(n) {
   markGharib(n, svg);
   markMut(svg);
   markQir(svg);
-  // marginTabs(n, svg);   // switched off until a better way to show quarter and prostration labels is settled
+  marginTabs(n, svg);
   paintMarks();
 }
 
@@ -901,26 +899,27 @@ function decorate(svg) {
 
 // Where a page stands: the hizb carries the number, and the quarter is said in words ("نصف الحزب ٢ · الجزء ١").
 const divName = (pm) => (["", "الحزب ", "ربع الحزب ", "نصف الحزب ", "ثلاثة أرباع الحزب "][pm.rub] || "الحزب ") + ar(pm.hizb) + " · الجزء " + ar(pm.juz);
-// Floating labels outside the page, level with the line where a division begins or a prostration falls.
-// Where the screen leaves no room beside the page (a phone held upright), they sit in the page's foot, beside its number.
+// A small floating square outside the page, level with the line where a division begins or a prostration falls.
+// Shown only where the screen has room beside the page.
 function marginTabs(n, svg) {
   const pageEl = svg.closest(".page"), pr = pageEl.getBoundingClientRect(), sr = stage.getBoundingClientRect(), items = [];
-  pageEl.querySelectorAll(".mtab,.mtabs-foot").forEach((x) => x.remove());
-  if (!pr.height) return;
+  pageEl.querySelectorAll(".mtab").forEach((x) => x.remove());
+  const room = pageEl.classList.contains("rt") ? sr.right - pr.right : pr.left - sr.left, size = Math.min(54, Math.floor(room - 24));   // 14px from the page, 10px from the edge
+  if (!pr.height || size < 40) return;
   (meta.rub || []).filter((r) => r.page === n).forEach((r) => {
     const w = svg.querySelector(`g.word[data-word-key="${r.ayah}:1"]`); if (!w) return;
-    items.push({ el: w, label: r.n === 1 ? (r.juz ? "الجزء " + ar(r.juz) : "الحزب " + ar(r.hizb)) : ["", "", "١/٤", "١/٢", "٣/٤"][r.n] + " الحزب", cls: "" });
+    items.push(r.n === 1 ? { el: w, small: r.juz ? "الجزء" : "الحزب", big: ar(r.juz || r.hizb), first: "small" } : { el: w, big: ["", "", "١/٤", "١/٢", "٣/٤"][r.n], small: "الحزب" });
   });
-  svg.querySelectorAll("g.sajdah-mark").forEach((g) => items.push({ el: g, label: "سجدة", cls: " sajda" }));
-  if (!items.length) return;
-  const tabs = items.map((it) => { const r = it.el.getBoundingClientRect(), t = document.createElement("span"); t.className = "mtab" + it.cls; t.textContent = it.label; pageEl.append(t); return { t, y: r.top + r.height / 2 - pr.top }; }).sort((a, b) => a.y - b.y);
-  const room = pageEl.classList.contains("rt") ? sr.right - pr.right : pr.left - sr.left, need = Math.max(...tabs.map((x) => x.t.getBoundingClientRect().width)) + 22;
-  if (room >= need) {
-    let last = -1e9;
-    tabs.forEach((x) => { const h = x.t.getBoundingClientRect().height; let y = Math.max(h / 2, Math.min(pr.height - h / 2, x.y)); if (y - h / 2 < last + 4) y = last + 4 + h / 2; last = y + h / 2; x.t.style.top = (y / pr.height) * 100 + "%"; });
-  } else {
-    const row = document.createElement("div"); row.className = "mtabs-foot"; tabs.forEach((x) => row.append(x.t)); pageEl.querySelector(".foot").append(row);
-  }
+  svg.querySelectorAll("g.sajdah-mark").forEach((g) => items.push({ el: g, big: "سجدة", cls: " word" }));
+  let last = -1e9;
+  items.map((it) => { const r = it.el.getBoundingClientRect(); return { ...it, y: r.top + r.height / 2 - pr.top }; }).sort((a, b) => a.y - b.y).forEach((it) => {
+    const t = document.createElement("span"), b = document.createElement("b"), sm = document.createElement("small");
+    t.className = "mtab" + (it.cls || ""); b.textContent = it.big; sm.textContent = it.small || "";
+    if (it.first === "small") t.append(sm, b); else if (it.small) t.append(b, sm); else t.append(b);
+    let y = Math.max(27, Math.min(pr.height - 27, it.y)); if (y - 27 < last + 5) y = last + 5 + 27; last = y + 27;   // two on one page never overlap
+    t.style.top = (y / pr.height) * 100 + "%"; t.style.width = t.style.height = size + "px"; if (size < 50) t.style.fontSize = "0.86em";
+    pageEl.append(t);
+  });
 }
 // The context for a page or a surah opened as a whole: it also carries the first ayah there, so the window can move
 // between the page, the surah and the ayah levels. Falls back to the single level while the page is still loading.
