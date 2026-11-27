@@ -153,6 +153,32 @@ body[data-tpi="3"]{--tpo:52%}
 .seg button+button{border-inline-start:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--panel)}
 .seg button{padding:7px 14px}
+/* The printable document: real text in Amiri, the ayah as vector drawing, footnote numbers that jump to their notes. */
+#printdoc{display:none}
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff !important;height:auto !important;overflow:visible !important;display:block !important}
+  body.printing>*:not(#printdoc){display:none !important}
+  body.printing #printdoc{display:block}
+}
+#printdoc{direction:rtl;color:#1b2421;background:#fff;font-family:"Amiri","Traditional Arabic",serif;font-size:13.5pt;line-height:1.95;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#printdoc table{width:100%;border-collapse:collapse}#printdoc td{padding:0 16mm}
+#printdoc .gap td{height:15mm}
+#printdoc h1{font:600 17pt "IBM Plex Sans Arabic","Amiri",sans-serif;margin:0 0 2pt}
+#printdoc .src{font:500 11.5pt "IBM Plex Sans Arabic","Amiri",sans-serif;color:#0f6e56;margin:0 0 10pt}
+#printdoc .q{break-inside:avoid;border:1pt solid #d9ddd6;border-inline-start:3pt solid #a67c2e;border-radius:8pt;background:#faf9f3;padding:9pt 12pt 3pt;margin:0 0 9pt;text-align:center}
+#printdoc .q svg{display:block;margin:0 auto 6pt;height:auto}
+#printdoc p{margin:0 0 4pt;text-align:justify;orphans:2;widows:2}
+#printdoc p.ltr{direction:ltr;text-align:left}
+#printdoc .body{border-inline-start:1.5pt solid #a67c2e;padding-inline-start:10pt;margin:0 0 10pt}
+#printdoc .aq{color:#0f6e56;font-family:"Amiri Quran","Amiri",serif}
+#printdoc a{color:#0f6e56;text-decoration:none}
+#printdoc sup{font:600 .58em "IBM Plex Sans Arabic","Amiri",sans-serif;line-height:0;vertical-align:super;padding-inline-start:1pt}
+#printdoc .pm{color:#6b7773;font:.6em "IBM Plex Sans Arabic","Amiri",sans-serif;border:.75pt solid #c9cfc8;border-radius:3pt;padding:0 3pt;white-space:nowrap}
+#printdoc p.fn{font-size:.82em;line-height:1.8;color:#4b5653}
+#printdoc p.fn a{font:600 .85em "IBM Plex Sans Arabic","Amiri",sans-serif}
+#printdoc .rabt{break-inside:avoid;background:#f5eeda;border-inline-start:3pt solid #a67c2e;border-radius:4pt;color:#4a3a12;padding:4pt 10pt;margin:0 0 12pt}
+#printdoc .end{font:9.5pt "IBM Plex Sans Arabic","Amiri",sans-serif;color:#6b7773;border-top:.75pt solid #d9ddd6;margin-top:12pt;padding-top:6pt}
 .pm{color:var(--muted);font-size:.62em;font-family:var(--ui);border:1px solid var(--line);border-radius:4px;padding:0 4px;white-space:nowrap}
 .ref{background:none;border:0;padding:0 1px;color:var(--accent);font-family:var(--ui);font-size:.62em;vertical-align:super;line-height:1}
 .notes{margin:10px 0 4px;padding:8px 0 0 0;border-top:1px solid var(--line);font-family:var(--naskh);font-size:14px;line-height:1.9;color:var(--muted);list-style:none}
@@ -549,7 +575,8 @@ body[data-tpi="3"]{--tpo:52%}
     <div class="opt" id="shr-count-row" hidden><h3>عدد الآيات المتتالية</h3><div class="seg" id="shr-count" role="group" aria-label="عدد الآيات المتتالية"><button type="button" data-v="1">١</button><button type="button" data-v="2">٢</button><button type="button" data-v="3">٣</button><button type="button" data-v="4">٤</button><button type="button" data-v="5">٥</button></div></div>
     <div class="shr-opts">
       <button type="button" class="btn" id="shr-png"><strong>صورة PNG</strong><small>بطاقة مصمّمة، تناسب واتساب وفيسبوك</small></button>
-      <button type="button" class="btn" id="shr-pdf"><strong>ملف PDF</strong><small>بالتصميم نفسه في صفحات، للمحتوى الطويل</small></button>
+      <button type="button" class="btn" id="shr-print"><strong>PDF نصي عالي الجودة</strong><small>آيات متجهية ونص حقيقي وهوامش فعّالة؛ يُحفظ من نافذة الطباعة</small></button>
+      <button type="button" class="btn" id="shr-pdf"><strong>PDF سريع</strong><small>صفحات مصوَّرة، ينزل بضغطة واحدة</small></button>
       <button type="button" class="btn" id="shr-txt"><strong>ملف نصي</strong><small>نص خالص يمكن تعديله</small></button>
       <button type="button" class="btn" id="shr-copy"><strong>نسخ النص</strong><small>للصقه في أي مكان</small></button>
     </div>
@@ -2117,6 +2144,59 @@ async function paintDoc(d, pageH) {
     return cv;
   }) };
 }
+// The same document as a printable page: the browser's own "save as PDF" then gives real text and vector ayahs.
+const printBox = document.createElement("div"); printBox.id = "printdoc"; document.body.append(printBox);
+function printDoc(d) {
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const cell = mk("td"), table = mk("table"); let seq = 0; const waiting = {};
+  const inline = (node, text) => String(text).split(/(\u0001[^\u0002]*\u0002|\u0003[^\u0004]*\u0004)/).forEach((piece) => {
+    if (piece[0] === "\u0001") { node.append(" ", mk("span", "pm", piece.slice(1, -1)), " "); return; }
+    if (piece[0] === "\u0003") {   // a footnote number: small, raised, and a link to its note
+      const n = piece.slice(1, -1).replace(/[()]/g, ""), id = "pr" + (seq += 1), a = mk("a", "", "(" + n + ")"), sup = mk("sup");
+      a.id = id; a.href = "#" + id + "n"; (waiting[n] = waiting[n] || []).push(id); sup.append(a); node.append(sup); return;
+    }
+    withAyat(node, piece, showAyat ? "aq" : "");
+  });
+  const para = (box, line, cls) => {
+    if (!line.trim()) return;
+    const m = /^\u0003\(?([^\u0004)]*)\)?\u0004\s*/.exec(line), el = mk("p", cls || "");
+    if (m) {   // a note: its number leads back to the place in the text
+      const id = (waiting[m[1]] || []).shift(), a = mk("a", "", "(" + m[1] + ")");
+      el.className = "fn"; if (id) { el.id = id + "n"; a.href = "#" + id; }
+      el.append(a, " "); inline(el, line.slice(m[0].length));
+    } else inline(el, line);
+    if (!/[؀-ۿ]/.test(line)) el.classList.add("ltr");
+    box.append(el);
+  };
+  cell.append(mk("h1", "", d.title)); if (d.source) cell.append(mk("p", "src", d.source));
+  for (const sec of d.sections || [{ block: $("#sh-body .ayah-block"), body: d.body }]) {
+    const block = sec.block, svgs = block ? [...block.querySelectorAll("svg")] : [];
+    if (svgs.length) {
+      const q = mk("div", "q"), full = Math.max(1, block.clientWidth - 28);
+      svgs.forEach((sv) => {
+        const c = sv.cloneNode(true), r = sv.getBoundingClientRect();
+        c.querySelectorAll(".hit,.tpbar,.banner,.mtu,.qru").forEach((n) => n.remove());
+        c.querySelectorAll("[class]").forEach((n) => n.removeAttribute("class"));
+        c.querySelectorAll("path").forEach((n) => n.setAttribute("fill", n.dataset.kind === "ayah_mark_ornament" ? "#a67c2e" : "#1b2421"));
+        c.removeAttribute("style"); c.removeAttribute("height"); c.removeAttribute("class"); c.setAttribute("width", Math.min(100, (r.width / full) * 100).toFixed(2) + "%");
+        q.append(c);
+      });
+      cell.append(q);
+    }
+    const body = mk("div", "body"); String(sec.body || "").split(/\n/).forEach((line) => para(body, line)); cell.append(body);
+    if (sec.rabt) { const r = mk("div", "rabt"); String(sec.rabt).split(/\n/).forEach((line) => para(r, line)); cell.append(r); }
+  }
+  cell.append(mk("p", "end", [d.foot, "تطبيق اقرأ القرآن الكريم"].filter(Boolean).join(" · ")));
+  // Margins come from a repeating table head and foot, so the page itself has none and the browser adds no address or date line.
+  const gap = () => { const tr = mk("tr", "gap"); tr.append(mk("td")); return tr; };
+  const head = mk("thead"), foot = mk("tfoot"), tb = mk("tbody"), row = mk("tr");
+  head.append(gap()); foot.append(gap()); row.append(cell); tb.append(row); table.append(head, foot, tb);
+  printBox.replaceChildren(table);
+  const was = document.title, done = () => { document.body.classList.remove("printing"); document.title = was; printBox.replaceChildren(); window.removeEventListener("afterprint", done); };
+  document.title = d.name; document.body.classList.add("printing");
+  window.addEventListener("afterprint", done);
+  return document.fonts.ready.then(() => new Promise((res) => setTimeout(() => { window.print(); res(); }, 60)));
+}
 // A PDF made of the painted pages (one JPEG per A4 page): Arabic keeps its exact look on every device.
 function pdfOf(canvases) {
   const enc = new TextEncoder(), chunks = [], offs = []; let pos = 0;
@@ -2205,6 +2285,7 @@ async function shareAs(kind) {
   try {
     if (kind === "copy") { await navigator.clipboard.writeText(await docText(d)); msg.textContent = "نُسخ النص."; return; }
     if (kind === "txt") return done(await deliver(new Blob([await docText(d)], { type: "text/plain;charset=utf-8" }), d.name + ".txt", "text/plain"), "الملف النصي");
+    if (kind === "print") { msg.textContent = "في نافذة الطباعة اختر الوجهة «حفظ بتنسيق PDF» ثم اضغط «حفظ»."; await printDoc(d); return; }
     msg.textContent = "جارٍ التجهيز…";
     if (kind === "png") {
       const r = await paintDoc(d, 0);
@@ -2216,7 +2297,7 @@ async function shareAs(kind) {
     return done(await deliver(pdfOf(r.canvases), d.name + ".pdf", "application/pdf"), `ملف PDF (${ar(r.canvases.length)} صفحة)`);
   } catch (e) { msg.textContent = "تعذّر تجهيز الملف."; }
 }
-[["png", "png"], ["pdf", "pdf"], ["txt", "txt"], ["copy", "copy"]].forEach(([id, kind]) => $("#shr-" + id).addEventListener("click", () => shareAs(kind)));
+[["png", "png"], ["print", "print"], ["pdf", "pdf"], ["txt", "txt"], ["copy", "copy"]].forEach(([id, kind]) => $("#shr-" + id).addEventListener("click", () => shareAs(kind)));
 $("#shr-close").addEventListener("click", () => show(shareBox, false));
 $("#sh-share").addEventListener("click", () => openShare(docShown()));
 
