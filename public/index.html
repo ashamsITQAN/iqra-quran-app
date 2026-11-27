@@ -2143,7 +2143,7 @@ $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n =
 /* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes ----------
    Kept on this device; a removed item stays as a dated tombstone so that syncing does not bring it back. */
 const KINDS = [["hifz", "ح", "الحفظ"], ["read", "ق", "القراءة"], ["rev", "م", "المراجعة"]];
-const GOOGLE_CLIENT_ID = "" || store.get("gcid", "");   // OAuth client id (public, not a secret) of the Google Cloud project that owns the Drive link
+const GOOGLE_CLIENT_ID = "777166406494-smbg9a0tfged63te8ql1q97rmelc558t.apps.googleusercontent.com" || store.get("gcid", "");   // OAuth client id (public, not a secret) of the Google Cloud project that owns the Drive link
 const readJ = (k) => { try { return JSON.parse(store.get(k, "{}")) || {}; } catch (e) { return {}; } };
 const fmtDate = (ms) => { try { return new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric" }).format(ms); } catch (e) { return new Date(ms).toISOString().slice(0, 10); } };
 const rawMarks = readJ("marks"), rawNotes = readJ("notes"), rawAct = Object.assign({ s: {}, kh: { n: 0, done: [], last: -1, t: 0 } }, readJ("activity"));
