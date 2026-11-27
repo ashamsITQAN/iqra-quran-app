@@ -520,7 +520,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button class="sh-close" id="set-close" type="button" aria-label="إغلاق الإعدادات">×</button>
   </div>
   <div class="tabs" id="set-tabs" role="tablist">
-    <button type="button" role="tab" data-v="mushaf">عرض المصحف</button><button type="button" role="tab" data-v="look">المظهر والتلوين</button><button type="button" role="tab" data-v="recite">التسميع والتلاوة</button><button type="button" role="tab" data-v="content">المحتوى</button><button type="button" role="tab" data-v="mine">بياناتي</button>
+    <button type="button" role="tab" data-v="mushaf">عرض المصحف</button><button type="button" role="tab" data-v="look">المظهر والتلوين</button><button type="button" role="tab" data-v="recite">التسميع والتلاوة</button><button type="button" role="tab" data-v="content">المحتوى</button><button type="button" role="tab" data-v="offline">دون اتصال</button><button type="button" role="tab" data-v="mine">بياناتي</button>
   </div>
   <div class="sh-body" id="set-mine" hidden>
     <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
@@ -569,6 +569,12 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
         <button type="button" data-v="1">هادئ</button><button type="button" data-v="2">واضح</button><button type="button" data-v="3">قوي</button>
       </div></div>
     <div class="opt"><h3><label for="set-ayat">تمييز الآيات داخل نص التفاسير والمحتوى</label></h3><input id="set-ayat" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent)"></div>
+  </div>
+  <div class="sh-body" id="set-offline" hidden>
+    <p class="note" style="margin:0 0 8px">نزّل ما تريد ليعمل بلا إنترنت. ما تنزّله يُحدَّث وحده عند الاتصال كلما تغيّر في مصدره، ولا يُعاد تنزيل إلا ما تغيّر.</p>
+    <p class="note" id="off-status" role="status" style="margin:0 0 8px"></p>
+    <ul class="ac-list" id="off-list"></ul>
+    <p class="note">ما لا يُنزَّل بعد: التلاوات الصوتية، ومحتوى الإعراب والصرف والقراءات الآتي من موقع سورة. والتسميع يحتاج اتصالًا في أول تشغيل لتنزيل النموذج.</p>
   </div>
   <div class="sh-body" id="set-recite" hidden>
     <p class="note" style="margin:0 0 6px">زر «تسميع» في الشريط العلوي يشغّل اللاقط ويتابع قراءتك في المصحف.</p>
@@ -2851,6 +2857,64 @@ $("#fb-close").addEventListener("click", () => show($("#fb"), false));
 $("#ts-eye").addEventListener("click", () => { tsHide = !tsHide; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
 $("#ts-act").addEventListener("click", () => { if (FOL.on) folStop(); openActivity(); });
 
+/* ---------- kept for use without a connection. The reader chooses packs (the mushaf, a tafsir…); their files go into a
+   cache that outlives builds. data/offline.json lists every file with a short hash: on each start with a connection the
+   packs on the device are compared with it and only what changed at the source is fetched again. ---------- */
+const KEPT = "iqra-offline", offBusy = new Map();   // pack unit id -> [done, total]
+const offFetchList = () => fetch("data/offline.json?t=" + Date.now(), { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error("list"); return r.json(); });
+const offState = async (c, id) => { const r = await c.match("__state/" + id); return r ? r.json() : null; };
+const offSave = (c, id, files) => c.put("__state/" + id, new Response(JSON.stringify({ files }), { headers: { "Content-Type": "application/json" } }));
+function offUnits(list) {   // what the reader sees: the mushaf with its indexes, then each content project that has files
+  const out = [{ id: "mushaf", name: "المصحف: صفحاته وفهارسه والبحث", packs: ["mushaf", "core"].filter((k) => list.packs[k]) }], seen = new Set();
+  projects.forEach((p) => { const m = /^content\/([^/]+)\/\{page\}\.json$/.exec(p.file || ""); if (!m || seen.has(m[1]) || !list.packs[m[1]]) return; seen.add(m[1]); out.push({ id: m[1], name: p.name, packs: [m[1]] }); });
+  return out.map((u) => ({ ...u, bytes: u.packs.reduce((t, k) => t + Object.entries(list.packs[k].files).reduce((x, [f, v]) => x + (/\.svg$/.test(f) && window.CompressionStream ? v[1] / 4 : v[1]), 0), 0) }));
+}
+async function offPut(c, path, hash) {
+  const res = await fetch(path + "?h=" + hash, { cache: "no-store" }); if (!res.ok) throw new Error(path);
+  if (/\.svg$/.test(path) && window.CompressionStream && res.body) { const blob = await new Response(res.body.pipeThrough(new CompressionStream("gzip"))).blob(); await c.put(path, new Response(blob, { headers: { "Content-Type": "image/svg+xml", "x-iqra-enc": "gzip" } })); }
+  else await c.put(path, res);
+}
+async function offPull(list, unit, quiet) {   // bring a unit's packs in step with the list
+  const c = await caches.open(KEPT); let done = 0, total = 0, failed = 0; const jobs = [];
+  for (const k of unit.packs) {
+    const want = list.packs[k].files, have = ((await offState(c, k)) || { files: {} }).files;
+    for (const f of Object.keys(have)) if (!want[f]) { await c.delete(f); delete have[f]; }
+    for (const [f, v] of Object.entries(want)) if (have[f] !== v[0]) jobs.push([k, f, v[0], have]);
+    jobs.states = jobs.states || {}; jobs.states[k] = have;
+  }
+  total = jobs.length; if (!total) { for (const k of unit.packs) await offSave(c, k, jobs.states[k]); return { total: 0, failed: 0 }; }
+  offBusy.set(unit.id, [0, total]); if (!quiet) paintOffline();
+  let next = 0; const worker = async () => { while (next < jobs.length) { const [k, f, h, have] = jobs[next++]; try { await offPut(c, f, h); have[f] = h; } catch (e) { failed += 1; } done += 1; offBusy.set(unit.id, [done, total]); if (done % 40 === 0) { for (const p of unit.packs) await offSave(c, p, jobs.states[p]); } if (done % 5 === 0 || done === total) offTick(unit.id); } };
+  await Promise.all([1, 2, 3, 4, 5].map(worker));
+  for (const k of unit.packs) await offSave(c, k, jobs.states[k]);
+  offBusy.delete(unit.id); return { total, failed };
+}
+function offTick(id) { const row = document.querySelector(`#off-list li[data-u="${id}"] small`), b = offBusy.get(id); if (row && b) row.textContent = `جارٍ التنزيل… ${ar(b[0])} من ${ar(b[1])} ملف`; }
+async function paintOffline() {
+  const ul = $("#off-list"), st = $("#off-status"); if (!("caches" in window)) { st.textContent = "هذا المتصفح لا يدعم الحفظ للعمل دون اتصال."; return; }
+  let list; try { list = await offFetchList(); } catch (e) { list = null; }
+  const c = await caches.open(KEPT), mb = (b) => (b >= 1048576 ? ar(Math.round(b / 1048576)) + " م.ب" : ar(Math.max(1, Math.round(b / 1024))) + " ك.ب");
+  if (!list) { st.textContent = "لا يوجد اتصال الآن. ما نزّلته سابقًا يعمل، والقائمة تظهر عند عودة الاتصال."; ul.replaceChildren(); return; }
+  if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then((e) => { if (e.usage != null) st.textContent = `المستعمل من تخزين التطبيق على هذا الجهاز: ${mb(e.usage)}.`; }).catch(() => {});
+  ul.replaceChildren();
+  for (const u of offUnits(list)) {
+    const li = acEl("li"), top = acEl("div", "top"), acts = acEl("div", "acts"), info = acEl("small"), states = await Promise.all(u.packs.map((k) => offState(c, k))), have = states.every(Boolean);
+    const stale = have ? u.packs.reduce((t, k, i) => t + Object.entries(list.packs[k].files).filter(([f, v]) => states[i].files[f] !== v[0]).length, 0) : 0, busy = offBusy.get(u.id);
+    li.dataset.u = u.id; top.append(acEl("strong", "", u.name), acEl("small", "", "نحو " + mb(u.bytes)));
+    info.textContent = busy ? `جارٍ التنزيل… ${ar(busy[0])} من ${ar(busy[1])} ملف` : !have ? "غير منزَّل" : stale ? `منزَّل، وفيه ${ar(stale)} ملف يحتاج تحديثًا` : "منزَّل ومحدَّث ✓";
+    const get = acEl("button", "btn" + (have ? "" : " main"), have ? (stale ? "حدّث الآن" : "تحقق من التحديث") : "تنزيل"), del = acEl("button", "btn", "حذف من الجهاز"); get.type = del.type = "button"; get.disabled = !!busy;
+    get.addEventListener("click", async () => { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); get.disabled = true; const r = await offPull(list, u).catch(() => ({ failed: 1 })); paintOffline(); if (r.failed) $("#off-status").textContent = "تعذّر تنزيل بعض الملفات. اضغط «تنزيل» مرة أخرى لإكمالها."; });
+    del.addEventListener("click", async () => { for (let i = 0; i < u.packs.length; i++) { const s0 = states[i]; if (s0) for (const f of Object.keys(s0.files)) await c.delete(f); await c.delete("__state/" + u.packs[i]); } paintOffline(); });
+    acts.append(get); if (have || states.some(Boolean)) acts.append(del); li.append(top, info, acts); ul.append(li);
+  }
+}
+async function offSync() {   // on start and when the connection returns: bring what is kept up to date with the sources
+  if (!("caches" in window) || navigator.onLine === false || !(await caches.has(KEPT))) return;
+  try { const list = await offFetchList(), c = await caches.open(KEPT); for (const u of offUnits(list)) { if ((await Promise.all(u.packs.map((k) => offState(c, k)))).every(Boolean) && !offBusy.has(u.id)) await offPull(list, u, true); } if (setSec === "offline" && settings.classList.contains("open")) paintOffline(); } catch (e) {}
+}
+window.addEventListener("online", offSync);
+setTimeout(() => { if (Array.isArray(projects)) offSync(); }, 6000);
+
 /* ---------- my activity: what was recited and when. A record of reading only: it holds no marks or scores of a recitation. ---------- */
 const ranges = (set) => { const a = [...set].sort((x, y) => x - y), out = []; a.forEach((g) => { const l = out[out.length - 1]; if (l && g <= l[1] + 1) l[1] = Math.max(l[1], g); else out.push([g, g]); }); return out; };
 const spanCount = (rs) => rs.reduce((t, r) => t + r[1] - r[0] + 1, 0);
@@ -3104,7 +3168,8 @@ function paintSettings() {
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
   $("#wmark-help").textContent = { "": "لا تُميَّز كلمات.", gharib: "كلمات الغريب بالأحمر.", mut: "العبارات المتشابهة بالأزرق؛ ولمسها يعرض مواضعها الأخرى.", qir: "كلمات الخلاف بين القراءات بالبنفسجي؛ ولمسها يعرض أوجه الخلاف." }[wmark];
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setSec));
-  ["mushaf", "look", "recite", "content", "mine"].forEach((k) => { $("#set-" + k).hidden = setSec !== k; });
+  ["mushaf", "look", "recite", "content", "offline", "mine"].forEach((k) => { $("#set-" + k).hidden = setSec !== k; });
+  if (setSec === "offline") { paintOffline(); return; }
   if (setSec === "mine") { paintMine(); return; }
   const box = $("#set-projects"); box.replaceChildren();
   if (setSec !== "content") return;

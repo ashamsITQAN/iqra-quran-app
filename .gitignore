@@ -19,3 +19,4 @@ qiraat-index.json
 # مفتاح Quran Lab يُكتب وقت النشر من أسرار المستودع
 public/quranlab-key.js
 .claude/skills/quranlab-sdk/quranlab-sdk.checked
+public/data/offline.json
