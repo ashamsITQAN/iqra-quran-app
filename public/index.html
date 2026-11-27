@@ -2461,7 +2461,7 @@ async function folIndex(model) {
   Object.assign(FOL, { U, ug, uw, start, n, idx, rows, blank: model.tokens.blank, bar });
 }
 // Where is this being read? The last heard units vote, six at a time, for the places of the mushaf that hold the same run.
-function folLocate(H) {
+function folLocate(H, force) {
   const { K, idx, n } = FOL, L = Math.min(H.length, 36), off = H.length - L, votes = new Map();
   if (L < 12) return null;
   for (let i = 0; i + K <= L; i++) {
@@ -2474,11 +2474,14 @@ function folLocate(H) {
   if (!cands.length) return null;
   const best = Math.max(...cands.map((c) => c[1])), top = cands.filter((c) => c[1] >= best * 0.8);
   // the same words occur in many places: wait for more of the reading, then take the place nearest the open page
+  const shown = [...spread.querySelectorAll(".page[data-page]")].map((x) => +x.dataset.page), p1 = Math.min(...shown, cur), p2 = Math.max(...shown, cur);
+  const i1 = FOL.rows.findIndex((r) => r[2] >= p1), i2 = FOL.rows.findIndex((r) => r[2] > p2), lo = FOL.start[Math.max(0, i1)], hi = i2 < 0 ? n : FOL.start[i2];
+  const here = top.filter((c) => c[0] + L > lo && c[0] < hi);   // a place on the open pages is taken at once
   const far = top.some((c) => Math.abs(c[0] - top[0][0]) > 40);
-  if (far && H.length < 44) return null;
-  const home = FOL.start[Math.max(0, FOL.rows.findIndex((r) => r[2] >= cur))] || 0;
-  top.sort((a, b) => Math.abs(a[0] - home) - Math.abs(b[0] - home));
-  const d = top[0][0];
+  if (!here.length && far && H.length < 44 && !force) return null;
+  const pick = here.length ? here : top;
+  pick.sort((a, b) => Math.abs(a[0] - lo) - Math.abs(b[0] - lo));
+  const d = pick[0][0];
   return { from: Math.max(0, d), pos: Math.min(n, d + L) };
 }
 // Follow on from a known place: the latest heard units are laid along the text around it, allowing for sounds the model
@@ -2505,7 +2508,9 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
   if (d.isFinal) for (let i = d.settled; i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
   const fresh = H.length - (FOL.seen || 0); if (fresh <= 0) return; FOL.seen = H.length;
   if (FOL.pos == null) {
-    const hit = folLocate(H.slice(FOL.cut || 0)); if (!hit) return;
+    const hit = folLocate(H.slice(FOL.cut || 0), d.isFinal); if (!hit) return;
+    // the basmala opens every surah: away from the first page it does not say where the reading is, so the place is taken from what follows it
+    if (FOL.ug[hit.pos - 1] === 0 && cur !== 1) { FOL.cut = H.length; return; }
     FOL.pos = hit.pos; FOL.from = hit.from; FOL.bad = 0;
   } else if (folTrack(H, fresh)) FOL.bad = 0;
   else if ((FOL.bad += 1) >= 4) { FOL.pos = null; FOL.cut = Math.max(0, H.length - 14); return; }   // lost: find the place again from what comes next
