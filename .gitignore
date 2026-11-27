@@ -16,3 +16,6 @@ public/data/mutashabihat.json
 # فهرس كلمات الخلاف بين القراءات يُبنى وقت النشر
 public/data/qiraat.json
 qiraat-index.json
+# مفتاح Quran Lab يُكتب وقت النشر من أسرار المستودع
+public/quranlab-key.js
+.claude/skills/quranlab-sdk/quranlab-sdk.checked

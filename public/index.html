@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>اقرأ القرآن الكريم</title>
+<script src="quranlab-key.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -263,6 +264,10 @@ body[data-tpi="3"]{--tpo:52%}
 #settings{width:min(520px,calc(100% - 24px));height:min(70%,560px)}
 .sh-body[hidden],.opt[hidden]{display:none}
 #set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
+#ts-prog{width:100%;height:8px;accent-color:var(--accent)}
+.ts-h{font-size:14px;font-weight:600;color:var(--muted);margin:10px 0 6px}
+#ts-heard{min-height:110px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px 14px;font-family:var(--naskh);font-size:20px;line-height:2;overflow-wrap:anywhere}
+#ts-heard .tail{color:var(--muted)}   /* heard, but may still change */
 .zoomer{display:flex;align-items:center;gap:8px;flex:1;min-width:220px;max-width:360px}
 .zoomer input{flex:1;min-width:0;accent-color:var(--accent)}
 .zoomer button{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;font-size:22px;line-height:1;color:var(--ink);background:var(--panel);flex:none}
@@ -549,7 +554,7 @@ body[data-tpi="3"]{--tpo:52%}
       <label for="hz-speed">سرعة التلاوة في الحفظ</label><select id="hz-speed"><option value="0.75">أبطأ ٠٫٧٥</option><option value="1">عادية</option><option value="1.25">أسرع ١٫٢٥</option><option value="1.5">أسرع ١٫٥</option></select>
     </fieldset>
   </div>
-  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
+  <div class="sh-nav"><output id="hz-est" class="note"></output><button type="button" id="hz-listen" class="btn" hidden>استمع إلى السورة</button><button type="button" id="hz-tasmee" class="btn">سمِّع ما حفظت</button><button type="button" id="hz-start" class="btn main" disabled>ابدأ الحفظ</button></div>
 </section>
 
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
@@ -575,6 +580,22 @@ body[data-tpi="3"]{--tpo:52%}
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
+</section>
+
+<section id="tasmee" class="modal" role="dialog" aria-label="التسميع" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">التسميع</p><p class="sub" id="ts-what"></p></div>
+    <button class="sh-close" id="ts-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <p class="note" id="ts-status" role="status" style="margin:0 0 8px"></p>
+    <progress id="ts-prog" max="1" value="0" hidden></progress>
+    <h3 class="ts-h">ما سمعه النموذج</h3>
+    <div id="ts-heard" dir="auto" aria-live="polite"></div>
+    <p class="note" style="margin:10px 0 0">يعمل النموذج على جهازك، ويعرض ما سمعه من تلاوتك كما هو ولا يحكم عليها. قد يخطئ، ولا يغني عن معلّم متقن. أول استعمال ينزّل النموذج مرة واحدة (نحو ٥٦ ميغابايت). من Quran Lab.</p>
+    <p class="note" style="margin:6px 0 0"><a href="privacy.html" target="_blank" rel="noopener">الخصوصية ومشاركة التسجيلات</a></p>
+  </div>
+  <div class="sh-nav"><button type="button" id="ts-sample" class="btn" hidden>مقطع تجريبي</button><button type="button" id="ts-stop" class="btn" hidden>إنهاء التلاوة</button><button type="button" id="ts-start" class="btn main">ابدأ التلاوة</button></div>
 </section>
 
 <section id="share" class="modal" role="dialog" aria-label="مشاركة المحتوى" aria-hidden="true">
@@ -1095,7 +1116,7 @@ spread.addEventListener("pointerover", (e) => {
 });
 spread.addEventListener("pointerleave", () => hoverAyah(""));
 function open(c, lv) { ctx = c; level = lv; show(settings, false); show(indexBox, false); show(sheet, true); paintSheet(); applySelection(); }
-function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); applySelection(); }
+function close() { found = []; ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); show(hifzBox, false); show(reportBox, false); show(shareBox, false); if (typeof tsBox !== "undefined") closeTasmee(); applySelection(); }
 veil.addEventListener("click", close);
 $("#nav-prev").addEventListener("click", () => step(-1));
 $("#nav-next").addEventListener("click", () => step(1));
@@ -2393,6 +2414,71 @@ async function shareAs(kind) {
 [["png", "png"], ["print", "print"], ["pdf", "pdf"], ["txt", "txt"], ["copy", "copy"]].forEach(([id, kind]) => $("#shr-" + id).addEventListener("click", () => shareAs(kind)));
 $("#shr-close").addEventListener("click", () => show(shareBox, false));
 $("#sh-share").addEventListener("click", () => openShare(docShown()));
+
+/* Recitation (Quran Lab TajweedFormer SDK). The model runs in the reader's own browser, inside Quran Lab's frame: it hears
+   the recitation and reports what it heard. It judges nothing; this screen shows its output as it is. */
+const tsBox = $("#tasmee"), QL_KEY = window.QURANLAB_KEY || store.get("qlkey", "");   // the web key comes from quranlab-key.js, written at deploy time and kept out of the repository
+let qlClient = null, qlModel = null, qlSession = null, tsRange = null;
+function qlLoader() {
+  return qlLoader.p || (qlLoader.p = new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = "https://web.quranlab.ai/4/loader.js"; sc.crossOrigin = "anonymous";
+    sc.onload = res; sc.onerror = () => { qlLoader.p = null; rej(Object.assign(new Error("loader"), { code: "needs_connection" })); }; document.head.append(sc);
+  }));
+}
+const qlWords = { needs_connection: "اتصل بالإنترنت ثم حاول مرة أخرى.", download_failed: "تعذّر التنزيل الآن؛ حاول لاحقًا.", microphone_denied: "لم يُسمح باستعمال الميكروفون. اسمح به من إعدادات المتصفح ثم حاول.", microphone_unavailable: "لا يوجد ميكروفون متاح على هذا الجهاز.", storage_full: "لا توجد مساحة كافية لتنزيل النموذج.", runtime_unsupported: "هذا المتصفح لا يدعم تشغيل النموذج؛ جرّب متصفحًا أحدث.", interrupted: "انقطعت التلاوة؛ ابدأ من جديد.", invalid_key: "مفتاح التسميع غير مقبول.", server_rejected: "رفض خادم Quran Lab هذا الموقع." };
+const qlSay = (e) => (e && qlWords[e.code]) || "تعذّر تشغيل التسميع" + (e && e.code ? " (" + e.code + ")." : ".");
+async function qlReady() {   // the client and the open model, made once; the first time downloads the model
+  if (qlModel) return qlModel;
+  const st = $("#ts-status"), pr = $("#ts-prog");
+  if (!QL_KEY) throw Object.assign(new Error("no key"), { code: "invalid_key" });
+  st.textContent = "جارٍ تجهيز النموذج…";
+  await qlLoader();
+  if (!qlClient) qlClient = await QuranLab.TajweedClient.create({ key: QL_KEY });
+  pr.hidden = false;
+  await qlClient.prefetch({ onProgress: (p) => { if (p.bytesTotal) { pr.value = p.bytesDone / p.bytesTotal; st.textContent = `جارٍ تنزيل النموذج… ${ar(Math.round((p.bytesDone / p.bytesTotal) * 100))}٪`; } } });
+  pr.hidden = true; st.textContent = "جارٍ فتح النموذج…";
+  qlModel = await qlClient.model();
+  return qlModel;
+}
+function tsPaint(d) {   // settled words as they are; the tail, which may still change, in a lighter ink
+  const box = $("#ts-heard"), kids = []; let seen = 0;
+  (d.words || []).forEach((w) => { seen += (w.tokens || []).length; const sp = document.createElement("span"); sp.textContent = w.text + " "; if (seen > d.settled && !d.isFinal) sp.className = "tail"; kids.push(sp); });
+  if (!kids.length && d.text) kids.push(d.text);
+  box.replaceChildren(...kids);
+}
+async function tsTake(from) {   // one take: the microphone, or a sample clip of the model
+  const st = $("#ts-status"), start = $("#ts-start"), stop = $("#ts-stop");
+  start.disabled = true; $("#ts-heard").replaceChildren();
+  try {
+    const model = await qlReady();
+    qlSession = await model.listen(from ? { from } : {});
+    st.textContent = from ? "يُشغَّل المقطع التجريبي…" : "أسمعك الآن… اقرأ، ثم اضغط «إنهاء التلاوة».";
+    start.hidden = true; stop.hidden = !!from;
+    let last = null;
+    for await (const chunk of qlSession.chunks) { last = chunk.decoded; tsPaint(last); }
+    if (!from && tsRange && last && last.text) { try { qlSession.reportRecited(tsRange.surah, tsRange.from, tsRange.to); } catch (e) {} }
+    st.textContent = last && last.text ? "انتهت التلاوة. هذا ما سمعه النموذج." : "لم يُسمع شيء.";
+    if (from) { const dg = await qlClient.diagnose(); console.log("[quranlab] sample heard:", last && last.text); console.log("[quranlab] diagnose:", JSON.stringify(dg)); window.__quranlab = { heard: last && last.text, diagnose: dg }; }
+  } catch (e) {
+    if (!e || e.code !== "cancelled") { st.textContent = qlSay(e); console.warn("[quranlab]", e && e.code, e && e.message, e && e.errorCause); window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; }
+  }
+  qlSession = null; $("#ts-prog").hidden = true; start.hidden = false; start.disabled = false; stop.hidden = true;
+}
+function openTasmee() {
+  readForm(); tsRange = { surah: +hz.surah, from: +hz.from, to: +hz.to };
+  show(hifzBox, false); show(tsBox, true);
+  $("#ts-what").textContent = `${surahName(tsRange.surah)} · ${tsRange.from === tsRange.to ? "الآية " + ar(tsRange.from) : "الآيات " + ar(tsRange.from) + "–" + ar(tsRange.to)}`;
+  $("#ts-status").textContent = QL_KEY ? "اضغط «ابدأ التلاوة» واسمح بالميكروفون." : "التسميع غير مفعّل في هذه النسخة بعد.";
+  $("#ts-start").disabled = !QL_KEY; $("#ts-sample").hidden = !tsDev;
+  if (QL_KEY) qlReady().then(() => { if (!qlSession) $("#ts-status").textContent = "النموذج جاهز. اضغط «ابدأ التلاوة» واسمح بالميكروفون."; }).catch((e) => { $("#ts-status").textContent = qlSay(e); $("#ts-prog").hidden = true; window.__quranlab = { error: e && e.code, message: e && e.message, cause: e && e.errorCause }; });
+}
+function closeTasmee() { if (qlSession) { try { qlSession.cancel(); } catch (e) {} } show(tsBox, false); }
+const tsDev = new URLSearchParams(location.search).has("quranlab-sample");   // for checks: plays a sample clip of the model, with no microphone
+$("#hz-tasmee").addEventListener("click", openTasmee);
+$("#ts-close").addEventListener("click", close);
+$("#ts-start").addEventListener("click", () => tsTake());   // the microphone needs a tap
+$("#ts-stop").addEventListener("click", () => { if (qlSession) qlSession.finish().catch(() => {}); });
+$("#ts-sample").addEventListener("click", () => tsTake(qlModel.sampleClips[0]));
 
 /* Backup file */
 function backupSave(note) { download("iqra-backup-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify(exportObj(), null, 1), "application/json"); note.textContent = "نُزّلت النسخة الاحتياطية."; }

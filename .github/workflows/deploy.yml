@@ -44,6 +44,11 @@ jobs:
         run: |
           python3 scripts/qiraat.py public qiraat-index.json 5 || true
           if [ -f qiraat-index.json ]; then cp qiraat-index.json public/data/qiraat.json; else echo "::warning::readings index not built; the app reads the readings live"; fi
+      # The Quran Lab web key is public by design and works only from this site's origin; it is still kept out of the repository.
+      - name: Quran Lab key
+        env:
+          QURANLAB_KEY: ${{ secrets.QURANLAB_KEY }}
+        run: python3 -c 'import json,os;open("public/quranlab-key.js","w").write("window.QURANLAB_KEY="+json.dumps(os.environ.get("QURANLAB_KEY",""))+";\n")'
       - name: Stamp the build version
         run: |
           sed -i "s/__BUILD__/${GITHUB_SHA::10}/" public/index.html public/sw.js
