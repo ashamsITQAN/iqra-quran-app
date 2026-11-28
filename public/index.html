@@ -314,7 +314,8 @@ body.kb .modal{top:calc(var(--vvt,0px) + var(--vvh,100vh) / 2);max-height:calc(v
 .tsg{margin:0;padding-inline-start:22px;line-height:1.9}.tsg li{margin-bottom:6px}
 #ts-prog{position:absolute;inset-inline:0;bottom:0;width:100%;height:4px;accent-color:var(--accent)}
 #ts-go[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
-body.ts-on.ts-hide .art svg g.word:not(.rd) path{opacity:0}
+body.ts-on.ts-hide .art svg g.word:not(.rd):not(.hint) path{opacity:0}
+body.ts-on.ts-hide .art svg g.word.hint .hit{fill:var(--tint-strong)}   /* the prompted word, for a moment */
 body.ts-on.ts-nomark .art svg g.ayah-mark:not(.rdm){opacity:0}
 body.ts-on:not(.ts-hide) .art svg g.ayah-fragment.rda g.word .hit,body.ts-on:not(.ts-hide) .art svg g.ayah-mark.rda .hit{fill:var(--tint)}   /* words shown: what has been read is tinted, the word reached more strongly */
 body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
@@ -631,6 +632,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <p class="note" style="margin:0 0 6px">زر «تسميع» في الشريط العلوي يشغّل اللاقط ويتابع قراءتك في المصحف.</p>
     <div class="opt"><h3><label for="set-tshide">إخفاء الكلمات حتى تُقرأ</label></h3><input id="set-tshide" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsmark">إخفاء أرقام الآيات أيضًا</label></h3><input id="set-tsmark" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-tshint">تلقين الكلمة التالية عند التوقف أو الخطأ (تظهر لحظة ثم تختفي)</label></h3><input id="set-tshint" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsfb">بيان مواضع تحتاج مراجعة بعد كل آية</label></h3><input id="set-tsfb" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsrec">الاحتفاظ بتسجيل صوتي لجلساتي على هذا الجهاز</label></h3><input id="set-tsrec" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <p class="note">سجل جلساتك وختمتك في «نشاطي» من الفهرس. وإعدادات التلقين والقرّاء في نافذة «الحفظ».</p>
@@ -810,6 +812,7 @@ const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
 
 const store = { get(k, d) { try { const v = localStorage.getItem("iqra-" + k); return v == null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("iqra-" + k, v); } catch (e) {} } };
+let tsHint = store.get("tshint", "1") === "1";   // prompt the next word when the reader stops or goes astray
 let tsFb = store.get("tsfb", "1") === "1", tsRec = store.get("tsrec", "0") === "1";   // recitation: places to look at again after each ayah; keep a recording
 let tsHide = store.get("tshide", "1") === "1", tsNoMark = store.get("tsmark", "0") === "1";   // recitation: hide the words until read, and the ayah numbers too
 let view = store.get("view", "print"), zoom = Math.max(1.2, Math.min(3, +store.get("zoom", "1.4") || 1.4));   // "flow": the page's words set again in bigger lines
@@ -2887,6 +2890,39 @@ function folTrack(H, fresh, tail, limit) {
   FOL.pos = a + bj;
   return true;
 }
+// Between two surahs the reader says the basmala, which is not in the run of ayat (only al-Fatiha begins with it as an ayah).
+// At the start of a surah the newly heard units are therefore laid against the basmala first:
+//   "wait"  they read as a basmala still being said: the place stays where it is;
+//   n > 0   the basmala was said in full within the first n of them: following goes on from what comes after;
+//   0       it is not a basmala.
+function folBasmala(S) {
+  const { U, start } = FOL, B = U.subarray(start[0], start[1]), nb = B.length;
+  if (S.length < 5) return "wait";
+  let best = null;
+  for (let off = 0; off <= Math.min(8, S.length - 5); off++) {   // a few last sounds of the surah just ended may come first
+    const X = S.slice(off, off + nb + 8), N = X.length;
+    let prev = new Float32Array(nb + 1), row = new Float32Array(nb + 1);
+    for (let j = 0; j <= nb; j++) prev[j] = j;
+    let full = null;
+    for (let i = 1; i <= N; i++) {
+      row[0] = i; const x = X[i - 1];
+      for (let j = 1; j <= nb; j++) { const y = B[j - 1], sub = x === y ? 0 : (x > 30 && y > 30 && Math.abs(x - y) === 3 ? 0.4 : 1); row[j] = Math.min(prev[j - 1] + sub, prev[j] + 1, row[j - 1] + 1); }
+      [prev, row] = [row, prev];
+      if (i >= nb - 3 && prev[nb] / nb <= 0.3 && (!full || prev[nb] < full[1])) full = [i, prev[nb]];
+    }
+    if (full) { if (!best || best[0] !== "full" || full[1] < best[2]) best = ["full", off + full[0], full[1]]; continue; }
+    if (N < nb + 2) { let c = Infinity; for (let j = Math.max(1, N - 4); j <= Math.min(nb, N + 4); j++) c = Math.min(c, prev[j]); if (c / N <= 0.34 && (!best || best[0] !== "full")) best = ["wait"]; }
+  }
+  return !best ? 0 : best[0] === "wait" ? "wait" : best[1];
+}
+// The start of a surah that the place has reached, or is within a few sounds of (the last sounds of a surah are often
+// still on their way when the basmala begins); -1 when there is none.
+function folSurahEdge() {
+  const { pos, n, start, ug, rows } = FOL; if (pos == null || pos <= 0 || pos >= n) return -1;
+  const g = ug[pos];
+  if (pos === start[g] && rows[g][1] === 1) return pos;
+  return g + 1 < rows.length && rows[g + 1][1] === 1 && start[g + 1] - pos <= 6 ? start[g + 1] : -1;
+}
 function folHeard(d) {   // one chunk of the take: the settled units so far
   const H = []; for (let i = 0; i < d.settled && i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
   if (d.isFinal) for (let i = d.settled; i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
@@ -2897,6 +2933,7 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
     if (FOL.ug[hit.pos - 1] === 0 && cur !== 1) { FOL.cut = H.length; return; }
     FOL.pos = hit.pos; FOL.from = hit.from; FOL.bad = 0;
     if (FOL.take && FOL.take.startPos == null && !FOL.cut) { const s0 = FOL.start[FOL.ug[hit.from]]; if (hit.from - s0 <= 2) { FOL.take.startPos = s0; FOL.from = s0; } }   // the take began with this ayah
+    folReveal(); return;
   } else if (FOL.away) {
     // The reading left the place it was following. The place is kept: the reader is told which other place the reading
     // matches and chooses whether to go there. Reading on from the kept place takes the following up again by itself.
@@ -2907,19 +2944,54 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
       if (hit && hit.pos > FOL.pos - 500 && hit.pos < FOL.pos + 70) { FOL.pos = hit.pos; FOL.from = hit.from; folAway(null); FOL.bad = 0; }   // the same passage: a repeat, or a little further on
       else { if (hit && FOL.ug[hit.pos - 1] !== 0 && (!FOL.away.hit || FOL.ug[FOL.away.hit.pos - 1] !== FOL.ug[hit.pos - 1])) folAway(hit); return; }
     }
-  } else if (folTrack(H, fresh)) { FOL.bad = 0; FOL.walked = (FOL.walked || 0) + fresh; }
-  else if ((FOL.bad += 1) >= 4) {
+    folReveal(); return;
+  } else {
+    // at the start of a surah: is this the basmala being said?
+    const eb = folSurahEdge();
+    if (eb >= 0) {
+      if (!FOL.edge || FOL.edge.pos !== eb) FOL.edge = { pos: eb, take: FOL.take, h: H.length - fresh, said: false };
+      else if (FOL.edge.take !== FOL.take) { FOL.edge.take = FOL.take; FOL.edge.h = 0; }
+      if (!FOL.edge.said && !FOL.edge.no) {
+        const r = folBasmala(H.slice(FOL.edge.h));
+        if (r === "wait") return;
+        if (r > 0) {   // (a take that holds a basmala is not looked over: the engine expects ayat only)
+          FOL.edge.said = true; FOL.edge.skip = FOL.edge.h + r; FOL.bad = 0; if (FOL.take) FOL.take.extra = true;
+          if (FOL.pos < eb) { FOL.pos = eb; folReveal(); }   // the surah before it is taken as read to its end
+        }
+        else if (FOL.pos < eb) FOL.edge = null;   // the end of the surah is still being read: look again after it
+        else FOL.edge.no = true;
+      }
+    } else if (!(FOL.edge && FOL.edge.said && FOL.edge.take === FOL.take && FOL.edge.skip > H.length - 28)) FOL.edge = null;   // (kept while the basmala is still among the last units heard)
+    const sk = FOL.edge && FOL.edge.said && FOL.edge.take === FOL.take ? FOL.edge.skip : 0;
+    let tail = null;
+    if (sk > H.length - 28) { tail = H.slice(sk); if (tail.length < 5) return; }   // only what came after the basmala is followed
+    if (folTrack(H, tail ? Math.min(fresh, tail.length) : fresh, tail)) { FOL.bad = 0; FOL.walked = (FOL.walked || 0) + fresh; folReveal(); return; }
+  }
+  if ((FOL.bad += 1) >= 4) {
     if ((FOL.walked || 0) < 24) { FOL.pos = null; FOL.cut = Math.max(0, H.length - 14); return; }   // hardly begun: find the place afresh
     FOL.away = { cut: Math.max(0, H.length - 14), hit: null }; folAway(undefined); return;
-  } else return;
-  folReveal();
+  }
+  if (FOL.bad >= 2) folHint();   // the reading does not go on from the place: prompt the next word
 }
+// The prompt: when the reader stops or goes astray with the ayat hidden, the next word is shown for a moment and hidden
+// again, as a teacher would say it, so that the reading can go on.
+function folHint() {
+  if (!tsHint || !tsHide || !FOL.on || FOL.pos == null || FOL.pos >= FOL.n) return;
+  const now = performance.now(); if (FOL.hintAt && now - FOL.hintAt < 3500) return;
+  const g = FOL.ug[FOL.pos], key = `${FOL.rows[g][0]}:${FOL.rows[g][1]}:${FOL.uw[FOL.pos] + 1}`, el = spread.querySelector(`.art svg g.word[data-word-key="${key}"]`);
+  if (!el) return;
+  FOL.hintAt = now; FOL.hints = (FOL.hints || 0) + 1;
+  el.classList.add("hint"); setTimeout(() => el.classList.remove("hint"), 1800);
+}
+setInterval(() => { if (FOL.on && mic && FOL.pos != null && !FOL.away && mic.loudAt && performance.now() - mic.loudAt >= 3000) folHint(); }, 500);
+if (navigator.webdriver) window.__iqra = { FOL, folHeard: (d) => folHeard(d), folHint: () => folHint() };   // for the automated tests only
 const folName = (g) => `${surahName(FOL.rows[g][0])}، الآية ${ar(FOL.rows[g][1])}`;
 function folAway(hit) {   // null: back on track; undefined: off the place, the other place not known yet; else the other place
   const bar = $("#ts-bar"), jump = $("#ts-jump");
   if (hit === null) { FOL.away = null; bar.classList.remove("away"); jump.hidden = true; tsSay("أتابعك. تظهر الكلمات كلما قرأتها."); return; }
   const here = folName(FOL.ug[Math.min(FOL.n - 1, FOL.pos)]);   // the ayah to go on from
   if (FOL.take) FOL.take.away = true;
+  folHint();
   if (!bar.classList.contains("away")) { bar.classList.add("away"); FOL.notes = (FOL.notes || 0) + 1; try { navigator.vibrate && navigator.vibrate([90, 60, 90]); } catch (e) {} }
   if (hit) { FOL.away.hit = hit; jump.hidden = false; tsSay(`تنبيه: ما تقرؤه الآن يوافق موضعًا آخر (${folName(FOL.ug[hit.pos - 1])}). موضعك الذي تكمل منه: ${here}.`); }
   else { jump.hidden = true; tsSay(`تنبيه: ما تقرؤه الآن لا يوافق موضعك (${here}). أكمل من موضعك.`); }
@@ -2971,7 +3043,7 @@ async function micOpen() {
   node.port.onmessage = (e) => {
     const b = e.data; let sum = 0; for (let k = 0; k < b.length; k++) sum += b[k] * b[k];
     const rms = Math.sqrt(sum / b.length); m.level = Math.max(m.level * 0.997, rms);
-    if (rms < Math.max(0.004, m.level * 0.1)) m.quietMs += (b.length / m.rate) * 1000; else { m.quietMs = 0; m.spoke = true; }
+    if (rms < Math.max(0.004, m.level * 0.1)) m.quietMs += (b.length / m.rate) * 1000; else { m.quietMs = 0; m.spoke = true; m.loudAt = performance.now(); }
     if (m.sink) m.sink.push(b); else if (m.queue.length < 400) m.queue.push(b);
   };
   if (tsRec && window.MediaRecorder) { try { m.rec = new MediaRecorder(stream); m.rec.ondataavailable = (e) => { if (e.data && e.data.size) m.parts.push(e.data); }; m.rec.start(1000); } catch (e) { m.rec = null; } }
@@ -2990,7 +3062,7 @@ const recPut = (id, blob) => recDo("readwrite", (st) => st.put(blob, id)), recGe
 function takeEnd(judge) {   // end the running take here; it is judged only when it holds whole ayat from a start to a stop
   const tk = FOL.take, ses = qlSession; if (!tk || tk.fin || !ses) return;
   const { ug, n } = FOL, edge = (p) => p != null && (p === 0 || p >= n || ug[p] !== ug[p - 1]);
-  tk.endPos = FOL.pos; tk.judge = judge && tsFb && !tk.away && edge(tk.startPos) && edge(tk.endPos) && tk.endPos > tk.startPos;
+  tk.endPos = FOL.pos; tk.judge = judge && tsFb && !tk.away && !tk.extra && edge(tk.startPos) && edge(tk.endPos) && tk.endPos > tk.startPos;
   if (tk.endPos > (tk.startPos || 0) && tk.startPos != null) { const a = FOL.rows[ug[tk.startPos]], b = FOL.rows[ug[tk.endPos - 1]]; if (a[0] === b[0]) { try { ses.reportRecited(a[0], a[1], b[1]); } catch (e) {} } }
   if (mic) { mic.sink = null; mic.quietMs = 0; mic.spoke = false; }
   tk.fin = ses.finish();
@@ -2998,7 +3070,8 @@ function takeEnd(judge) {   // end the running take here; it is judged only when
 function folCut() {
   const tk = FOL.take; if (!tk || tk.fin || !mic) return;
   const atEnd = FOL.pos != null && !FOL.away && FOL.pos > 0 && (FOL.pos >= FOL.n || FOL.ug[FOL.pos] !== FOL.ug[FOL.pos - 1]);
-  if (atEnd && FOL.pos !== tk.startPos && mic.quietMs >= 450) takeEnd(true);
+  if (FOL.edge && FOL.edge.said && FOL.edge.take === tk && FOL.pos === FOL.edge.pos && mic.quietMs >= 350) takeEnd(false);   // a pause after the basmala: the surah begins a take of its own
+  else if (atEnd && FOL.pos !== tk.startPos && mic.quietMs >= 450) takeEnd(true);
   else if (mic.spoke && FOL.seen > 0 && mic.quietMs >= 5000) takeEnd(false);   // a long silence in the middle: begin afresh
 }
 let fbWorker = null, fbSeq = 0; const fbWait = new Map();
@@ -3465,6 +3538,7 @@ $("#mine-copy").addEventListener("click", async () => copyText(await allText()))
 /* ---------- settings ---------- */
 let setSec = "mushaf", setTab = "mokhtasar";   // the section of the panel, and inside "content" the kind of content
 $("#set-lang").addEventListener("change", (e) => { store.set("lang", e.target.value); });
+$("#set-tshint").addEventListener("change", (e) => { tsHint = e.target.checked; store.set("tshint", tsHint ? "1" : "0"); });
 $("#set-tsfb").addEventListener("change", (e) => { tsFb = e.target.checked; store.set("tsfb", tsFb ? "1" : "0"); });
 $("#set-tsrec").addEventListener("change", (e) => { tsRec = e.target.checked; store.set("tsrec", tsRec ? "1" : "0"); });
 $("#set-tshide").addEventListener("change", (e) => { tsHide = e.target.checked; store.set("tshide", tsHide ? "1" : "0"); tsClasses(); });
@@ -3479,7 +3553,7 @@ function paintSettings() {
   $("#view-help").textContent = view === "tafsir" ? "صفحة طولية: كل آية برسم المصحف وتحتها ما تختاره من التفاسير المختصرة ومعاني الكلمات. لمس الآية يفتح نافذتها الكاملة." : view === "flow" ? "تُعرض كلمات الصفحة نفسها برسم المصحف في أسطر أكبر، صفحةً صفحة، وتُمرَّر الصفحة إلى أسفل. أرقام الصفحات كما في المطبوع." : "كل صفحة كما هي في المصحف المطبوع، سطرًا بسطر.";
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
-  $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec;
+  $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec; $("#set-tshint").checked = tsHint;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark; $("#set-ruku").checked = showRuku;
   { const ok = "wakeLock" in navigator; $("#set-awake").checked = awake && ok; $("#set-awake").disabled = !ok; $("#awake-note").textContent = ok ? "لا تنطفئ الشاشة ما دام التطبيق ظاهرًا أمامك. قد يزيد استهلاك البطارية." : "متصفحك لا يدعم هذه الخاصية."; }
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
