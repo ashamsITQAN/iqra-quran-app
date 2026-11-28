@@ -103,7 +103,7 @@ body.full .fs{display:grid}
 .art svg g.prs .hit,.art svg g.ayah-fragment.prs g.word .hit{fill:var(--tint)}.art svg .banner.prs{fill:var(--tint)}
 .art .wait{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted)}
 .foot{height:38px;display:flex;align-items:center;justify-content:center;padding:0 14px;flex:none}
-.page.rt .foot{justify-content:flex-start}.page.lt .foot{justify-content:flex-end}   /* the number sits on the outer side, as in the printed mushaf */
+body.one .page.rt .foot{justify-content:flex-start}body.one .page.lt .foot{justify-content:flex-end}   /* the number sits on the outer side, as in the printed mushaf */
 .foot button{font-family:var(--naskh);font-size:16px;min-width:48px;color:var(--ink);border:1px solid var(--line)}
 .page.sel .foot button,.head button.sel{background:var(--tint-strong);border-color:var(--accent);color:var(--accent)}
 
@@ -165,6 +165,10 @@ body[data-tpi="3"]{--tpo:52%}
 #results .ay{font-family:var(--naskh);font-size:18px;line-height:2}
 #results mark{background:var(--tint-strong);color:var(--accent);border-radius:3px;padding:0 1px}
 #results .near{font-size:11px;color:var(--mark);border:1px solid var(--mark);border-radius:999px;padding:0 8px;margin-inline-start:6px}
+/* what carries a note of mine: the ayah, the word, the surah's name at its head, the page's number */
+.art svg g.ayah-fragment.noted g.word .hit,.art svg g.ayah-mark.noted .hit,.art svg g.word.notedw .hit,.art svg .banner.noted{fill:color-mix(in srgb,var(--nhl,#f2c200) 42%,transparent)}
+.art svg g.word.notedw .hit{fill:color-mix(in srgb,var(--nhl,#f2c200) 62%,transparent)}
+.foot button.noted{background:color-mix(in srgb,var(--nhl,#f2c200) 45%,transparent);border-color:var(--nhl,#f2c200)}
 .art svg g.word.found .hit{fill:var(--tint-strong)}
 .art svg g.word.found path{fill:var(--accent)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
@@ -636,6 +640,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
+    <div class="opt"><h3><label for="set-nhl">تمييز ما عليه تعليق لي في صفحة المصحف</label><p>الآية أو الكلمة تُظلَّل، والسورة يُظلَّل اسمها في مطلعها، والصفحة يُظلَّل رقمها.</p></h3><input id="set-nhl" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <div class="opt"><h3><label for="set-nhlc">لون تمييز التعليقات</label></h3><select id="set-nhlc"><option value="#f2c200">أصفر</option><option value="#3fae5a">أخضر</option><option value="#3b8fe0">أزرق</option><option value="#e0569b">وردي</option><option value="#f08a24">برتقالي</option><option value="#9a6be0">بنفسجي</option></select><span id="nhl-swatch" aria-hidden="true" style="width:34px;height:20px;border-radius:5px;border:1px solid var(--line);flex:none;background:color-mix(in srgb,var(--nhl,#f2c200) 45%,transparent)"></span></div>
     <div class="opt"><h3>تمييز الكلمات في صفحة المصحف<p id="wmark-help"></p></h3>
       <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
     <div class="opt"><h3><label for="set-ruku">مواضع الركوع: حرف «ع» فوق الآية التي ينتهي عندها الركوع</label></h3><input id="set-ruku" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
@@ -928,7 +934,7 @@ function firstOfSpread(n) { return cols === 2 && n % 2 === 0 ? n - 1 : n; }
 async function render() {
   const m = measure();
   cols = m.cols; render.artH = m.artH; render.fit = !!m.fit; render.artW = m.artW || 0;
-  document.body.classList.toggle("fit", render.fit);
+  document.body.classList.toggle("fit", render.fit); document.body.classList.toggle("one", cols === 1);
   if (view !== "print" && render.last !== cur) stage.scrollTop = 0;
   cur = Math.max(meta.first, Math.min(meta.last, cur));
   const start = firstOfSpread(cur);
@@ -2577,7 +2583,21 @@ function prefsOut() { const o = {}; try { for (let i = 0; i < localStorage.lengt
 const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct, prefs: prefsOut() });
 function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
+let noteHl = store.get("nhl", "1") === "1", noteCol = store.get("nhlc", "#f2c200");
+function paintNoted() {
+  document.documentElement.style.setProperty("--nhl", noteCol);
+  spread.querySelectorAll(".noted,.notedw").forEach((x) => x.classList.remove("noted", "notedw"));
+  if (!noteHl) return;
+  Object.keys(notes).forEach((k) => {
+    const v = notes[k], a = k.split(":"), lv = a[0];
+    if (lv === "ayah") spread.querySelectorAll(`.art svg g.ayah-fragment[data-ayah-key="${a[1]}:${a[2]}"],.art svg g.ayah-mark[data-ayah-key="${a[1]}:${a[2]}"]`).forEach((g) => g.classList.add("noted"));
+    else if (lv === "word") spread.querySelectorAll(`.art svg g.word[data-word-key="${a[1]}:${a[2]}:${a[3]}"]`).forEach((g) => g.classList.add("notedw"));
+    else if (lv === "surah") spread.querySelectorAll(`.art svg .banner[data-sid="${v.surah || a[1]}"]`).forEach((g) => g.classList.add("noted"));
+    else if (lv === "page") spread.querySelectorAll(`.foot button[data-pnum="${v.page || a[1]}"]`).forEach((g) => g.classList.add("noted"));
+  });
+}
 function paintMarks() {
+  paintNoted();
   spread.querySelectorAll(".bm").forEach((n) => n.remove());
   const at = {};
   KINDS.forEach(([k, letter, name]) => {
@@ -2616,7 +2636,7 @@ function notesCard(lv, key) {
   const id = lv + ":" + key, c = { ...ctx };
   const btn = (t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = t; b.addEventListener("click", fn); acts.append(b); return b; };
   el.className = "proj mynote"; h.append(tag("شخصي"), tag("خاص بك", "src")); row.className = "row"; st.className = "note"; acts.className = "acts";
-  ta.dir = "auto"; ta.setAttribute("aria-label", "تعليقي على " + LEVELS[lv]); ta.placeholder = "اكتب تعليقك أو تدبرك هنا…"; ta.value = notes[id] ? notes[id].t : "";
+  ta.dir = "auto"; ta.setAttribute("aria-label", "تعليقي على " + LEVELS[lv]); ta.placeholder = `اكتب تعليقًا أو تدبرًا حول هذه ${LEVELS[lv]}…`; ta.value = notes[id] ? notes[id].t : "";
   const save = () => {
     const t = ta.value.trim();
     if (t) { if (!notes[id] || notes[id].t !== t) setNote(id, { t, page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) }); }
@@ -3815,6 +3835,7 @@ function paintSettings() {
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec; $("#set-tshint").checked = tsHint;
+  $("#set-nhl").checked = noteHl; $("#set-nhlc").value = noteCol; $("#set-nhlc").disabled = !noteHl;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark; $("#set-ruku").checked = showRuku;
   { const ok = "wakeLock" in navigator; $("#set-awake").checked = awake && ok; $("#set-awake").disabled = !ok; $("#awake-note").textContent = ok ? "لا تنطفئ الشاشة ما دام التطبيق ظاهرًا أمامك. قد يزيد استهلاك البطارية." : "متصفحك لا يدعم هذه الخاصية."; }
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
@@ -3872,6 +3893,8 @@ $("#set-topics").addEventListener("change", (e) => {
 });
 // Ruku places and coloured words are not shown together: turning one on turns the other off.
 function setRuku(on) { showRuku = on; store.set("ruku", on ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(rukuPaint); }
+$("#set-nhl").addEventListener("change", (e) => { noteHl = e.target.checked; store.set("nhl", noteHl ? "1" : "0"); $("#set-nhlc").disabled = !noteHl; paintNoted(); });
+$("#set-nhlc").addEventListener("change", (e) => { noteCol = e.target.value; store.set("nhlc", noteCol); paintNoted(); });
 $("#set-ruku").addEventListener("change", (e) => {
   setRuku(e.target.checked);
   if (showRuku) { if (wmark) $('#seg-wmark button[data-v=""]').click(); toast("مواضع الركوع تظهر حرف «ع» أزرق فوق رأس الآية التي ينتهي عندها الركوع (التي تركع عندها)."); }
