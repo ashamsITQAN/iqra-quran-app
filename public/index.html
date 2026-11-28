@@ -277,6 +277,7 @@ body[data-tpi="3"]{--tpo:52%}
 .modal{position:fixed;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 24px));max-height:min(84%,780px);
   background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column}
 .modal.open{display:flex}
+body.kb .modal{top:calc(var(--vvt,0px) + var(--vvh,100vh) / 2);max-height:calc(var(--vvh,100vh) - 10px)}
 #settings{width:min(520px,calc(100% - 24px));height:min(70%,560px)}
 .sh-body[hidden],.opt[hidden]{display:none}
 #set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
@@ -1390,6 +1391,7 @@ let shown = null;   // the project whose content the window is showing
 // still drag the whole app sideways, where no finger can bring it back; so whenever the app itself is found moved, it is put back.
 function fixView() {
   const d = document.documentElement, b = document.body;
+  if (b.classList.contains("kb")) return;   // while the keyboard is up the system may move the app to show the box being typed in
   if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
   if (d.scrollLeft || d.scrollTop) { d.scrollLeft = 0; d.scrollTop = 0; }
   if (b.scrollLeft || b.scrollTop) { b.scrollLeft = 0; b.scrollTop = 0; }
@@ -1397,6 +1399,24 @@ function fixView() {
 // An iPhone or iPad enlarges the whole app when a box to type in is touched, and leaves it enlarged. There the page is told not
 // to enlarge by itself (the reader's own text-size view remains); other devices keep their pinch zoom.
 if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) document.querySelector('meta[name="viewport"]').setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
+// The on-screen keyboard: while it is up, a window is kept within the part of the screen left above it, and the box being
+// typed in is brought to the middle of that window, so nothing typed in is hidden behind the keyboard.
+function reveal(el) {
+  const m = el && el.closest && el.closest(".modal"); if (!m) return;
+  for (let s = el.parentElement; s && m.contains(s); s = s.parentElement) {
+    if (s.scrollHeight > s.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(s).overflowY)) { const r = el.getBoundingClientRect(), sr = s.getBoundingClientRect(); s.scrollTop += r.top + r.height / 2 - (sr.top + sr.height / 2); return; }
+  }
+}
+function vvSync() {
+  const vv = window.visualViewport; if (!vv) return;
+  const kb = window.innerHeight - vv.height > 120 && vv.scale <= 1.05, rs = document.documentElement.style;
+  rs.setProperty("--vvh", vv.height + "px"); rs.setProperty("--vvt", vv.offsetTop + "px");
+  const was = document.body.classList.contains("kb"); document.body.classList.toggle("kb", kb);
+  if (kb) requestAnimationFrame(() => reveal(document.activeElement)); else if (was) fixView();
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", vvSync); visualViewport.addEventListener("scroll", vvSync); }
+document.addEventListener("focusin", (e) => { if (e.target.matches("input,textarea,select")) setTimeout(() => { vvSync(); reveal(e.target); }, 350); });
+document.addEventListener("focusout", () => setTimeout(vvSync, 350));
 window.addEventListener("scroll", fixView, { passive: true });
 document.body.addEventListener("scroll", fixView, { passive: true });
 if (window.visualViewport) visualViewport.addEventListener("scroll", () => { if (visualViewport.scale <= 1.01) fixView(); });
@@ -3602,7 +3622,8 @@ stage.addEventListener("pointercancel", () => { down = null; });
 
 let rz;
 if (window.ResizeObserver) new ResizeObserver(() => window.dispatchEvent(new Event("resize"))).observe(stage);
-window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
+window.addEventListener("resize", () => {
+  if (!meta) return;   // not yet started clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
