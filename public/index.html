@@ -713,7 +713,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <form id="idx-page" class="pagejump"><label for="idx-num">صفحة</label><input id="idx-num" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1" max="604"><button type="submit" class="btn">انتقال</button></form>
     <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
   </div>
-  <div class="seg" id="idx-mode" hidden><button type="button" data-m="me">مساحتي</button><button type="button" data-m="idx">الفهرس</button></div>
+  <div class="seg" id="idx-mode" hidden><button type="button" data-m="idx">الفهرس</button><button type="button" data-m="me">مساحتي</button></div>
   <div class="tabs" id="idx-tabs" role="tablist">
     <button type="button" role="tab" data-v="home" data-g="me">نظرة عامة</button><button type="button" role="tab" data-v="goals" data-g="me">أهدافي</button><button type="button" role="tab" data-v="surah" data-g="idx">السور</button><button type="button" role="tab" data-v="juz" data-g="idx">الأجزاء</button><button type="button" role="tab" data-v="hizb" data-g="idx">الأحزاب</button><button type="button" role="tab" data-v="marks" data-g="me">علاماتي</button><button type="button" role="tab" data-v="notes" data-g="me">تعليقاتي</button><button type="button" role="tab" data-v="act" data-g="me">نشاطي</button>
   </div>
@@ -2410,7 +2410,7 @@ async function recitationCard(p) {
 let idxTab = "surah";
 /* «مساحتي» (a trial, switched from the settings): the index window gathers what is the reader's own — where to carry on,
    goals, marks, notes, activity — beside the index proper (surahs, juz, hizb). */
-let spaceOn = store.get("space", "1") === "1", idxMode = store.get("idxmode", "me");
+let spaceOn = store.get("space", "1") === "1", idxMode = "idx";
 const ME_TABS = ["home", "goals", "marks", "notes"];
 const dayStart = (per) => { const d = new Date(); d.setHours(0, 0, 0, 0); if (per === "week") d.setDate(d.getDate() - ((d.getDay() + 1) % 7)); return d.getTime(); };   // the week begins on Saturday
 const goalsOf = () => (Array.isArray(rawAct.goals) ? rawAct.goals : (rawAct.goals = []));
@@ -2523,9 +2523,9 @@ function paintIndex() {
   const on = list.querySelector(".here");
   if (on) on.scrollIntoView({ block: "center" }); else list.scrollTop = 0;
 }
-$("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
+$("#idx-open").addEventListener("click", () => { idxMode = "idx";   /* the index button shows the index; «مساحتي» is one press away */ ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
 $("#idx-close").addEventListener("click", close);
-$("#idx-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; idxMode = b.dataset.m; store.set("idxmode", idxMode); paintIndex(); });
+$("#idx-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; idxMode = b.dataset.m; paintIndex(); });
 $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; if (b.dataset.v === "act") return openActivity(); idxTab = b.dataset.v; paintIndex(); });
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(num($("#idx-num").value)); if (n >= meta.first && n <= meta.last) jump(n); });
 
