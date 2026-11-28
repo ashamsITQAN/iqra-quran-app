@@ -3428,7 +3428,7 @@ function paintSettings() {
   if (setSec !== "content") return;
   $("#set-hint").textContent = `اختر ما يظهر في النافذة عند لمس ${{ word: "كلمة", ayah: "رأس آية", page: "رقم صفحة", surah: "ترويسة سورة" }[setTab]}.`;
   const fam = setTab === "mokhtasar";
-  $("#set-lang-row").hidden = !fam; $("#set-rabt-row").hidden = !fam;
+  $("#set-lang-row").hidden = true; $("#set-rabt-row").hidden = !fam;
   if (fam) {
     $("#set-hint").textContent = "مشروعات المختصر في تفسير القرآن الكريم: اللغة وما يظهر منها.";
     const sel = $("#set-lang"), langs = projects.filter((p) => p.group === "mokhtasar");
@@ -3585,7 +3585,11 @@ window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() =
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
-  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]); Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-act-" + l, level: l, name: "تلاوتي وتسميعي", groupName: "نشاطي", kind: "شخصي", source: "خاص بك", act: true, file: null }));
+  try { [meta, projects] = await Promise.all([getJSON("data/meta.json"), getJSON("data/projects.json")]);
+    // The app is in Arabic: of the projects published in several languages only the Arabic one is offered, so no list of
+    // languages shows that could be taken for the language of the app itself.
+    projects = projects.filter((p) => !p.lang || p.lang === "ar"); store.set("lang", "ar");
+    Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-act-" + l, level: l, name: "تلاوتي وتسميعي", groupName: "نشاطي", kind: "شخصي", source: "خاص بك", act: true, file: null }));
     Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null }));
     getJSON("data/surah-site.json").then((j) => { surahSite = j; }).catch(() => {}); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
