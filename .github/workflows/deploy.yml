@@ -60,6 +60,8 @@ jobs:
       - name: Offline list
         run: python3 scripts/offline.py public
       # The feedback engine must give Quran Lab's published numbers before anything is deployed.
+      - name: The app parses
+        run: node tests/syntax.js
       - name: Engine vectors
         run: node tests/engine.test.js
       # The Quran Lab web key is public by design and works only from this site's origin; it is still kept out of the repository.

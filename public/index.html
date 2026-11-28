@@ -3623,7 +3623,8 @@ stage.addEventListener("pointercancel", () => { down = null; });
 let rz;
 if (window.ResizeObserver) new ResizeObserver(() => window.dispatchEvent(new Event("resize"))).observe(stage);
 window.addEventListener("resize", () => {
-  if (!meta) return;   // not yet started clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
+  if (!meta) return;   // not yet started
+  clearTimeout(rz); rz = setTimeout(() => { const m = measure(); if (m.cols !== cols || Math.abs(m.artH - (render.artH || 0)) > 2 || Math.abs((m.artW || 0) - (render.artW || 0)) > 2) render(); }, 120); });
 window.addEventListener("hashchange", () => { const n = +location.hash.replace("#p", ""); if (n && n !== cur) { cur = n; render(); } });
 
 (async function init() {
