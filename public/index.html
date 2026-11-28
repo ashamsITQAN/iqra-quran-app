@@ -2704,7 +2704,7 @@ async function itemText(k) {
   if (KINDS.some((x) => x[0] === k)) { const m = marks[k], a = m.key.split(":"), t = await ayahPlain(m.page, m.key); return `علامة ${KINDS.find((x) => x[0] === k)[2]}: ${surahName(a[0])} · الآية ${a[1]} · الصفحة ${m.page}` + (t ? `\n﴿${t}﴾` : "") + `\nوُضعت ${fmtDate(m.t)}`; }
   const v = notes[k], a = k.split(":"), lv = a[0], t = lv === "ayah" || lv === "word" ? await ayahPlain(v.page, a[1] + ":" + a[2]) : "";
   const place = lv === "page" ? `الصفحة ${v.page}` : lv === "surah" ? surahName(v.surah) : `${surahName(a[1])}: ${a[2]}` + (lv === "word" ? ` · الكلمة «${v.text || ""}»` : "");
-  return (t ? `﴿${t}﴾ ` : "") + `[${place}]\n\n${v.t}\n\n— ${noteDates(v)}`;
+  return (t ? `﴿${t}﴾ ` : "") + `[${place}]\n\n${v.title ? v.title + "\n\n" : ""}${v.t}\n\n— ${noteDates(v)}`;
 }
 async function copyText(t) { try { await navigator.clipboard.writeText(t); toast("نُسخ النص."); } catch (e) { toast("تعذّر النسخ."); } }
 async function allText() {
@@ -2728,7 +2728,7 @@ function svgImage(svg, f) {
 function docOf(k) {   // one of my bookmarks or notes; its place must be open in the window
   const isMark = KINDS.some((x) => x[0] === k), v = isMark ? marks[k] : notes[k], a = k.split(":");
   if (isMark) return { name: "iqra-mark-" + k, title: `${surahName(v.key.split(":")[0])} · الآية ${ar(v.key.split(":")[1])}`, source: "", body: "علامة " + KINDS.find((x) => x[0] === k)[2], foot: "وُضعت " + fmtDate(v.t), page: v.page, ayah: v.key };
-  return { name: "iqra-" + k.replace(/:/g, "-"), title: noteWhere(k), source: "تعليقي", body: v.t, foot: noteDates(v), page: v.page, ayah: a[0] === "ayah" || a[0] === "word" ? a[1] + ":" + a[2] : "" };
+  return { name: "iqra-" + k.replace(/:/g, "-"), title: noteWhere(k), source: v.title ? "تعليقي: " + v.title : "تعليقي", body: v.t || v.title, foot: noteDates(v), page: v.page, ayah: a[0] === "ayah" || a[0] === "word" ? a[1] + ":" + a[2] : "" };
 }
 function docShown() {   // the content the window is showing now
   if (!ctx || !shown) return null;
