@@ -169,6 +169,12 @@ body[data-tpi="3"]{--tpo:52%}
 .art svg g.ayah-fragment.noted g.word .hit,.art svg g.ayah-mark.noted .hit,.art svg g.word.notedw .hit,.art svg .banner.noted{fill:color-mix(in srgb,var(--nhl,#f2c200) 42%,transparent)}
 .art svg g.word.notedw .hit{fill:color-mix(in srgb,var(--nhl,#f2c200) 62%,transparent)}
 .foot button.noted{background:color-mix(in srgb,var(--nhl,#f2c200) 45%,transparent);border-color:var(--nhl,#f2c200)}
+.mynote .ntitle{width:100%;box-sizing:border-box;margin-bottom:6px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-weight:600}
+.nmeta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}.nmeta small{color:var(--muted);font-size:12.5px}.nmeta input{width:8.5em;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:13px}.nmeta .btn{padding:3px 10px;font-size:12.5px}
+.ntags{display:inline-flex;gap:4px;flex-wrap:wrap}.ntag{border:1px solid var(--line);border-radius:999px;padding:1px 4px 1px 9px;font-size:13px;background:color-mix(in srgb,var(--nhl,transparent) 35%,transparent)}.ntag button{border:0;background:none;color:inherit;padding:0 4px;cursor:pointer;font-size:14px}
+.colpick{display:inline-flex;gap:5px;align-items:center}.colpick select{padding:3px 6px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:13px}.colpick i{width:26px;height:18px;border-radius:5px;border:1px solid var(--line);display:inline-block}
+.idx-list li.card .btn[aria-pressed="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.idx-list button.ncol{border-inline-start:5px solid var(--nhl,transparent)}
 .art svg g.word.found .hit{fill:var(--tint-strong)}
 .art svg g.word.found path{fill:var(--accent)}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
@@ -640,8 +646,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
       <div class="seg" id="seg-theme" role="group" aria-label="المظهر">
         <button type="button" data-v="auto">تلقائي</button><button type="button" data-v="light">نهاري</button><button type="button" data-v="dark">ليلي</button>
       </div></div>
-    <div class="opt"><h3><label for="set-nhl">تمييز ما عليه تعليق لي في صفحة المصحف</label><p>الآية أو الكلمة تُظلَّل، والسورة يُظلَّل اسمها في مطلعها، والصفحة يُظلَّل رقمها.</p></h3><input id="set-nhl" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
-    <div class="opt"><h3><label for="set-nhlc">لون تمييز التعليقات</label></h3><select id="set-nhlc"><option value="#f2c200">أصفر</option><option value="#3fae5a">أخضر</option><option value="#3b8fe0">أزرق</option><option value="#e0569b">وردي</option><option value="#f08a24">برتقالي</option><option value="#9a6be0">بنفسجي</option></select><span id="nhl-swatch" aria-hidden="true" style="width:34px;height:20px;border-radius:5px;border:1px solid var(--line);flex:none;background:color-mix(in srgb,var(--nhl,#f2c200) 45%,transparent)"></span></div>
+    <div class="opt"><h3><label for="set-nhl">تمييز ما عليه تعليق لي في صفحة المصحف</label><p>الآية أو الكلمة تُظلَّل، والسورة يُظلَّل اسمها في مطلعها، والصفحة يُظلَّل رقمها. واللون تختاره مع كل تعليق أو لكل وسم.</p></h3><input id="set-nhl" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3>تمييز الكلمات في صفحة المصحف<p id="wmark-help"></p></h3>
       <div class="seg" id="seg-wmark" role="group" aria-label="نوع الكلمات المميزة في صفحة المصحف"><button type="button" data-v="">بلا</button><button type="button" data-v="gharib">الغريب</button><button type="button" data-v="mut">المتشابهات</button><button type="button" data-v="qir">القراءات</button></div></div>
     <div class="opt"><h3><label for="set-ruku">مواضع الركوع: حرف «ع» فوق الآية التي ينتهي عندها الركوع</label></h3><input id="set-ruku" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
@@ -2413,7 +2418,7 @@ async function recitationCard(p) {
 }
 
 /* ---------- index: surahs, ajza' and ahzab ---------- */
-let idxTab = "surah";
+let idxTab = "surah", noteTag = "";
 /* «مساحتي» (a trial, switched from the settings): the index window gathers what is the reader's own — where to carry on,
    goals, marks, notes, activity — beside the index proper (surahs, juz, hizb). */
 let spaceOn = store.get("space", "1") === "1", idxMode = "idx";
@@ -2518,8 +2523,15 @@ function paintIndex() {
     rows = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], li = row(letter, "علامة " + name, at(m.key) + " · " + fmtDate(m.t), m.page, false, () => jump(m.page, m.key)); li.querySelector(".n").className = "n bm bm-" + k; li.querySelector(".n").style.cssText = "position:static;transform:none;justify-self:center"; return li; });
     if (!rows.length) rows = none("لا علامات بعد. المس رقم آية في المصحف، ثم اختر علامة الحفظ أو القراءة أو المراجعة.");
   } else if (idxTab === "notes") {
-    rows = sortedNotes().map((k) => { const v = notes[k]; return row(LEVELS[k.split(":")[0]], noteWhere(k), fmtDate(v.u) + " · " + (v.t.length > 80 ? v.t.slice(0, 80) + "…" : v.t), v.page, false, () => openNote(k)); });
+    const tagsNow = allTags(); if (noteTag && !tagsNow.some(([t]) => t === noteTag)) noteTag = "";
+    rows = sortedNotes().filter((k) => !noteTag || (notes[k].tags || []).includes(noteTag)).map((k) => { const v = notes[k], li = row(LEVELS[k.split(":")[0]], (v.title ? v.title + " — " : "") + noteWhere(k), fmtDate(v.u) + (v.t ? " · " + (v.t.length > 80 ? v.t.slice(0, 80) + "…" : v.t) : "") + (v.tags && v.tags.length ? " · " + v.tags.map((t) => "#" + t).join(" ") : ""), v.page, false, () => openNote(k)); const b = li.querySelector("button"); b.classList.add("ncol"); b.style.setProperty("--nhl", noteColor(v)); return li; });
     if (!rows.length) rows = none("لا تعليقات بعد. افتح نافذة أي كلمة أو آية أو صفحة أو سورة، ثم اكتب في تبويب «تعليقاتي».");
+    if (tagsNow.length) {   // the tags, to browse by; and the colour of the chosen one
+      const head = acEl("li", "card"), chips = acEl("div", "chips"), chip = (t, label) => { const b = acEl("button", "btn", label); b.type = "button"; b.setAttribute("aria-pressed", String(noteTag === t)); if (t && tagCols()[t]) b.style.borderInlineStart = "5px solid " + tagCols()[t]; b.addEventListener("click", () => { noteTag = t; paintIndex(); }); return b; };
+      chips.append(chip("", `الكل (${ar(Object.keys(notes).length)})`), ...tagsNow.map(([t, c]) => chip(t, `#${t} (${ar(c)})`))); head.append(acEl("h4", "", "تصفّح بحسب الوسم"), chips);
+      if (noteTag) { const line = acEl("div", "gform"), cp = colPick(tagCols()[noteTag], "بلا لون", "لون الوسم " + noteTag); cp.sel.addEventListener("change", () => { if (cp.sel.value) tagCols()[noteTag] = cp.sel.value; else delete tagCols()[noteTag]; rawAct.tgt = Date.now(); saveMine(); paintIndex(); }); line.append(acEl("small", "", `لون الوسم «${noteTag}»:`), cp.el); head.append(line); }
+      rows.unshift(head);
+    }
     rows.forEach((li) => { const n = li.querySelector(".n"); if (n) n.style.fontSize = "12px"; });
   } else
   if (idxTab === "surah") rows = Object.entries(meta.surahs).map(([n, s]) => row(n, "سورة " + s.name, `${s.place} · ${ar(s.ayahs)} آية`, s.page, here.surahs.includes(+n), () => jump(s.page)));
@@ -2573,6 +2585,7 @@ function mergeMine(d, fromFile) {
   if (a && typeof a === "object") {
     Object.entries(a.s || {}).forEach(([k, v]) => { const mine = rawAct.s[k]; if (v && (!mine || (v.del && !mine.del))) { rawAct.s[k] = v; n += 1; } });
     if (a.kh && (a.kh.t || 0) > (rawAct.kh.t || 0)) { rawAct.kh = a.kh; n += 1; }
+    if ((a.tgt || 0) > (rawAct.tgt || 0)) { rawAct.tagc = a.tagc || {}; rawAct.tgt = a.tgt; n += 1; }   // the colours of the tags: the set touched last
     if ((a.gt || 0) > (rawAct.gt || 0)) { rawAct.goals = a.goals || []; rawAct.gd = a.gd || {}; rawAct.gt = a.gt; n += 1; }   // goals: the set touched last
   }
   return n;
@@ -2583,17 +2596,30 @@ function prefsOut() { const o = {}; try { for (let i = 0; i < localStorage.lengt
 const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct, prefs: prefsOut() });
 function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
-let noteHl = store.get("nhl", "1") === "1", noteCol = store.get("nhlc", "#f2c200");
+let noteHl = store.get("nhl", "1") === "1"; const noteCol = "#f2c200";
+// A note is highlighted in its own colour; else in the colour of the first of its tags that has one; else in yellow.
+const NOTE_COLS = [["#f2c200", "أصفر"], ["#3fae5a", "أخضر"], ["#3b8fe0", "أزرق"], ["#e0569b", "وردي"], ["#f08a24", "برتقالي"], ["#9a6be0", "بنفسجي"]];
+const tagCols = () => (rawAct.tagc && typeof rawAct.tagc === "object" ? rawAct.tagc : (rawAct.tagc = {}));
+const noteColor = (v) => v.col || (v.tags || []).map((t) => tagCols()[t]).find(Boolean) || noteCol;
+const allTags = () => { const m = new Map(); Object.values(notes).forEach((v) => (v.tags || []).forEach((t) => m.set(t, (m.get(t) || 0) + 1))); return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ar")); };
+function colPick(value, auto, label) {   // a list of colours by name, with a patch of the chosen one beside it
+  const w = document.createElement("span"), sel = document.createElement("select"), sw = document.createElement("i");
+  w.className = "colpick"; sel.setAttribute("aria-label", label); sw.setAttribute("aria-hidden", "true");
+  if (auto) sel.append(new Option(auto, "")); NOTE_COLS.forEach(([v, t]) => sel.append(new Option(t, v))); sel.value = value || "";
+  const show = () => { sw.style.background = sel.value ? `color-mix(in srgb,${sel.value} 55%,transparent)` : "none"; }; sel.addEventListener("change", show); show();
+  w.append(sel, sw); return { el: w, sel };
+}
 function paintNoted() {
-  document.documentElement.style.setProperty("--nhl", noteCol);
-  spread.querySelectorAll(".noted,.notedw").forEach((x) => x.classList.remove("noted", "notedw"));
+  spread.querySelectorAll(".noted,.notedw").forEach((x) => { x.classList.remove("noted", "notedw"); x.style.removeProperty("--nhl"); });
   if (!noteHl) return;
+  const on = (sel, cls, col) => spread.querySelectorAll(sel).forEach((g) => { g.classList.add(cls); g.style.setProperty("--nhl", col); });
   Object.keys(notes).forEach((k) => {
     const v = notes[k], a = k.split(":"), lv = a[0];
-    if (lv === "ayah") spread.querySelectorAll(`.art svg g.ayah-fragment[data-ayah-key="${a[1]}:${a[2]}"],.art svg g.ayah-mark[data-ayah-key="${a[1]}:${a[2]}"]`).forEach((g) => g.classList.add("noted"));
-    else if (lv === "word") spread.querySelectorAll(`.art svg g.word[data-word-key="${a[1]}:${a[2]}:${a[3]}"]`).forEach((g) => g.classList.add("notedw"));
-    else if (lv === "surah") spread.querySelectorAll(`.art svg .banner[data-sid="${v.surah || a[1]}"]`).forEach((g) => g.classList.add("noted"));
-    else if (lv === "page") spread.querySelectorAll(`.foot button[data-pnum="${v.page || a[1]}"]`).forEach((g) => g.classList.add("noted"));
+    const col = noteColor(v);
+    if (lv === "ayah") on(`.art svg g.ayah-fragment[data-ayah-key="${a[1]}:${a[2]}"],.art svg g.ayah-mark[data-ayah-key="${a[1]}:${a[2]}"]`, "noted", col);
+    else if (lv === "word") on(`.art svg g.word[data-word-key="${a[1]}:${a[2]}:${a[3]}"]`, "notedw", col);
+    else if (lv === "surah") on(`.art svg .banner[data-sid="${v.surah || a[1]}"]`, "noted", col);
+    else if (lv === "page") on(`.foot button[data-pnum="${v.page || a[1]}"]`, "noted", col);
   });
 }
 function paintMarks() {
@@ -2637,17 +2663,30 @@ function notesCard(lv, key) {
   const btn = (t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = t; b.addEventListener("click", fn); acts.append(b); return b; };
   el.className = "proj mynote"; h.append(tag("شخصي"), tag("خاص بك", "src")); row.className = "row"; st.className = "note"; acts.className = "acts";
   ta.dir = "auto"; ta.setAttribute("aria-label", "تعليقي على " + LEVELS[lv]); ta.placeholder = `اكتب تعليقًا أو تدبرًا حول هذه ${LEVELS[lv]}…`; ta.value = notes[id] ? notes[id].t : "";
+  const ti = document.createElement("input"), meta2 = document.createElement("div"), tagBox = document.createElement("span"), tg = document.createElement("input"), tgAdd = document.createElement("button"), dl = document.createElement("datalist");
+  const cp = colPick(notes[id] && notes[id].col, "تلقائي (لون الوسم، وإلا الأصفر)", "لون تمييز هذا التعليق"), tags = notes[id] && notes[id].tags ? [...notes[id].tags] : [];
+  ti.type = "text"; ti.className = "ntitle"; ti.dir = "auto"; ti.maxLength = 80; ti.placeholder = "عنوان التعليق (اختياري)"; ti.setAttribute("aria-label", "عنوان التعليق"); ti.value = (notes[id] && notes[id].title) || "";
+  meta2.className = "nmeta"; tagBox.className = "ntags"; tg.type = "text"; tg.maxLength = 30; tg.placeholder = "وسم جديد"; tg.setAttribute("aria-label", "وسم جديد"); dl.id = "ntag-list"; tg.setAttribute("list", dl.id); allTags().forEach(([t]) => dl.append(new Option(t)));
+  tgAdd.type = "button"; tgAdd.className = "btn"; tgAdd.textContent = "إضافة وسم";
+  const paintTags = () => tagBox.replaceChildren(...tags.map((t) => { const ch = document.createElement("span"), x = document.createElement("button"); ch.className = "ntag"; ch.textContent = "#" + t + " "; if (tagCols()[t]) ch.style.setProperty("--nhl", tagCols()[t]); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "إزالة الوسم " + t); x.addEventListener("click", () => { tags.splice(tags.indexOf(t), 1); paintTags(); flush(); }); ch.append(x); return ch; }));
+  const addTag = () => { const t = tg.value.replace(/^#+/, "").trim().replace(/\s+/g, " "); if (!t) { tg.focus(); return; } if (!tags.includes(t)) tags.push(t); tg.value = ""; paintTags(); flush(); if (!ta.value.trim() && !ti.value.trim()) toast("يُحفظ الوسم مع التعليق عند كتابة نصه أو عنوانه."); };
+  tgAdd.addEventListener("click", addTag); tg.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } });
+  const lab = (t) => { const x = document.createElement("small"); x.textContent = t; return x; };
+  meta2.append(lab("لون التمييز:"), cp.el, lab("الوسوم:"), tagBox, tg, tgAdd, dl);
   const save = () => {
-    const t = ta.value.trim();
-    if (t) { if (!notes[id] || notes[id].t !== t) setNote(id, { t, page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) }); }
-    else if (notes[id]) setNote(id, null);
+    const t = ta.value.trim(), title = ti.value.trim(), old = notes[id];
+    if (t || title) {
+      if (!old || old.t !== t || (old.title || "") !== title || (old.col || "") !== cp.sel.value || JSON.stringify(old.tags || []) !== JSON.stringify(tags))
+        setNote(id, { t, ...(title ? { title } : {}), ...(tags.length ? { tags: [...tags] } : {}), ...(cp.sel.value ? { col: cp.sel.value } : {}), page: c.page, surah: c.surah, ...(lv === "word" ? { text: c.text } : {}) });
+    } else if (old) setNote(id, null);
     when();
   };
   let timer; const flush = () => { clearTimeout(timer); save(); };
-  const share = btn("مشاركة", () => { flush(); if (notes[id]) openShare(docOf(id)); }), copy = btn("نسخ النص", async () => { flush(); if (notes[id]) copyText(await itemText(id)); }), del = btn("حذف", () => { clearTimeout(timer); ta.value = ""; save(); paintSheet(); });
+  const share = btn("مشاركة", () => { flush(); if (notes[id]) openShare(docOf(id)); }), copy = btn("نسخ النص", async () => { flush(); if (notes[id]) copyText(await itemText(id)); }), del = btn("حذف", () => { clearTimeout(timer); ta.value = ""; ti.value = ""; save(); paintSheet(); });
   const when = () => { st.textContent = notes[id] ? noteDates(notes[id]) : "يُحفظ تلقائيًّا أثناء الكتابة."; [share, copy, del].forEach((b) => { b.hidden = !notes[id]; }); if (shown && shown.notes) $("#sh-share").hidden = !notes[id]; };
   ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", flush);
-  when(); row.append(st, acts); el.append(h, ta, row);
+  ti.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ti.addEventListener("blur", flush); cp.sel.addEventListener("change", flush);
+  paintTags(); when(); row.append(st, acts); el.append(h, ti, ta, meta2, row);
   return el;
 }
 function ctxOf(lv, a, v) { return lv === "page" ? { page: v.page, surah: v.surah, only: "page" } : lv === "surah" ? { page: v.page, surah: v.surah, only: "surah" } : { page: v.page, surah: v.surah || +a[1], ayah: a[1] + ":" + a[2], ...(lv === "word" ? { word: a.slice(1).join(":"), text: v.text } : {}) }; }
@@ -3835,7 +3874,7 @@ function paintSettings() {
   press("seg-mode", mode); press("seg-theme", theme); press("seg-touch", touch); press("seg-tpi", tpi);
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec; $("#set-tshint").checked = tsHint;
-  $("#set-nhl").checked = noteHl; $("#set-nhlc").value = noteCol; $("#set-nhlc").disabled = !noteHl;
+  $("#set-nhl").checked = noteHl;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark; $("#set-ruku").checked = showRuku;
   { const ok = "wakeLock" in navigator; $("#set-awake").checked = awake && ok; $("#set-awake").disabled = !ok; $("#awake-note").textContent = ok ? "لا تنطفئ الشاشة ما دام التطبيق ظاهرًا أمامك. قد يزيد استهلاك البطارية." : "متصفحك لا يدعم هذه الخاصية."; }
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
@@ -3893,8 +3932,7 @@ $("#set-topics").addEventListener("change", (e) => {
 });
 // Ruku places and coloured words are not shown together: turning one on turns the other off.
 function setRuku(on) { showRuku = on; store.set("ruku", on ? "1" : "0"); spread.querySelectorAll(".page[data-page] .art svg").forEach(rukuPaint); }
-$("#set-nhl").addEventListener("change", (e) => { noteHl = e.target.checked; store.set("nhl", noteHl ? "1" : "0"); $("#set-nhlc").disabled = !noteHl; paintNoted(); });
-$("#set-nhlc").addEventListener("change", (e) => { noteCol = e.target.value; store.set("nhlc", noteCol); paintNoted(); });
+$("#set-nhl").addEventListener("change", (e) => { noteHl = e.target.checked; store.set("nhl", noteHl ? "1" : "0"); paintNoted(); });
 $("#set-ruku").addEventListener("change", (e) => {
   setRuku(e.target.checked);
   if (showRuku) { if (wmark) $('#seg-wmark button[data-v=""]').click(); toast("مواضع الركوع تظهر حرف «ع» أزرق فوق رأس الآية التي ينتهي عندها الركوع (التي تركع عندها)."); }
