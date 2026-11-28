@@ -322,6 +322,10 @@ body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
 body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word.fb .hit{fill:var(--tint-strong)}   /* a place to look at again */
 #fb-list small{display:block;margin-top:2px}
 .ac-fl{margin-top:6px}.ac-fl summary{cursor:pointer;font-size:13px;color:var(--accent)}.ac-fl ol{margin:6px 0;padding-inline-start:22px;display:flex;flex-direction:column;gap:4px}.ac-fl li{border:0;padding:0;background:none}.ac-fl .btn{padding:1px 8px}
+.hz-sets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.hz-sets label{font-size:13px;color:var(--muted)}.hz-sets select{flex:1 1 130px;min-width:0}.hz-sets input{flex:1 1 130px;min-width:0;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit}
+.ac-go{display:block;width:100%;margin-bottom:10px;padding:9px 12px;font-size:15px}
+#find-recent{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 6px}#find-recent:empty{display:none}#find-recent button{border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);padding:2px 10px;font:inherit;font-size:13px;cursor:pointer}
+#results li.place button{border-inline-start:3px solid var(--accent)}
 .ac-list audio{width:100%;margin-top:6px;height:34px}
 /* ayah and tafsir */
 #tv-row[hidden],#zoom-row[hidden],#mode-row[hidden]{display:none}
@@ -550,9 +554,10 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 
 <section id="find" role="dialog" aria-label="البحث في القرآن" hidden>
   <div class="find-top">
-    <input id="q" type="search" placeholder="اكتب كلمة أو جزءًا من آية" autocomplete="off" aria-label="نص البحث">
+    <input id="q" type="search" placeholder="كلمة أو جزء من آية، أو اسم سورة، أو رقم جزء أو حزب أو صفحة" autocomplete="off" aria-label="نص البحث">
     <button class="sh-close" id="find-close" type="button" aria-label="إغلاق البحث">×</button>
   </div>
+  <div id="find-recent"></div>
   <p class="note" id="find-info">يتسامح البحث مع الهمزات والتاء المربوطة والألف المقصورة والأخطاء الإملائية القريبة.</p>
   <ol id="results"></ol>
 </section>
@@ -664,6 +669,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button class="sh-close" id="hz-help" type="button" aria-label="كيف أستفيد من التكرار المتقاطع؟" title="كيف أستفيد من التكرار المتقاطع؟">؟</button><button class="sh-close" id="hz-close" type="button" aria-label="إغلاق">×</button>
   </div>
   <div class="sh-body hz">
+    <div class="hz-sets"><label for="hz-set">إعداداتي المحفوظة</label><select id="hz-set" aria-label="إعداداتي المحفوظة"></select><input id="hz-set-name" type="text" placeholder="اسم للإعداد الحالي" maxlength="30" autocomplete="off" aria-label="اسم الإعداد"><button type="button" class="btn" id="hz-set-save">حفظ</button><button type="button" class="btn" id="hz-set-del" hidden>حذف</button></div>
     <fieldset><legend>المقطع</legend>
       <label for="hz-surah">السورة</label><select id="hz-surah"></select>
       <label for="hz-from">من الآية</label><input id="hz-from" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1">
@@ -2037,6 +2043,25 @@ function writeForm() {
   F("gap").disabled = F("hide").disabled = hz.mode !== "repeat";
   $("#hz-max").textContent = `من ${ar(max)}`;
 }
+// «حفظي»: named sets of the repetition settings (not the passage), chosen from the top of the window
+const HZ_SET = ["reciter", "unit", "r1", "r2", "r3", "link", "mode", "gap", "speed", "hide"];
+let hzSets = []; try { hzSets = JSON.parse(store.get("hzsets", "[]")) || []; } catch (e) {}
+function paintSets(sel) {
+  const el = $("#hz-set"); el.replaceChildren(new Option(hzSets.length ? "اختر إعدادًا…" : "لا إعدادات محفوظة بعد", ""), ...hzSets.map((x, i) => new Option(x.name, String(i))));
+  el.value = sel == null ? "" : String(sel); $("#hz-set-del").hidden = el.value === ""; if (el.value !== "") $("#hz-set-name").value = hzSets[+el.value].name;
+}
+$("#hz-set").addEventListener("change", (e) => {
+  const x = hzSets[+e.target.value]; $("#hz-set-del").hidden = e.target.value === ""; if (e.target.value === "" || !x) return;
+  HZ_SET.forEach((k) => { if (x[k] !== undefined && (k !== "reciter" || [...F("reciter").options].some((o) => o.value === x[k]))) hz[k] = x[k]; });
+  $("#hz-set-name").value = x.name; writeForm(); saveHz(); F("r1").dispatchEvent(new Event("change", { bubbles: true })); toast(`طُبّق إعداد «${x.name}».`);
+});
+$("#hz-set-save").addEventListener("click", () => {
+  const name = $("#hz-set-name").value.trim(); if (!name) { toast("اكتب اسمًا للإعداد أولًا."); $("#hz-set-name").focus(); return; }
+  readForm(); const x = { name }; HZ_SET.forEach((k) => { x[k] = hz[k]; });
+  let i = hzSets.findIndex((y) => y.name === name); if (i < 0) { hzSets.push(x); i = hzSets.length - 1; } else hzSets[i] = x;
+  store.set("hzsets", JSON.stringify(hzSets)); paintSets(i); toast(`حُفظ إعداد «${name}».`);
+});
+$("#hz-set-del").addEventListener("click", () => { const i = +$("#hz-set").value, x = hzSets[i]; if (!x) return; hzSets.splice(i, 1); store.set("hzsets", JSON.stringify(hzSets)); $("#hz-set-name").value = ""; paintSets(); toast(`حُذف إعداد «${x.name}».`); });
 let estToken;
 async function estimate() {
   const out = F("est"), go = F("start"), token = (estToken = {});
@@ -2058,6 +2083,7 @@ async function estimate() {
   go.disabled = false;
 }
 async function openHifz(preset) {
+  paintSets();
   if (preset) Object.assign(hz, preset);
   ctx = null; show(sheet, false); show(settings, false); show(indexBox, false); applySelection();
   show(hifzBox, true);
@@ -2350,7 +2376,7 @@ async function recitationCard(p) {
   if (p.level === "ayah") {
     const a = +ctx.ayah.split(":")[1];
     btn("استمع إلى الآية", () => listen(a, a), !off, off);
-    btn("استمع من هنا إلى آخر السورة", () => listen(a, n), false, off);
+    if (a < n) btn("استمع من هنا إلى آخر السورة", () => listen(a, n), false, off);   // (at the last ayah it would be the ayah alone)
     btn("استمع إلى السورة كاملة", () => listen(1, n), off);
     btn("احفظ ابتداءً من هذه الآية", () => openHifz({ surah: s, from: a, to: Math.min(n, a + 4) }), false, off);
   } else {
@@ -3400,6 +3426,14 @@ async function paintActivity() {
   const span = (r) => { const a = r[0][0], b = r[r.length - 1][1]; return rows[a][0] === rows[b][0] ? `${meta.surahs[rows[a][0]].name} ${ar(rows[a][1])}` + (b > a ? `–${ar(rows[b][1])}` : "") : `${name(a)} – ${name(b)}`; };
   $("#ac-sub").textContent = all.length ? `${ar(all.length)} جلسة` : "";
   body.replaceChildren();
+  {   // carry on from where the last session stopped (else from the reading mark)
+    const last = rawAct.kh && rawAct.kh.last >= 0 ? rawAct.kh.last : -1, g = last >= 0 ? Math.min(rows.length - 1, last + 1) : -1, rd = marks.read;
+    if (g >= 0 || rd) {
+      const go = acEl("button", "btn main ac-go", g >= 0 ? `أكمل من حيث توقفت: ${name(g)}` : `أكمل من علامة القراءة: ${surahName(rd.key.split(":")[0])} ${ar(rd.key.split(":")[1])}`); go.type = "button";
+      go.addEventListener("click", () => { show($("#activity"), false); if (g >= 0) jump(rows[g][2], rows[g][0] + ":" + rows[g][1]); else jump(rd.page, rd.key); });
+      body.append(go);
+    }
+  }
   if (!all.length && acTab !== "khatma") { body.append(acEl("p", "note", "لا يوجد نشاط مسجَّل بعد. اضغط «تسميع» في الشريط العلوي واقرأ، فتُسجَّل الجلسة هنا عند انتهائها.")); if (acTab !== "stats") return; }
   if (acTab === "stats") {
     const seg = acEl("div", "seg"); [["day", "اليوم"], ["week", "الأسبوع"], ["month", "الشهر"], ["year", "السنة"], ["all", "الكل"]].forEach(([v, t]) => { const b = acEl("button", "", t); b.type = "button"; b.setAttribute("aria-pressed", v === acPeriod); b.addEventListener("click", () => { acPeriod = v; paintActivity(); }); seg.append(b); });
@@ -3800,15 +3834,40 @@ function search(query) {
 const findBox = $("#find"), qInput = $("#q"), resultsEl = $("#results"), findInfo = $("#find-info");
 const HELP = findInfo.textContent, MAX = 150;
 let findTimer;
+// A surah by its name or number, a juz, a hizb or a page by its number: offered above the ayat found.
+function searchPlaces(query) {
+  const q = fold(query).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).trim(), out = [], m = /^(سوره|السوره|جز|الجز|حزب|الحزب|صفحه|الصفحه|ص)?\s*(\d{1,3})$/.exec(q), n = m ? +m[2] : 0, kind = m && m[1] ? m[1].replace(/^ال/, "") : "";   // (the fold drops the hamza of «جزء»)
+  const sur = (k) => { const x = meta.surahs[k]; out.push([`سورة ${x.name}`, `${x.place} · ${ar(x.ayahs)} آية · الصفحة ${ar(x.page)}`, () => jump(x.page)]); };
+  if (m) {
+    if ((!kind || kind === "سوره") && meta.surahs[n]) sur(n);
+    ["juz", "hizb"].forEach((t) => { const d = (!kind || kind === (t === "juz" ? "جز" : "حزب")) && meta[t].find((x) => x.n === n); if (d) out.push([(t === "juz" ? "الجزء " : "الحزب ") + ar(n), `الصفحة ${ar(d.page)}`, () => jump(d.page, d.ayah)]); });
+    if ((!kind || kind === "صفحه" || kind === "ص") && n >= 1 && n <= 604) out.push([`الصفحة ${ar(n)}`, "", () => jump(n)]);
+  } else {
+    const name = q.replace(/^(سوره|السوره)\s+/, ""), bare = (t) => fold(t).replace(/^ال/, "");
+    if (name.length >= 2) Object.keys(meta.surahs).filter((k) => fold(meta.surahs[k].name).includes(name) || bare(meta.surahs[k].name).includes(name.replace(/^ال/, ""))).slice(0, 8).forEach(sur);
+  }
+  return out;
+}
+const recentQ = () => { try { return JSON.parse(store.get("recentq", "[]")) || []; } catch (e) { return []; } };
+function keepQuery(q) { q = q.trim(); if (q.length < 2) return; store.set("recentq", JSON.stringify([q, ...recentQ().filter((x) => x !== q)].slice(0, 8))); }
+function paintRecent() {
+  const box = $("#find-recent"), list = qInput.value.trim() ? [] : recentQ();
+  box.replaceChildren(...list.map((q) => { const b = document.createElement("button"); b.type = "button"; b.textContent = q; b.addEventListener("click", () => { qInput.value = q; runSearch(); }); return b; }));
+  if (list.length) { const c = document.createElement("button"); c.type = "button"; c.textContent = "مسح السابق ×"; c.addEventListener("click", () => { store.set("recentq", "[]"); paintRecent(); }); box.append(c); }
+}
 async function runSearch() {
-  const query = qInput.value.trim();
+  const query = qInput.value.trim(); paintRecent();
   if (!query) { resultsEl.replaceChildren(); findInfo.textContent = HELP; return; }
   try { await loadCorpus(); } catch (e) { findInfo.textContent = "تعذّر تحميل فهرس البحث. أعد المحاولة."; jsonCache.delete("data/search.json"); return; }
   if (qInput.value.trim() !== query) return;
-  const { hits, fuzzy } = search(query);
-  findInfo.textContent = !hits.length ? "لا توجد نتائج. جرّب كلمة أقل أو تهجئة أخرى."
+  const { hits, fuzzy } = search(query), places = searchPlaces(query);
+  findInfo.textContent = !hits.length ? (places.length ? "مواضع توافق ما كتبت:" : "لا توجد نتائج. جرّب كلمة أقل أو تهجئة أخرى.")
     : `عدد الآيات: ${ar(hits.length)}${fuzzy ? "، بتهجئة قريبة مما كتبت" : ""}${hits.length > MAX ? `، المعروض أول ${ar(MAX)}` : ""}`;
-  resultsEl.replaceChildren(...hits.slice(0, MAX).map(({ r, idx }) => {
+  resultsEl.replaceChildren(...places.map(([title, sub, go]) => {
+    const li = document.createElement("li"), b = document.createElement("button"), where = document.createElement("span"), ay = document.createElement("span");
+    li.className = "place"; b.type = "button"; where.className = "where"; ay.className = "ay"; where.textContent = sub; ay.textContent = title; b.append(ay, where);
+    b.addEventListener("click", () => { keepQuery(query); findBox.hidden = true; go(); }); li.append(b); return li;
+  }), ...hits.slice(0, MAX).map(({ r, idx }) => {
     const li = document.createElement("li"), b = document.createElement("button"), where = document.createElement("span"), ay = document.createElement("span");
     b.type = "button"; where.className = "where"; ay.className = "ay";
     where.textContent = `${surahName(r.s)} · الآية ${ar(r.a)} · الصفحة ${ar(r.page)}`;
@@ -3817,7 +3876,7 @@ async function runSearch() {
     r.words.forEach((w, i) => { if (on.has(i)) { const m = document.createElement("mark"); m.textContent = w; ay.append(m, " "); } else ay.append(w + " "); });
     b.append(where, ay);
     b.addEventListener("click", async () => {
-      findBox.hidden = true;
+      keepQuery(query); findBox.hidden = true;
       cur = r.page; ctx = null; show(sheet, false);
       found = idx.map((i) => `${r.s}:${r.a}:${i + 1}`);
       await render();
@@ -3830,7 +3889,7 @@ async function runSearch() {
   resultsEl.scrollTop = 0;
 }
 qInput.addEventListener("input", () => { clearTimeout(findTimer); findTimer = setTimeout(runSearch, 180); });
-$("#find-open").addEventListener("click", () => { findBox.hidden = false; qInput.focus(); loadCorpus().catch(() => {}); });
+$("#find-open").addEventListener("click", () => { findBox.hidden = false; qInput.focus(); paintRecent(); loadCorpus().catch(() => {}); });
 $("#find-close").addEventListener("click", () => { findBox.hidden = true; });
 
 // Turning by touch: the finger takes hold of the page and moves it; let go past a quarter of the way (or with a quick
