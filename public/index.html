@@ -597,6 +597,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button type="button" role="tab" data-v="mushaf">عرض المصحف</button><button type="button" role="tab" data-v="look">المظهر والتلوين</button><button type="button" role="tab" data-v="recite">التسميع والتلاوة</button><button type="button" role="tab" data-v="content">المحتوى</button><button type="button" role="tab" data-v="offline">دون اتصال</button><button type="button" role="tab" data-v="mine">بياناتي</button>
   </div>
   <div class="sh-body" id="set-mine" hidden>
+    <div class="opt"><h3><label for="set-author">اسمي في التعليقات التي أنشرها</label></h3><input id="set-author" type="text" dir="auto" maxlength="60" autocomplete="name" placeholder="اكتب اسمك" style="flex:0 1 220px;min-width:0;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit"></div>
     <div class="opt"><h3><label for="set-space">«مساحتي»: جمع أهدافي وعلاماتي وتعليقاتي ونشاطي في نافذة الفهرس (تجربة)</label></h3><input id="set-space" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <p class="note">أوقف هذا الخيار ليعود الفهرس كما كان.</p>
     <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
@@ -742,6 +743,18 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="subtabs" id="subtabs" role="tablist" hidden></div>
   <div class="sh-body" id="sh-body"></div>
   <div class="sh-nav"><button type="button" id="nav-prev">السابق</button><button type="button" id="sh-report" hidden>إبلاغ عن خطأ</button><button type="button" id="sh-share" hidden>مشاركة</button><button type="button" id="nav-next">التالي</button></div>
+</section>
+
+<section id="whoami" class="modal" role="dialog" aria-label="اسمك في التعليقات" aria-hidden="true">
+  <div class="sh-top">
+    <div class="sh-title"><p class="big plain">اسمك في تعليقاتك</p><p class="sub">يُوقَّع به ما تنشره أو تشاركه من تعليقاتك وتدبراتك</p></div>
+    <button class="sh-close" id="who-close" type="button" aria-label="إغلاق">×</button>
+  </div>
+  <div class="sh-body">
+    <p class="note" style="margin-top:0">اكتب الاسم الذي تحب أن يظهر تحت تعليقاتك عند مشاركتها. يبقى على جهازك وفي نسختك الاحتياطية، وتستطيع تغييره متى شئت من الإعدادات ← «بياناتي».</p>
+    <input id="who-name" type="text" dir="auto" maxlength="60" autocomplete="name" placeholder="مثال: أحمد شمس" aria-label="اسمي في التعليقات" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px">
+  </div>
+  <div class="sh-nav"><button type="button" class="btn" id="who-later">ليس الآن</button><button type="button" class="btn main" id="who-ok">حفظ الاسم</button></div>
 </section>
 
 <section id="hzguide" class="modal" role="dialog" aria-label="كيف أستفيد من التكرار المتقاطع" aria-hidden="true">
@@ -2591,12 +2604,25 @@ function mergeMine(d, fromFile) {
   return n;
 }
 // The settings go into the copy too (not sign-ins, keys, caches or what belongs to one device's link with Drive).
-const PREF_SKIP = /^(marks|notes|activity|api|drive.*|fanar-token|gcid|qlkey|reciters2|recbk-sig|recentq|surah-api|page|apptour|tstour|hzguide|presshint)$/;
+const PREF_SKIP = /^(marks|notes|activity|api|drive.*|fanar-token|gcid|qlkey|reciters2|recbk-sig|recentq|surah-api|page|apptour|tstour|hzguide|presshint|author-asked)$/;
 function prefsOut() { const o = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("iqra-") && !PREF_SKIP.test(k.slice(5))) o[k.slice(5)] = localStorage.getItem(k); } } catch (e) {} return o; }
 const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct, prefs: prefsOut() });
 function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
 let noteHl = store.get("nhl", "1") === "1"; const noteCol = "#f2c200";
+// The name the reader signs notes with: asked for the first time a note is about to be written.
+let author = store.get("author", "");
+const signed = (v) => (author ? author + " · " : "") + noteDates(v);
+function askName(then) {
+  if (author || store.get("author-asked", "0") === "1" || navigator.webdriver && !/[?&]who\b/.test(location.search)) return false;
+  store.set("author-asked", "1"); askName.then = then || null; show($("#whoami"), true); setTimeout(() => $("#who-name").focus(), 60); return true;
+}
+function whoDone(save) {
+  if (save) { const n = $("#who-name").value.trim(); if (!n) { $("#who-name").focus(); return; } author = n; store.set("author", n); toast("حُفظ اسمك: " + n); const el = $("#set-author"); if (el) el.value = n; }
+  show($("#whoami"), false); const t = askName.then; askName.then = null; if (t) t();
+}
+$("#who-ok").addEventListener("click", () => whoDone(true)); ["#who-later", "#who-close"].forEach((x) => $(x).addEventListener("click", () => whoDone(false)));
+$("#who-name").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); whoDone(true); } });
 // A note is highlighted in its own colour; else in the colour of the first of its tags that has one; else in yellow.
 const NOTE_COLS = [["#f2c200", "أصفر"], ["#3fae5a", "أخضر"], ["#3b8fe0", "أزرق"], ["#e0569b", "وردي"], ["#f08a24", "برتقالي"], ["#9a6be0", "بنفسجي"]];
 const tagCols = () => (rawAct.tagc && typeof rawAct.tagc === "object" ? rawAct.tagc : (rawAct.tagc = {}));
@@ -2686,6 +2712,7 @@ function notesCard(lv, key) {
   const when = () => { st.textContent = notes[id] ? noteDates(notes[id]) : "يُحفظ تلقائيًّا أثناء الكتابة."; [share, copy, del].forEach((b) => { b.hidden = !notes[id]; }); if (shown && shown.notes) $("#sh-share").hidden = !notes[id]; };
   ta.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ta.addEventListener("blur", flush);
   ti.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(save, 400); }); ti.addEventListener("blur", flush); cp.sel.addEventListener("change", flush);
+  [ta, ti].forEach((x) => x.addEventListener("focus", () => { if (askName(() => x.focus())) x.blur(); }));   // the first note ever: whose name signs it?
   paintTags(); when(); row.append(st, acts); el.append(h, ti, ta, meta2, row);
   return el;
 }
@@ -2704,7 +2731,7 @@ async function itemText(k) {
   if (KINDS.some((x) => x[0] === k)) { const m = marks[k], a = m.key.split(":"), t = await ayahPlain(m.page, m.key); return `علامة ${KINDS.find((x) => x[0] === k)[2]}: ${surahName(a[0])} · الآية ${a[1]} · الصفحة ${m.page}` + (t ? `\n﴿${t}﴾` : "") + `\nوُضعت ${fmtDate(m.t)}`; }
   const v = notes[k], a = k.split(":"), lv = a[0], t = lv === "ayah" || lv === "word" ? await ayahPlain(v.page, a[1] + ":" + a[2]) : "";
   const place = lv === "page" ? `الصفحة ${v.page}` : lv === "surah" ? surahName(v.surah) : `${surahName(a[1])}: ${a[2]}` + (lv === "word" ? ` · الكلمة «${v.text || ""}»` : "");
-  return (t ? `﴿${t}﴾ ` : "") + `[${place}]\n\n${v.title ? v.title + "\n\n" : ""}${v.t}\n\n— ${noteDates(v)}`;
+  return (t ? `﴿${t}﴾ ` : "") + `[${place}]\n\n${v.title ? v.title + "\n\n" : ""}${v.t}\n\n— ${signed(v)}`;
 }
 async function copyText(t) { try { await navigator.clipboard.writeText(t); toast("نُسخ النص."); } catch (e) { toast("تعذّر النسخ."); } }
 async function allText() {
@@ -2728,7 +2755,7 @@ function svgImage(svg, f) {
 function docOf(k) {   // one of my bookmarks or notes; its place must be open in the window
   const isMark = KINDS.some((x) => x[0] === k), v = isMark ? marks[k] : notes[k], a = k.split(":");
   if (isMark) return { name: "iqra-mark-" + k, title: `${surahName(v.key.split(":")[0])} · الآية ${ar(v.key.split(":")[1])}`, source: "", body: "علامة " + KINDS.find((x) => x[0] === k)[2], foot: "وُضعت " + fmtDate(v.t), page: v.page, ayah: v.key };
-  return { name: "iqra-" + k.replace(/:/g, "-"), title: noteWhere(k), source: v.title ? "تعليقي: " + v.title : "تعليقي", body: v.t || v.title, foot: noteDates(v), page: v.page, ayah: a[0] === "ayah" || a[0] === "word" ? a[1] + ":" + a[2] : "" };
+  return { name: "iqra-" + k.replace(/:/g, "-"), title: noteWhere(k), source: v.title ? "تعليقي: " + v.title : "تعليقي", body: v.t || v.title, foot: signed(v), page: v.page, ayah: a[0] === "ayah" || a[0] === "word" ? a[1] + ":" + a[2] : "" };
 }
 function docShown() {   // the content the window is showing now
   if (!ctx || !shown) return null;
@@ -3810,7 +3837,7 @@ if (GOOGLE_CLIENT_ID && driveLinked()) setTimeout(() => syncNow(false), 1500);
 /* The settings tab for all of this: sync, backup, export, and the dated list of every bookmark and note. */
 function paintMine() {
   const linked = driveLinked(), at = +store.get("drive-at", "0");
-  $("#set-space").checked = spaceOn; $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked; recBkPaint();
+  $("#set-author").value = author; $("#set-space").checked = spaceOn; $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked; recBkPaint();
   $("#dr-link").disabled = !GOOGLE_CLIENT_ID;
   setSync(syncMsg && (syncing || syncBad || linked) ? syncMsg : !GOOGLE_CLIENT_ID ? "المزامنة غير مفعّلة بعد: ينقص التطبيقَ معرّفُ Google الخاص به." : linked ? (at ? "آخر مزامنة: " + fmtDate(at) : "مربوط.") : "غير مربوط. بياناتك على هذا الجهاز فقط.", syncBad);
   const list = $("#mine-list"), mk = (badge, cls, title, sub, text, onOpen, onShare, onCopy) => {
@@ -3833,6 +3860,7 @@ function paintMine() {
 $("#dr-link").addEventListener("click", () => syncNow(true));
 $("#dr-sync").addEventListener("click", () => syncNow(true));
 $("#dr-unlink").addEventListener("click", driveUnlink);
+$("#set-author").addEventListener("change", (e) => { author = e.target.value.trim(); store.set("author", author); toast(author ? "حُفظ اسمك: " + author : "أُزيل الاسم من التعليقات."); });
 $("#set-space").addEventListener("change", (e) => { spaceOn = e.target.checked; store.set("space", spaceOn ? "1" : "0"); toast(spaceOn ? "فُعّلت «مساحتي» في نافذة الفهرس." : "عاد الفهرس كما كان."); });
 $("#set-recbk").addEventListener("change", async (e) => { recBk = e.target.checked; store.set("recbk", recBk ? "1" : "0"); store.set("recbk-sig", ""); $("#rec-status").textContent = ""; await recBkPaint(); if (recBk && driveLinked() && gToken) syncNow(false); });
 // Sharing recitations with Quran Lab is the SDK's own switch and sheet: the app only gives it a place in the settings.
