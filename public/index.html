@@ -428,6 +428,18 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 #idx-backup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-top:1px solid var(--line);flex:none}
 #idx-backup[hidden]{display:none}
 #ql-share-box{margin-top:8px;--ql-accent:var(--accent);--ql-accent-fg:var(--paper);--ql-bg:var(--panel);--ql-fg:var(--ink);--ql-muted:var(--muted);--ql-radius:10px;--ql-font:inherit;--ql-title-font:inherit}
+#idx-page[hidden]{display:none}
+#idx-mode{margin:6px 12px 0;display:flex}#idx-mode[hidden]{display:none}#idx-mode button{flex:1}
+.idx-list li.card{border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px 12px;margin:4px 2px}
+.idx-list li.card h4{margin:0 0 6px;font-size:14px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.idx-list li.card .btn{display:inline-block;width:auto;border:1px solid var(--line);padding:3px 10px;font-size:13px;text-align:center}
+.idx-list li.card .btn.main{display:block;width:100%;padding:9px 12px;font-size:15px;border-color:var(--accent);background:var(--accent);color:var(--paper)}
+.idx-list li.card .goal{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;padding:5px 0}.idx-list li.card .goal + .goal{border-top:1px dashed var(--line)}
+.idx-list li.card .goal b{font-weight:600;font-size:14.5px}.idx-list li.card .goal small{color:var(--muted);font-size:12.5px}.idx-list li.card .goal progress{grid-column:1/-1;width:100%;height:8px;accent-color:var(--accent)}
+.idx-list li.card .goal .ok{font-size:13px;white-space:nowrap}.idx-list li.card .goal input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.idx-list li.card .line{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:3px 0;font-size:14px}.idx-list li.card .line small{color:var(--muted)}
+.idx-list li.card .chips{display:flex;gap:6px;flex-wrap:wrap}.idx-list li.card .gform{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.idx-list li.card .gform select,.idx-list li.card .gform input{padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);font:inherit;min-width:0}.idx-list li.card .gform input.num{width:4.5em}.idx-list li.card .gform input.title{flex:1 1 150px}
 .idx-list li.empty{color:var(--muted);padding:14px 8px;font-size:14px}
 .gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
 .ayah-block .hit{fill:transparent;pointer-events:none}
@@ -575,6 +587,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <button type="button" role="tab" data-v="mushaf">عرض المصحف</button><button type="button" role="tab" data-v="look">المظهر والتلوين</button><button type="button" role="tab" data-v="recite">التسميع والتلاوة</button><button type="button" role="tab" data-v="content">المحتوى</button><button type="button" role="tab" data-v="offline">دون اتصال</button><button type="button" role="tab" data-v="mine">بياناتي</button>
   </div>
   <div class="sh-body" id="set-mine" hidden>
+    <div class="opt"><h3><label for="set-space">«مساحتي»: جمع أهدافي وعلاماتي وتعليقاتي ونشاطي في نافذة الفهرس (تجربة)</label></h3><input id="set-space" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <p class="note">أوقف هذا الخيار ليعود الفهرس كما كان.</p>
     <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
       <p class="note" id="dr-status" role="status"></p>
       <div class="acts"><button type="button" class="btn main" id="dr-link">ربط Google Drive</button><button type="button" class="btn main" id="dr-sync" hidden>مزامنة الآن</button><button type="button" class="btn" id="dr-unlink" hidden>إلغاء الربط</button></div>
@@ -695,12 +709,13 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
   <div class="sh-top">
-    <div class="sh-title"><p class="big plain">الفهرس</p></div>
+    <div class="sh-title"><p class="big plain" id="idx-title">الفهرس</p></div>
     <form id="idx-page" class="pagejump"><label for="idx-num">صفحة</label><input id="idx-num" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1" max="604"><button type="submit" class="btn">انتقال</button></form>
     <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
   </div>
+  <div class="seg" id="idx-mode" hidden><button type="button" data-m="me">مساحتي</button><button type="button" data-m="idx">الفهرس</button></div>
   <div class="tabs" id="idx-tabs" role="tablist">
-    <button type="button" role="tab" data-v="surah">السور</button><button type="button" role="tab" data-v="juz">الأجزاء</button><button type="button" role="tab" data-v="hizb">الأحزاب</button><button type="button" role="tab" data-v="marks">علاماتي</button><button type="button" role="tab" data-v="notes">تعليقاتي</button><button type="button" role="tab" data-v="act">نشاطي</button>
+    <button type="button" role="tab" data-v="home" data-g="me">نظرة عامة</button><button type="button" role="tab" data-v="goals" data-g="me">أهدافي</button><button type="button" role="tab" data-v="surah" data-g="idx">السور</button><button type="button" role="tab" data-v="juz" data-g="idx">الأجزاء</button><button type="button" role="tab" data-v="hizb" data-g="idx">الأحزاب</button><button type="button" role="tab" data-v="marks" data-g="me">علاماتي</button><button type="button" role="tab" data-v="notes" data-g="me">تعليقاتي</button><button type="button" role="tab" data-v="act" data-g="me">نشاطي</button>
   </div>
   <ol class="sh-body idx-list" id="idx-list"></ol>
   <div id="idx-backup" hidden><button type="button" class="btn" id="bk-save">حفظ نسخة احتياطية</button><button type="button" class="btn" id="bk-load">استرجاع من ملف</button><input type="file" id="bk-file" accept="application/json,.json" hidden><span class="note" id="bk-note">علاماتك وتعليقاتك محفوظة على هذا الجهاز فقط.</span></div>
@@ -2392,11 +2407,90 @@ async function recitationCard(p) {
 
 /* ---------- index: surahs, ajza' and ahzab ---------- */
 let idxTab = "surah";
+/* «مساحتي» (a trial, switched from the settings): the index window gathers what is the reader's own — where to carry on,
+   goals, marks, notes, activity — beside the index proper (surahs, juz, hizb). */
+let spaceOn = store.get("space", "1") === "1", idxMode = store.get("idxmode", "me");
+const ME_TABS = ["home", "goals", "marks", "notes"];
+const dayStart = (per) => { const d = new Date(); d.setHours(0, 0, 0, 0); if (per === "week") d.setDate(d.getDate() - ((d.getDay() + 1) % 7)); return d.getTime(); };   // the week begins on Saturday
+const goalsOf = () => (Array.isArray(rawAct.goals) ? rawAct.goals : (rawAct.goals = []));
+function goalState(gl) {   // how far a goal has come in its day or week
+  const from = dayStart(gl.per);
+  if (gl.kind === "task") { const done = !!(rawAct.gd && rawAct.gd[gl.id] >= from); return { done, have: done ? 1 : 0, want: 1 }; }
+  let have = 0; Object.values(rawAct.s).forEach((x) => { if (x && !x.del && x.r && x.t >= from && x.k === (gl.kind === "hifz" ? "h" : "r")) x.r.forEach(([a, b]) => { have += b - a + 1; }); });
+  return { done: have >= gl.n, have, want: gl.n };
+}
+const goalTitle = (gl) => (gl.kind === "task" ? gl.title : `${gl.kind === "hifz" ? "تسميع من الحفظ" : "تلاوة بالنظر"}: ${ar(gl.n)} ${gl.n >= 3 && gl.n <= 10 ? "آيات" : "آية"}`) ;
+const goalTouch = () => { rawAct.gt = Date.now(); saveMine(); paintIndex(); };
+function goalRow(gl, withDel) {
+  const st = goalState(gl), row = acEl("div", "goal"), per = gl.per === "week" ? "أسبوعي" : "يومي", left = acEl("div");
+  left.append(acEl("b", "", goalTitle(gl)), acEl("small", "", ` · ${per}`));
+  row.append(left);
+  if (gl.kind === "task") {
+    const c = document.createElement("input"); c.type = "checkbox"; c.checked = st.done; c.setAttribute("aria-label", "تمّت: " + gl.title);
+    c.addEventListener("change", () => { rawAct.gd = rawAct.gd || {}; if (c.checked) rawAct.gd[gl.id] = Date.now(); else delete rawAct.gd[gl.id]; goalTouch(); });
+    row.append(c);
+  } else {
+    row.append(acEl("span", "ok", st.done ? `✓ تمّ (${ar(st.have)})` : `${ar(st.have)} من ${ar(st.want)}`));
+    const p = document.createElement("progress"); p.max = st.want; p.value = Math.min(st.have, st.want); row.append(p);
+  }
+  if (withDel) { const d = acEl("button", "btn", "حذف الهدف"); d.type = "button"; d.addEventListener("click", () => { rawAct.goals = goalsOf().filter((x) => x.id !== gl.id); goalTouch(); }); const w = acEl("div"); w.style.gridColumn = "1/-1"; w.append(d); row.append(w); }
+  return row;
+}
+function spaceRows(tab) {
+  const card = (title, ...kids) => { const li = acEl("li", "card"); if (title) li.append(typeof title === "string" ? acEl("h4", "", title) : title); li.append(...kids); return li; };
+  const goals = goalsOf(), out = [];
+  const addGoal = (gl) => { goalsOf().push({ id: "g" + Date.now().toString(36), ...gl }); goalTouch(); };
+  if (tab === "home") {
+    // 1) carry on
+    const last = rawAct.kh && rawAct.kh.last >= 0 ? rawAct.kh.last : -1, rd = marks.read;
+    if ((last >= 0 && spaceDb) || rd) {
+      const g = last >= 0 && spaceDb ? Math.min(spaceDb.length - 1, last + 1) : -1, go = acEl("button", "btn main", g >= 0 ? `أكمل من حيث توقفت: ${surahName(spaceDb[g][0])} ${ar(spaceDb[g][1])}` : `أكمل من علامة القراءة: ${surahName(rd.key.split(":")[0])} ${ar(rd.key.split(":")[1])}`); go.type = "button";
+      go.addEventListener("click", () => { if (g >= 0) jump(spaceDb[g][2], spaceDb[g][0] + ":" + spaceDb[g][1]); else jump(rd.page, rd.key); });
+      out.push(card("", go));
+    }
+    // 2) goals
+    const h = acEl("h4", "", "أهدافي"), all = acEl("button", "btn", goals.length ? "إدارة الأهداف" : "أضف هدفًا"); all.type = "button"; all.addEventListener("click", () => { idxTab = "goals"; paintIndex(); }); h.append(all);
+    out.push(card(h, ...(goals.length ? goals.map((gl) => goalRow(gl, false)) : [acEl("small", "", "لا أهداف بعد. ضع وردًا يوميًّا أو مقدار حفظ أو مهمة تتابعها.")])));
+    // 3) activity in brief
+    const sum = (from) => { let n = 0, d = 0, c = 0; Object.values(rawAct.s).forEach((x) => { if (x && !x.del && x.r && x.t >= from) { c += 1; d += x.d || 0; x.r.forEach(([a, b]) => { n += b - a + 1; }); } }); return c ? `${ar(n)} آية · ${acDur(d)} · ${ar(c)} جلسة` : "لا جلسات"; };
+    const ha = acEl("h4", "", "نشاطي"), more = acEl("button", "btn", "التفاصيل"); more.type = "button"; more.addEventListener("click", () => openActivity()); ha.append(more);
+    const l1 = acEl("div", "line"), l2 = acEl("div", "line"); l1.append(acEl("span", "", "اليوم"), acEl("small", "", sum(dayStart("day")))); l2.append(acEl("span", "", "هذا الأسبوع"), acEl("small", "", sum(dayStart("week"))));
+    out.push(card(ha, l1, l2));
+    // 4) marks and notes in brief
+    const hm = acEl("h4", "", "علاماتي"), mm = acEl("button", "btn", "الكل"); mm.type = "button"; mm.addEventListener("click", () => { idxTab = "marks"; paintIndex(); }); hm.append(mm);
+    const ml = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], a = m.key.split(":"), l = acEl("div", "line"), b = acEl("button", "btn", "اذهب"); b.type = "button"; b.addEventListener("click", () => jump(m.page, m.key)); const t = acEl("span", "", `علامة ${name} (${letter}): ${surahName(a[0])} ${ar(a[1])} `); t.append(acEl("small", "", `ص ${ar(m.page)}`)); l.append(t, b); return l; });
+    out.push(card(hm, ...(ml.length ? ml : [acEl("small", "", "لا علامات بعد. المس رقم آية ثم اختر علامة.")])));
+    const hn = acEl("h4", "", `تعليقاتي (${ar(Object.keys(notes).length)})`), nn = acEl("button", "btn", "الكل"); nn.type = "button"; nn.addEventListener("click", () => { idxTab = "notes"; paintIndex(); }); hn.append(nn);
+    const nl = sortedNotes().slice(0, 2).map((k) => { const v = notes[k], l = acEl("div", "line"), b = acEl("button", "btn", "افتح"); b.type = "button"; b.addEventListener("click", () => openNote(k)); const t = acEl("span", "", noteWhere(k) + ": "); t.append(acEl("small", "", v.t.length > 60 ? v.t.slice(0, 60) + "…" : v.t)); l.append(t, b); return l; });
+    out.push(card(hn, ...(nl.length ? nl : [acEl("small", "", "لا تعليقات بعد.")])));
+  } else {   // goals
+    out.push(card("أهدافي", ...(goals.length ? goals.map((gl) => goalRow(gl, true)) : [acEl("small", "", "لا أهداف بعد.")])));
+    const kind = document.createElement("select"), nIn = document.createElement("input"), tIn = document.createElement("input"), per = document.createElement("select"), add = acEl("button", "btn", "أضف الهدف"), form = acEl("div", "gform");
+    [["read", "تلاوة بالنظر (آيات)"], ["hifz", "تسميع من الحفظ (آيات)"], ["task", "مهمة أكتبها بنفسي"]].forEach(([v, t]) => kind.append(new Option(t, v)));
+    [["day", "كل يوم"], ["week", "كل أسبوع"]].forEach(([v, t]) => per.append(new Option(t, v)));
+    nIn.type = "text"; nIn.inputMode = "numeric"; nIn.className = "num"; nIn.dir = "ltr"; nIn.value = "10"; nIn.setAttribute("aria-label", "عدد الآيات"); tIn.type = "text"; tIn.className = "title"; tIn.placeholder = "مثال: ضبط متشابهات سورة البقرة"; tIn.maxLength = 60; tIn.hidden = true; tIn.setAttribute("aria-label", "نص المهمة"); kind.setAttribute("aria-label", "نوع الهدف"); per.setAttribute("aria-label", "المدة"); add.type = "button";
+    kind.addEventListener("change", () => { tIn.hidden = kind.value !== "task"; nIn.hidden = kind.value === "task"; });
+    add.addEventListener("click", () => { if (kind.value === "task") { const t = tIn.value.trim(); if (!t) { toast("اكتب نص المهمة أولًا."); tIn.focus(); return; } addGoal({ kind: "task", title: t, per: per.value }); } else { const n = Math.max(1, Math.min(6236, Math.round(num(nIn.value)) || 0)); addGoal({ kind: kind.value, n, per: per.value }); } });
+    form.append(kind, nIn, tIn, per, add);
+    const chips = acEl("div", "chips");
+    [["ورد يومي: ٢٠ آية تلاوة", { kind: "read", n: 20, per: "day" }], ["حفظ ٥ آيات كل يوم", { kind: "hifz", n: 5, per: "day" }], ["مراجعة ١٠٠ آية كل أسبوع", { kind: "hifz", n: 100, per: "week" }], ["ضبط المتشابه (مهمة يومية)", { kind: "task", title: "ضبط المتشابه", per: "day" }]].forEach(([t, gl]) => { const b = acEl("button", "btn", "+ " + t); b.type = "button"; b.addEventListener("click", () => addGoal(gl)); chips.append(b); });
+    out.push(card("هدف جديد", acEl("small", "", "أهداف جاهزة بضغطة:"), chips, form));
+    out.push(card("", acEl("small", "", "تقدّم أهداف التلاوة والتسميع يُحسب من جلساتك مع اللاقط (زر التسميع): «تلاوة بالنظر» والآيات ظاهرة، و«تسميع من الحفظ» والآيات مخفية. والمهمة التي تكتبها تؤشّر عليها بنفسك. يبدأ الأسبوع يوم السبت.")));
+  }
+  return out;
+}
+let spaceDb = null;
 async function jump(page, ayah) {
   cur = page; close(); await render();
   if (ayah) spread.querySelectorAll(`g.ayah-fragment[data-ayah-key="${ayah}"], g.ayah-mark[data-ayah-key="${ayah}"]`).forEach((n) => n.classList.add("sel"));
 }
 function paintIndex() {
+  const meMode = spaceOn && idxMode === "me";
+  if (spaceOn) { if (meMode && !ME_TABS.includes(idxTab)) idxTab = "home"; if (!meMode && ME_TABS.includes(idxTab)) idxTab = "surah"; } else if (idxTab === "home" || idxTab === "goals") idxTab = "surah";
+  $("#idx-mode").hidden = !spaceOn; $("#idx-title").textContent = meMode ? "مساحتي" : "الفهرس"; $("#idx-page").hidden = meMode;
+  document.querySelectorAll("#idx-mode button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.m === idxMode));
+  document.querySelectorAll("#idx-tabs button").forEach((b) => { b.hidden = spaceOn ? b.dataset.g !== idxMode : b.dataset.v === "home" || b.dataset.v === "goals"; });
+  if (meMode && !spaceDb) getJSON("data/search.json").then((r) => { spaceDb = r; if (indexBox.classList.contains("open") && idxTab === "home") paintIndex(); }).catch(() => {});
   document.querySelectorAll("#idx-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === idxTab));
   const here = pageMeta(cur), row = (n, title, sub, page, isHere, fn) => {
     const li = document.createElement("li"), b = document.createElement("button"), a = document.createElement("span"), t = document.createElement("span"), g = document.createElement("span");
@@ -2410,6 +2504,7 @@ function paintIndex() {
   const at = (k) => { const [s, a] = k.split(":"); return `${surahName(s)} · الآية ${ar(a)}`; };
   let rows;
   $("#idx-backup").hidden = idxTab !== "marks" && idxTab !== "notes";
+  if (idxTab === "home" || idxTab === "goals") { const list = $("#idx-list"); list.replaceChildren(...spaceRows(idxTab)); list.scrollTop = 0; return; }
   const none = (t) => { const li = document.createElement("li"); li.className = "empty"; li.textContent = t; return [li]; };
   if (idxTab === "marks") {
     rows = KINDS.filter(([k]) => marks[k]).map(([k, letter, name]) => { const m = marks[k], li = row(letter, "علامة " + name, at(m.key) + " · " + fmtDate(m.t), m.page, false, () => jump(m.page, m.key)); li.querySelector(".n").className = "n bm bm-" + k; li.querySelector(".n").style.cssText = "position:static;transform:none;justify-self:center"; return li; });
@@ -2428,6 +2523,7 @@ function paintIndex() {
 }
 $("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
 $("#idx-close").addEventListener("click", close);
+$("#idx-mode").addEventListener("click", (e) => { const b = e.target.closest("button[data-m]"); if (!b) return; idxMode = b.dataset.m; store.set("idxmode", idxMode); paintIndex(); });
 $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; if (b.dataset.v === "act") return openActivity(); idxTab = b.dataset.v; paintIndex(); });
 $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(num($("#idx-num").value)); if (n >= meta.first && n <= meta.last) jump(n); });
 
@@ -2463,6 +2559,7 @@ function mergeMine(d) {
   if (a && typeof a === "object") {
     Object.entries(a.s || {}).forEach(([k, v]) => { const mine = rawAct.s[k]; if (v && (!mine || (v.del && !mine.del))) { rawAct.s[k] = v; n += 1; } });
     if (a.kh && (a.kh.t || 0) > (rawAct.kh.t || 0)) { rawAct.kh = a.kh; n += 1; }
+    if ((a.gt || 0) > (rawAct.gt || 0)) { rawAct.goals = a.goals || []; rawAct.gd = a.gd || {}; rawAct.gt = a.gt; n += 1; }   // goals: the set touched last
   }
   return n;
 }
@@ -3346,7 +3443,7 @@ function appTour(tries) {
   const finger = matchMedia("(pointer:coarse)").matches;
   tour("apptour", [
     [".art", finger ? "هذا المصحف كما طُبع. اضغط مطوّلًا على آية أو كلمة لتفتح تفسيرها ومحتواها، واسحب لتقليب الصفحات." : "هذا المصحف كما طُبع. انقر آية أو كلمة لتفتح تفسيرها ومحتواها."],
-    ["#idx-open", "الفهرس: السور والأجزاء والأحزاب، وعلاماتك."],
+    ["#idx-open", "مساحتي والفهرس: أكمل من حيث توقفت، وأهدافك وعلاماتك وتعليقاتك ونشاطك، وفهرس السور والأجزاء والأحزاب."],
     ["#ts-go", "التسميع: اقرأ بصوتك والتطبيق يتابعك ويُظهر ما قرأت."],
     ["#hifz-open", "تلقين الحفظ بالتكرار المتقاطع: يكرّر القارئ المقطع ويصله بما قبله وأنت تردّد."],
     ["#set-open", "الإعدادات: المحتوى، طريقة عرض المصحف، التلوين، العمل دون اتصال، وبياناتك."],
@@ -3642,7 +3739,7 @@ if (GOOGLE_CLIENT_ID && driveLinked()) setTimeout(() => syncNow(false), 1500);
 /* The settings tab for all of this: sync, backup, export, and the dated list of every bookmark and note. */
 function paintMine() {
   const linked = driveLinked(), at = +store.get("drive-at", "0");
-  $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked; recBkPaint();
+  $("#set-space").checked = spaceOn; $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked; recBkPaint();
   $("#dr-link").disabled = !GOOGLE_CLIENT_ID;
   setSync(syncMsg && (syncing || syncBad || linked) ? syncMsg : !GOOGLE_CLIENT_ID ? "المزامنة غير مفعّلة بعد: ينقص التطبيقَ معرّفُ Google الخاص به." : linked ? (at ? "آخر مزامنة: " + fmtDate(at) : "مربوط.") : "غير مربوط. بياناتك على هذا الجهاز فقط.", syncBad);
   const list = $("#mine-list"), mk = (badge, cls, title, sub, text, onOpen, onShare, onCopy) => {
@@ -3665,6 +3762,7 @@ function paintMine() {
 $("#dr-link").addEventListener("click", () => syncNow(true));
 $("#dr-sync").addEventListener("click", () => syncNow(true));
 $("#dr-unlink").addEventListener("click", driveUnlink);
+$("#set-space").addEventListener("change", (e) => { spaceOn = e.target.checked; store.set("space", spaceOn ? "1" : "0"); toast(spaceOn ? "فُعّلت «مساحتي» في نافذة الفهرس." : "عاد الفهرس كما كان."); });
 $("#set-recbk").addEventListener("change", async (e) => { recBk = e.target.checked; store.set("recbk", recBk ? "1" : "0"); store.set("recbk-sig", ""); $("#rec-status").textContent = ""; await recBkPaint(); if (recBk && driveLinked() && gToken) syncNow(false); });
 // Sharing recitations with Quran Lab is the SDK's own switch and sheet: the app only gives it a place in the settings.
 $("#ql-share-go").addEventListener("click", async () => {
