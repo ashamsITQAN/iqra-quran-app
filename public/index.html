@@ -2000,7 +2000,11 @@ async function openHifz(preset) {
   }
   estimate();
 }
-hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.startsWith("hz-")) return; if (e.target.id === "hz-surah") { hz.surah = +e.target.value; hz.from = 1; hz.to = meta.surahs[hz.surah].ayahs; F("from").value = 1; F("to").value = hz.to; } readForm(); writeForm(); estimate(); });
+hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.startsWith("hz-")) return; if (e.target.id === "hz-surah") { hz.surah = +e.target.value; hz.from = 1; hz.to = meta.surahs[hz.surah].ayahs; F("from").value = 1; F("to").value = hz.to; }
+  // a number being typed is left as the reader types it (it may be empty for a moment); it is put within its bounds on leaving the box
+  readForm(); if (e.target.type !== "number") writeForm(); estimate(); });
+hifzBox.addEventListener("change", (e) => { if (e.target.type === "number" && e.target.id.startsWith("hz-")) { readForm(); writeForm(); estimate(); } });
+hifzBox.addEventListener("focusin", (e) => { if (e.target.type === "number") { try { e.target.select(); } catch (err) {} } });   // typing replaces the old number
 $("#hifz-open").addEventListener("click", () => { openHifz(); if (store.get("hzguide", "0") !== "1" && !navigator.webdriver /* not under an automated test */) { store.set("hzguide", "1"); show($("#hzguide"), true); } });
 $("#hz-help").addEventListener("click", () => show($("#hzguide"), true));
 ["#hzg-close", "#hzg-ok"].forEach((s) => $(s).addEventListener("click", () => show($("#hzguide"), false)));
