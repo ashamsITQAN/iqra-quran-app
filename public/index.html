@@ -4049,7 +4049,7 @@ window.addEventListener("hashchange", () => { const n = +location.hash.replace("
     // The app is in Arabic: of the projects published in several languages only the Arabic one is offered, so no list of
     // languages shows that could be taken for the language of the app itself.
     projects = projects.filter((p) => !p.lang || p.lang === "ar"); store.set("lang", "ar");
-    Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-act-" + l, level: l, name: "تلاوتي وتسميعي", groupName: "نشاطي", kind: "شخصي", source: "خاص بك", act: true, file: null }));
+    // (my activity is no longer a tab of the content window: it lives in «مساحتي» and behind the recitation bar)
     Object.keys(LEVELS).forEach((l) => projects.push({ id: "my-notes-" + l, level: l, name: "تعليقاتي وتدبراتي", groupName: "تعليقاتي", kind: "شخصي", source: "خاص بك", notes: true, file: null }));
     getJSON("data/surah-site.json").then((j) => { surahSite = j; }).catch(() => {}); }
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
