@@ -1394,6 +1394,9 @@ function fixView() {
   if (d.scrollLeft || d.scrollTop) { d.scrollLeft = 0; d.scrollTop = 0; }
   if (b.scrollLeft || b.scrollTop) { b.scrollLeft = 0; b.scrollTop = 0; }
 }
+// An iPhone or iPad enlarges the whole app when a box to type in is touched, and leaves it enlarged. There the page is told not
+// to enlarge by itself (the reader's own text-size view remains); other devices keep their pinch zoom.
+if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) document.querySelector('meta[name="viewport"]').setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1");
 window.addEventListener("scroll", fixView, { passive: true });
 document.body.addEventListener("scroll", fixView, { passive: true });
 if (window.visualViewport) visualViewport.addEventListener("scroll", () => { if (visualViewport.scale <= 1.01) fixView(); });
