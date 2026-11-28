@@ -3620,9 +3620,10 @@ const still = matchMedia("(prefers-reduced-motion:reduce)");
 const slide = (x, ms) => new Promise((done) => {
   spread.style.transition = ms ? `transform ${ms}ms ease-out, opacity ${ms}ms ease-out` : "none"; spread.style.transform = x ? `translateX(${x}px)` : "";
   spread.style.opacity = x ? String(Math.max(0.35, 1 - Math.abs(x) / (stage.clientWidth * 1.4))) : "";
-  if (ms) setTimeout(done, ms + 20); else done();
+  if (ms) setTimeout(done, ms + 8); else done();
 });
-const dragEnd = () => { spread.classList.remove("held"); spread.style.transition = spread.style.transform = spread.style.opacity = ""; };
+const dragEnd = () => { spread.classList.remove("turn-next", "turn-prev", "held");   // (the ordinary turning cue must not play once the hold ends)
+  spread.style.transition = spread.style.transform = spread.style.opacity = ""; };
 stage.addEventListener("pointerdown", (e) => { if (down && down.busy) return; down = { x: e.clientX, y: e.clientY, t: Date.now(), touch: e.pointerType !== "mouse", drag: false }; });
 stage.addEventListener("pointermove", (e) => {
   if (!down || !down.touch || down.busy) return;
@@ -3639,9 +3640,9 @@ stage.addEventListener("pointerup", async (e) => {
   if ((Math.abs(dx) > Math.min(110, W * 0.25) || quick) && canGo(dir)) {
     d.busy = true;
     try {
-      if (!still.matches) await slide(dir * W, 140);
+      if (!still.matches) await slide(dir * W, 100);
       await go(dir);
-      if (!still.matches) { await slide(-dir * W * 0.6, 0); spread.getBoundingClientRect(); await slide(0, 200); }
+      if (!still.matches) { await slide(-dir * W * 0.45, 0); spread.getBoundingClientRect(); await slide(0, 150); }
     } finally { dragEnd(); down = null; }
   } else { down = null; await slide(0, 160); dragEnd(); }
 });
