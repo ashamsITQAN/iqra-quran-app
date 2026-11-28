@@ -35,6 +35,7 @@
   --panel:#1c2624; --banner:rgba(211,176,103,.12); --gharib:#ff9d8a; --mut:#6cb8ff; --qir:#cfa3ff; --tpA:#f0b840; --tpB:#56b4e9; --tpbar:#e7ece8; color-scheme:dark;
 }
 *{box-sizing:border-box}
+@supports (-webkit-touch-callout:none){input,select,textarea{font-size:16px !important}}
 html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;display:flex;flex-direction:column;overflow:hidden}
 button,select,input{font:inherit;color:inherit}
@@ -859,7 +860,7 @@ function measure() {
   if (mode === "auto" && w >= 700 && two >= 500) return { cols: 2, artH: two };
   let one = (Math.min(w, 620) - 14) / RATIO;
   // a phone held upright: the page takes the whole screen, its side margins trimmed and its lines spread down the height
-  if (w < 700 && h > w * 1.25) { const fw = stage.clientWidth - 8, fh = stage.clientHeight - furn() - 2; return { cols: 1, artH: fh, artW: fw - 6, fit: true }; }
+  if (w < 700 && h > w * 1.25) { const fw = Math.min(stage.clientWidth, screen.width || 1e9, document.documentElement.clientWidth || 1e9) - 8, fh = stage.clientHeight - furn() - 2; return { cols: 1, artH: fh, artW: fw - 6, fit: true }; }
   if (h - FURN >= 460) one = Math.min(one, h - FURN);
   return { cols: 1, artH: one };
 }
@@ -1275,7 +1276,7 @@ async function fillTafsir(n, art, svg) {
 }
 // In the enlarged view the printed page is also kept, unseen, so that an ayah can still be shown as printed in the content window.
 const inkBox = document.createElement("div");
-inkBox.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none"; inkBox.setAttribute("aria-hidden", "true"); document.body.append(inkBox);
+inkBox.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;contain:strict;visibility:hidden;pointer-events:none"; inkBox.setAttribute("aria-hidden", "true"); document.body.append(inkBox);
 function keepInk(n, svg) {
   [...inkBox.children].forEach((c) => { if (!spread.querySelector(`.page[data-page="${c.dataset.page}"]`) || +c.dataset.page === n) c.remove(); });
   const box = document.createElement("div"), copy = svg.cloneNode(true);
@@ -1385,7 +1386,18 @@ shortWide.addEventListener("change", placePager);
 if (shortWide.matches) placePager();
 const veil = $("#veil"), settings = $("#settings"), indexBox = $("#index"), reportBox = $("#report"), shareBox = $("#share");
 let shown = null;   // the project whose content the window is showing
-function show(el, on) { el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
+// The app fills the screen and never scrolls as a whole. On an iPhone, bringing something into view inside a window can
+// still drag the whole app sideways, where no finger can bring it back; so whenever the app itself is found moved, it is put back.
+function fixView() {
+  const d = document.documentElement, b = document.body;
+  if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+  if (d.scrollLeft || d.scrollTop) { d.scrollLeft = 0; d.scrollTop = 0; }
+  if (b.scrollLeft || b.scrollTop) { b.scrollLeft = 0; b.scrollTop = 0; }
+}
+window.addEventListener("scroll", fixView, { passive: true });
+document.body.addEventListener("scroll", fixView, { passive: true });
+if (window.visualViewport) visualViewport.addEventListener("scroll", () => { if (visualViewport.scale <= 1.01) fixView(); });
+function show(el, on) { requestAnimationFrame(fixView); setTimeout(fixView, 350); el.classList.toggle("open", on); el.setAttribute("aria-hidden", String(!on)); veil.hidden = !document.querySelector(".modal.open"); }
 // In ayah mode, pointing at any word lights the whole ayah: every line of it, and its number.
 let hovKey = "";
 function hoverAyah(k) {
@@ -2658,7 +2670,7 @@ async function deliver(blob, name, type, text) {
 /* Several consecutive ayahs in one share (ayah, its text, the link, the next ayah, its text…), for short per-ayah content. */
 // (laid out unseen inside a clipped box of no size: a box parked far off the side would widen the page on a phone)
 const stageClip = document.createElement("div"), stageBox = document.createElement("div");
-stageClip.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none"; stageClip.setAttribute("aria-hidden", "true");
+stageClip.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;contain:strict;visibility:hidden;pointer-events:none"; stageClip.setAttribute("aria-hidden", "true");
 stageBox.style.cssText = "position:absolute;left:0;top:0;width:520px"; stageClip.append(stageBox); document.body.append(stageClip);
 async function rootOfPage(n) {   // the page as shown, or an unseen copy of it laid out off screen
   if ((view !== "print" || render.fit) && inkBox.querySelector(`[data-page="${n}"] g.word`)) return inkBox;
