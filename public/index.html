@@ -2466,6 +2466,7 @@ function spaceRows(tab) {
   const goals = goalsOf(), out = [];
   const addGoal = (gl) => { goalsOf().push({ id: "g" + Date.now().toString(36), ...gl }); goalTouch(); };
   if (tab === "home") {
+    out.push(card("", acEl("small", "", "اليوم: " + fmtDate(Date.now()))));
     // 1) carry on
     const last = rawAct.kh && rawAct.kh.last >= 0 ? rawAct.kh.last : -1, rd = marks.read;
     if ((last >= 0 && spaceDb) || rd) {
@@ -2565,7 +2566,15 @@ $("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n =
 const KINDS = [["hifz", "ح", "الحفظ"], ["read", "ق", "القراءة"], ["rev", "م", "المراجعة"]];
 const GOOGLE_CLIENT_ID = "777166406494-smbg9a0tfged63te8ql1q97rmelc558t.apps.googleusercontent.com" || store.get("gcid", "");   // OAuth client id (public, not a secret) of the Google Cloud project that owns the Drive link
 const readJ = (k) => { try { return JSON.parse(store.get(k, "{}")) || {}; } catch (e) { return {}; } };
-const fmtDate = (ms) => { try { return new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric" }).format(ms); } catch (e) { return new Date(ms).toISOString().slice(0, 10); } };
+// Every date is given with its weekday, in the Hijri calendar (Umm al-Qura) and the Gregorian one together.
+const fmtDate = (ms) => {
+  try {
+    const o = { day: "numeric", month: "long", year: "numeric" }, g = new Intl.DateTimeFormat("ar-EG", o).format(ms), wd = new Intl.DateTimeFormat("ar-EG", { weekday: "long" }).format(ms);
+    let h = ""; try { h = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-arab", o).format(ms).replace(/\s*هـ\s*$/, "").trim(); } catch (e) {}
+    return `${wd} ${h ? h + " هـ · " : ""}${g} م`;
+  } catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+};
+const fmtDateTime = (ms) => { try { return fmtDate(ms) + "، " + new Intl.DateTimeFormat("ar-EG", { hour: "numeric", minute: "2-digit" }).format(ms); } catch (e) { return fmtDate(ms); } };
 const rawMarks = readJ("marks"), rawNotes = readJ("notes"), rawAct = Object.assign({ s: {}, kh: { n: 0, done: [], last: -1, t: 0 } }, readJ("activity"));
 let marks = {}, notes = {};
 function liveViews() {
@@ -3588,7 +3597,7 @@ function actCard(lv) {
     const here = (k) => (wkey ? k === wkey : (() => { const [s, a] = k.split(":").map(Number), g = rows.findIndex((r) => r[0] === s && r[1] === a); return g >= g1 && g <= g2; })());
     body.replaceChildren();
     if (!mine.length) { body.append(acEl("p", "note", "لم تُسجَّل لك تلاوة لهذا الموضع بعد. اضغط «تسميع» في الشريط العلوي واقرأ، فتظهر جلساتك هنا.")); return; }
-    const heard = mine.filter((x) => x.k === "h").length, when = (t) => new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(t);
+    const heard = mine.filter((x) => x.k === "h").length, when = (t) => fmtDateTime(t);
     body.append(acEl("p", "text", `مررت بهذا الموضع في ${ar(mine.length)} جلسة: ${ar(heard)} تسميعًا مع الإخفاء و${ar(mine.length - heard)} قراءة. آخرها ${when(mine[0].t)}.`));
     const ul = acEl("ul", "ac-list"); ul.style.marginTop = "8px";
     mine.slice(0, 40).forEach((x) => {
@@ -3647,7 +3656,7 @@ async function paintActivity() {
     const ul = acEl("ul", "ac-list"), recs = (await recKeys()).map(String); ul.style.marginTop = "10px";
     all.filter((x) => acKind === "all" || x.k === acKind).slice(0, 300).forEach((x) => {
       const li = acEl("li"), top = acEl("div", "top"), acts = acEl("div", "acts"), open = acEl("button", "btn", "افتح الموضع"), del = acEl("button", "btn", "حذف"), n = spanCount(x.r);
-      const when = new Intl.DateTimeFormat("ar-EG", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(x.t);
+      const when = fmtDateTime(x.t);
       top.append(acEl("strong", "", span(x.r)), acEl("span", "ac-kind", x.k === "h" ? "تسميع" : "قراءة"));
       open.type = del.type = "button"; open.addEventListener("click", () => jump(rows[x.r[0][0]][2], rows[x.r[0][0]][0] + ":" + rows[x.r[0][0]][1]));
       del.addEventListener("click", () => { rawAct.s[String(x.t)] = { del: true, t: x.t }; recDel(String(x.t)); saveMine(); paintActivity(); });
