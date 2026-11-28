@@ -2475,6 +2475,7 @@ function spaceRows(tab) {
     const chips = acEl("div", "chips");
     [["ورد يومي: ٢٠ آية تلاوة", { kind: "read", n: 20, per: "day" }], ["حفظ ٥ آيات كل يوم", { kind: "hifz", n: 5, per: "day" }], ["مراجعة ١٠٠ آية كل أسبوع", { kind: "hifz", n: 100, per: "week" }], ["ضبط المتشابه (مهمة يومية)", { kind: "task", title: "ضبط المتشابه", per: "day" }]].forEach(([t, gl]) => { const b = acEl("button", "btn", "+ " + t); b.type = "button"; b.addEventListener("click", () => addGoal(gl)); chips.append(b); });
     out.push(card("هدف جديد", acEl("small", "", "أهداف جاهزة بضغطة:"), chips, form));
+    { const soon = card("نظام الخطط", acEl("span", "", "قريبًا: نظام الخطط (الختمة المجدولة وخطط الحفظ والمراجعة).")); soon.querySelector("h4").append(acEl("small", "", "قريبًا")); soon.style.borderStyle = "dashed"; out.push(soon); }
     out.push(card("", acEl("small", "", "تقدّم أهداف التلاوة والتسميع يُحسب من جلساتك مع اللاقط (زر التسميع): «تلاوة بالنظر» والآيات ظاهرة، و«تسميع من الحفظ» والآيات مخفية. والمهمة التي تكتبها تؤشّر عليها بنفسك. يبدأ الأسبوع يوم السبت.")));
   }
   return out;
