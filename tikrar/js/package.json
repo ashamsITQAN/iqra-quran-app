@@ -1,0 +1,1 @@
+{ "name": "tikrar", "version": "1.0.0", "description": "التكرار الدائري المتقاطع — circular cross repetition for Quran memorisation apps: the plan and the session, no UI, no audio", "type": "module", "main": "tikrar.js", "types": "tikrar.d.ts", "files": ["tikrar.js", "tikrar.d.ts", "tikrar-web.js"], "scripts": { "test": "node test.mjs" } }

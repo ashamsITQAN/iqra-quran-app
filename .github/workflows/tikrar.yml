@@ -1,0 +1,42 @@
+name: Tikrar — every implementation against the shared vectors
+
+on:
+  push:
+    paths: ["tikrar/**", ".github/workflows/tikrar.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vectors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The vectors file is the one the reference implementation writes
+        working-directory: tikrar
+        run: |
+          cp tests/vectors.txt /tmp/vectors.before
+          node tests/gen.mjs
+          diff /tmp/vectors.before tests/vectors.txt
+      - name: JavaScript
+        working-directory: tikrar
+        run: node js/test.mjs
+      - name: Python
+        working-directory: tikrar
+        run: python3 python/test_tikrar.py
+      - name: Kotlin
+        working-directory: tikrar/kotlin
+        run: |
+          kotlinc Tikrar.kt TikrarTest.kt -include-runtime -d /tmp/tikrar-test.jar
+          java -jar /tmp/tikrar-test.jar ../tests/vectors.txt
+      - name: Swift
+        working-directory: tikrar/swift
+        run: swift run TikrarVectors ../tests/vectors.txt
+      - name: C#
+        working-directory: tikrar/csharp
+        run: dotnet run --project Tikrar.Tests -- ../tests/vectors.txt
+      - uses: dart-lang/setup-dart@v1
+      - name: Dart
+        working-directory: tikrar/dart
+        run: dart run test/vectors_test.dart

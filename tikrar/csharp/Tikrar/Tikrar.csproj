@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- netstandard2.0 and C# 7.3: usable from .NET MAUI, Xamarin, Unity, Avalonia, WPF and any modern .NET -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>Tikrar</RootNamespace>
+    <AssemblyName>Tikrar</AssemblyName>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+</Project>

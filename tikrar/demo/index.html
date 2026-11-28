@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تكرار — تجربة التكرار الدائري المتقاطع</title>
+<style>
+  body{font:16px/1.7 system-ui,"Segoe UI",Tahoma,sans-serif;margin:0;background:#f6f7f5;color:#1b2321}
+  main{max-width:860px;margin:0 auto;padding:18px}
+  h1{font-size:22px;margin:0 0 4px} p.sub{margin:0 0 14px;color:#586360}
+  fieldset{border:1px solid #cfd6d2;border-radius:10px;margin:0 0 14px;padding:10px 14px;background:#fff}
+  legend{font-weight:700;padding:0 6px}
+  label{display:inline-flex;align-items:center;gap:6px;margin:4px 0 4px 14px}
+  input[type=number],select{font:inherit;padding:4px 8px;border:1px solid #cfd6d2;border-radius:8px;width:86px;background:#fff}
+  select{width:auto} textarea{font:14px/1.5 ui-monospace,Consolas,monospace;width:100%;min-height:90px;direction:ltr;box-sizing:border-box;border:1px solid #cfd6d2;border-radius:8px;padding:8px}
+  button{font:inherit;padding:6px 14px;border:1px solid #cfd6d2;border-radius:8px;background:#fff;cursor:pointer}
+  button.main{background:#0f6b5c;border-color:#0f6b5c;color:#fff}
+  ol{margin:0;padding-inline-start:26px} li{padding:2px 6px;border-radius:6px} li.now{background:#d9efe9;font-weight:700}
+  #status{font-weight:700;min-height:1.7em} #bar{height:10px;background:#e4e9e6;border-radius:5px;overflow:hidden;margin:6px 0 10px} #fill{height:100%;width:0;background:#0f6b5c}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center} small{color:#586360}
+</style>
+</head>
+<body>
+<main>
+  <h1>تكرار — التكرار الدائري المتقاطع</h1>
+  <p class="sub">صفحة تجربة للمكوّن. تعمل بلا صوت (محاكاة بساعة وهمية)، أو مع ملف صوت تختاره وتزمين مقاطعه.</p>
+
+  <fieldset><legend>المقاطع</legend>
+    <p style="margin:0 0 6px"><small>سطر لكل مقطع: البداية والنهاية بالميلي ثانية. المقطع آية أو جملة أو مجموعة كلمات، بحسب تزمين تلاوتك.</small></p>
+    <textarea id="units">0 4000
+4000 9000
+9000 15000</textarea>
+    <div class="row" style="margin-top:8px"><label style="margin:0">ملف الصوت (اختياري) <input type="file" id="file" accept="audio/*"></label><small id="src">بلا صوت: محاكاة.</small></div>
+    <audio id="audio" preload="auto"></audio>
+  </fieldset>
+
+  <fieldset><legend>الإعدادات</legend>
+    <label>تلقين <input type="number" id="talqin" min="0" value="2"></label>
+    <label>وصل <input type="number" id="wasl" min="0" value="2"></label>
+    <label>سرد <input type="number" id="sard" min="0" value="1"></label>
+    <label>الوصل <select id="link"><option value="cumulative">تراكمي</option><option value="previous">بالسابق فقط</option></select></label>
+    <label>الطريقة <select id="mode"><option value="repeat">أستمع ثم أردّد</option><option value="listen">أستمع فقط</option></select></label>
+    <label>المهلة <select id="gap"><option value="0.5">نصف المقطع</option><option value="1" selected>مثل المقطع</option><option value="1.5">مرة ونصف</option><option value="2">مثلاه</option><option value="manual">حتى أضغط</option></select></label>
+    <label>السرعة <select id="speed"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option></select></label>
+  </fieldset>
+
+  <fieldset><legend>الجلسة</legend>
+    <div id="status">اضغط «ابدأ».</div>
+    <div id="bar"><div id="fill"></div></div>
+    <div class="row">
+      <button class="main" id="start">ابدأ</button><button id="pause">إيقاف مؤقت</button><button id="go">تابع</button>
+      <button id="prev">الخطوة السابقة</button><button id="restart">أعد الخطوة</button><button id="next">الخطوة التالية</button><button id="stop">أنهِ</button>
+      <small id="left"></small>
+    </div>
+  </fieldset>
+
+  <fieldset><legend>الخطة</legend><ol id="plan"></ol></fieldset>
+</main>
+<script type="module">
+import * as T from "../js/tikrar.js";
+import { TikrarPlayer } from "../js/tikrar-web.js";
+const $ = (s) => document.querySelector(s), KIND = { talqin: "تلقين", wasl: "وصل", sard: "سرد" };
+const ar = (n) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+const clock = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? `${ar(s)} ث` : `${ar(Math.floor(s / 60))} د ${ar(s % 60)} ث`; };
+
+// A stand-in for an <audio> element, for trying the method with no recording at hand.
+class FakeAudio { constructor() { this.currentTime = 0; this.playbackRate = 1; this.ended = false; this._on = false; this._t = 0; setInterval(() => { const n = performance.now(); if (this._on) this.currentTime += ((n - this._t) / 1000) * this.playbackRate; this._t = n; }, 30); }
+  play() { this._on = true; this._t = performance.now(); return Promise.resolve(); } pause() { this._on = false; } }
+const fake = new FakeAudio(), audio = $("#audio"); let useFile = false, player = null;
+$("#file").addEventListener("change", (e) => { const f = e.target.files[0]; useFile = !!f; if (f) audio.src = URL.createObjectURL(f); $("#src").textContent = f ? "يُشغَّل الملف المختار؛ تأكد أن التزمين له." : "بلا صوت: محاكاة."; });
+
+const units = () => $("#units").value.split("\n").map((l) => l.trim().split(/[\s,;-]+/).map(Number)).filter((p) => p.length >= 2 && p[1] > p[0]).map(([start, end], i) => ({ id: String(i + 1), start, end }));
+const options = () => ({ talqin: +$("#talqin").value, wasl: +$("#wasl").value, sard: +$("#sard").value, link: $("#link").value, mode: $("#mode").value, gap: $("#gap").value === "manual" ? "manual" : +$("#gap").value, speed: +$("#speed").value });
+const label = (s) => `${KIND[s.kind]}: ${s.from === s.to ? "المقطع " + ar(s.from + 1) : "المقاطع " + ar(s.from + 1) + "–" + ar(s.to + 1)} × ${ar(s.reps)}`;
+function paintPlan() { const steps = T.plan(units(), options()); $("#plan").replaceChildren(...steps.map((s) => Object.assign(document.createElement("li"), { textContent: label(s) }))); $("#left").textContent = steps.length ? "مدة الجلسة نحو " + clock(T.totalMs(steps, options())) : "لا خطوات."; }
+document.querySelectorAll("#units,input[type=number],select").forEach((el) => el.addEventListener("input", () => { if (!player) paintPlan(); }));
+paintPlan();
+
+function onAction(a, session) {
+  const p = session.progress, s = session.steps[p.step];
+  document.querySelectorAll("#plan li").forEach((li, i) => li.classList.toggle("now", a.type !== "done" && i === p.step));
+  $("#status").textContent = a.type === "done" ? "تمّت الجلسة." : a.type === "play" ? `${label(s)} — المرة ${ar(a.rep + 1)}: استمع` : a.type === "wait" ? `ردّد الآن (${clock(a.ms)})` : "ردّد ثم اضغط «تابع»";
+  $("#left").textContent = a.type === "done" ? "" : "الباقي نحو " + clock(p.remainingMs);
+  if (a.type !== "play") $("#fill").style.width = "0";
+}
+$("#start").addEventListener("click", () => {
+  if (player) player.stop();
+  paintPlan();
+  player = new TikrarPlayer(useFile ? audio : fake, units(), options(), { onAction, onTime: (ms, a) => { $("#fill").style.width = Math.min(100, ((ms - a.start) / (a.end - a.start)) * 100) + "%"; }, onDone: () => { player = null; } });
+  player.start();
+});
+$("#pause").addEventListener("click", (e) => { if (!player) return; if (player.paused) { player.play(); e.target.textContent = "إيقاف مؤقت"; } else { player.pause(); e.target.textContent = "أكمل"; } });
+$("#go").addEventListener("click", () => player && player.resume());
+$("#next").addEventListener("click", () => player && player.next());
+$("#prev").addEventListener("click", () => player && player.previous());
+$("#restart").addEventListener("click", () => player && player.restart());
+$("#stop").addEventListener("click", () => { if (player) { player.stop(); player = null; } $("#status").textContent = "أُنهيت."; document.querySelectorAll("#plan li").forEach((li) => li.classList.remove("now")); paintPlan(); });
+</script>
+</body>
+</html>

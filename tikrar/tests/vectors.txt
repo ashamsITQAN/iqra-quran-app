@@ -1,0 +1,210 @@
+# Tikrar test vectors, format 1. Written by tests/gen.mjs from the reference implementation; see SPEC.md, section 7.
+
+CASE defaults-three-units
+UNITS 0-4000,4000-9000,9000-15000
+OPT -
+PLAN talqin:0-0x5@0-4000;talqin:1-1x5@4000-9000;wasl:0-1x5@0-9000;talqin:2-2x5@9000-15000;wasl:0-2x5@0-15000;sard:0-2x3@0-15000
+TOTAL 480000
+REMAIN 0/0=480000,1/2=420000,4/0=240000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-4000|wait:4000|play:0/1@0-4000|wait:4000|play:0/2@0-4000|wait:4000|play:0/3@0-4000|wait:4000|play:0/4@0-4000|wait:4000|play:1/0@4000-9000|wait:5000|play:1/1@4000-9000|wait:5000|play:1/2@4000-9000|wait:5000|play:1/3@4000-9000|wait:5000|play:1/4@4000-9000|wait:5000|play:2/0@0-9000|wait:9000|play:2/1@0-9000|wait:9000|play:2/2@0-9000|wait:9000|play:2/3@0-9000|wait:9000|play:2/4@0-9000|wait:9000|play:3/0@9000-15000|wait:6000|play:3/1@9000-15000|wait:6000|play:3/2@9000-15000|wait:6000|play:3/3@9000-15000|wait:6000|play:3/4@9000-15000|wait:6000|play:4/0@0-15000|wait:15000|play:4/1@0-15000|wait:15000|play:4/2@0-15000|wait:15000|play:4/3@0-15000|wait:15000|play:4/4@0-15000|wait:15000|play:5/0@0-15000|wait:15000|play:5/1@0-15000|wait:15000|play:5/2@0-15000|wait:15000|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done|done
+LOCATE 0=0,3999=0,4000=1,14999=2,15000=-1,-5=-1
+END
+
+CASE previous-link
+UNITS 0-4000,4000-9000,9000-15000,15000-21000
+OPT talqin=2 wasl=2 sard=1 link=previous
+PLAN talqin:0-0x2@0-4000;talqin:1-1x2@4000-9000;wasl:0-1x2@0-9000;talqin:2-2x2@9000-15000;wasl:1-2x2@4000-15000;talqin:3-3x2@15000-21000;wasl:2-3x2@9000-21000;sard:0-3x1@0-21000
+TOTAL 254000
+REMAIN 0/0=254000,3/1=170000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-4000|wait:4000|play:0/1@0-4000|wait:4000|play:1/0@4000-9000|wait:5000|play:1/1@4000-9000|wait:5000|play:2/0@0-9000|wait:9000|play:2/1@0-9000|wait:9000|play:3/0@9000-15000|wait:6000|play:3/1@9000-15000|wait:6000|play:4/0@4000-15000|wait:11000|play:4/1@4000-15000|wait:11000|play:5/0@15000-21000|wait:6000|play:5/1@15000-21000|wait:6000|play:6/0@9000-21000|wait:12000|play:6/1@9000-21000|wait:12000|play:7/0@0-21000|wait:21000|done|done|done|done|done|done|done|done|done|done|done
+LOCATE 20999=3,21000=-1
+END
+
+CASE single-unit
+UNITS 0-7000
+OPT talqin=3 wasl=4 sard=2
+PLAN talqin:0-0x3@0-7000
+TOTAL 42000
+REMAIN 0/0=42000,0/2=14000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-7000|wait:7000|play:0/1@0-7000|wait:7000|play:0/2@0-7000|wait:7000|done|done|done|done|done
+LOCATE 0=0,7000=-1
+END
+
+CASE single-unit-no-talqin
+UNITS 0-7000
+OPT talqin=0
+PLAN -
+TOTAL 0
+REMAIN 0/0=0
+EVENTS start,ended,resume,next
+ACTIONS done|done|done|done
+LOCATE -
+END
+
+CASE no-units
+UNITS -
+OPT -
+PLAN -
+TOTAL 0
+REMAIN 0/0=0
+EVENTS start,ended,resume
+ACTIONS done|done|done
+LOCATE 0=-1
+END
+
+CASE no-wasl
+UNITS 0-3000,3000-6000,6000-9000
+OPT talqin=1 wasl=0 sard=2
+PLAN talqin:0-0x1@0-3000;talqin:1-1x1@3000-6000;talqin:2-2x1@6000-9000;sard:0-2x2@0-9000
+TOTAL 54000
+REMAIN 0/0=54000,3/1=18000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-3000|wait:3000|play:1/0@3000-6000|wait:3000|play:2/0@6000-9000|wait:3000|play:3/0@0-9000|wait:9000|play:3/1@0-9000|wait:9000|done|done|done
+LOCATE -
+END
+
+CASE no-sard
+UNITS 0-3000,3000-6000
+OPT talqin=1 wasl=1 sard=0
+PLAN talqin:0-0x1@0-3000;talqin:1-1x1@3000-6000;wasl:0-1x1@0-6000
+TOTAL 24000
+REMAIN 1/0=18000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-3000|wait:3000|play:1/0@3000-6000|wait:3000|play:2/0@0-6000|wait:6000|done|done|done
+LOCATE -
+END
+
+CASE only-sard
+UNITS 0-3000,3000-6000,6000-9000
+OPT talqin=0 wasl=0 sard=2
+PLAN sard:0-2x2@0-9000
+TOTAL 36000
+REMAIN 0/1=18000
+EVENTS start,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-9000|wait:9000|play:0/1@0-9000|wait:9000|done|done|done
+LOCATE -
+END
+
+CASE listen-mode
+UNITS 0-4000,4000-9000
+OPT talqin=2 wasl=1 sard=1 mode=listen
+PLAN talqin:0-0x2@0-4000;talqin:1-1x2@4000-9000;wasl:0-1x1@0-9000;sard:0-1x1@0-9000
+TOTAL 36000
+REMAIN 0/0=36000,2/0=18000
+EVENTS start,ended,ended,resume,ended,ended,ended,ended,ended
+ACTIONS play:0/0@0-4000|play:0/1@0-4000|play:1/0@4000-9000|play:1/0@4000-9000|play:1/1@4000-9000|play:2/0@0-9000|play:3/0@0-9000|done|done
+LOCATE -
+END
+
+CASE manual-gap
+UNITS 0-4000,4000-9000
+OPT talqin=1 wasl=1 sard=1 gap=manual
+PLAN talqin:0-0x1@0-4000;talqin:1-1x1@4000-9000;wasl:0-1x1@0-9000;sard:0-1x1@0-9000
+TOTAL 27000
+REMAIN 0/0=27000,1/0=23000
+EVENTS start,resume,ended,ended,resume,ended,resume,ended,resume,ended,resume,resume
+ACTIONS play:0/0@0-4000|play:0/0@0-4000|await|await|play:1/0@4000-9000|await|play:2/0@0-9000|await|play:3/0@0-9000|await|done|done
+LOCATE -
+END
+
+CASE zero-gap
+UNITS 0-4000,4000-9000
+OPT talqin=1 wasl=1 sard=0 gap=0
+PLAN talqin:0-0x1@0-4000;talqin:1-1x1@4000-9000;wasl:0-1x1@0-9000
+TOTAL 18000
+REMAIN 0/0=18000
+EVENTS start,ended,ended,ended,ended
+ACTIONS play:0/0@0-4000|play:1/0@4000-9000|play:2/0@0-9000|done|done
+LOCATE -
+END
+
+CASE half-gap-fast
+UNITS 0-4000,4000-9000,9000-15000
+OPT talqin=2 wasl=1 sard=1 gap=0.5 speed=1.25
+PLAN talqin:0-0x2@0-4000;talqin:1-1x2@4000-9000;wasl:0-1x1@0-9000;talqin:2-2x2@9000-15000;wasl:0-2x1@0-15000;sard:0-2x1@0-15000
+TOTAL 82800
+REMAIN 0/0=82800,2/1=50400,5/0=18000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-4000|wait:1600|play:0/1@0-4000|wait:1600|play:1/0@4000-9000|wait:2000|play:1/1@4000-9000|wait:2000|play:2/0@0-9000|wait:3600|play:3/0@9000-15000|wait:2400|play:3/1@9000-15000|wait:2400|play:4/0@0-15000|wait:6000|play:5/0@0-15000|wait:6000|done|done|done|done|done|done|done
+LOCATE -
+END
+
+CASE double-gap-slow
+UNITS 0-3000,3000-9000
+OPT talqin=1 wasl=1 sard=1 gap=2 speed=0.75
+PLAN talqin:0-0x1@0-3000;talqin:1-1x1@3000-9000;wasl:0-1x1@0-9000;sard:0-1x1@0-9000
+TOTAL 108000
+REMAIN 0/0=108000,3/0=36000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-3000|wait:8000|play:1/0@3000-9000|wait:16000|play:2/0@0-9000|wait:24000|play:3/0@0-9000|wait:24000|done|done|done
+LOCATE -
+END
+
+CASE rounding
+UNITS 0-1001,1001-2003,2003-3334
+OPT talqin=1 wasl=1 sard=1 gap=1.5 speed=1.5
+PLAN talqin:0-0x1@0-1001;talqin:1-1x1@1001-2003;wasl:0-1x1@0-2003;talqin:2-2x1@2003-3334;wasl:0-2x1@0-3334;sard:0-2x1@0-3334
+TOTAL 20010
+REMAIN 0/0=20010,1/0=18342,4/0=11116
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-1001|wait:1001|play:1/0@1001-2003|wait:1002|play:2/0@0-2003|wait:2003|play:3/0@2003-3334|wait:1331|play:4/0@0-3334|wait:3335|play:5/0@0-3334|wait:3335|done
+LOCATE -
+END
+
+CASE units-with-silence-between
+UNITS 500-4100,4300-9800,10050-12000,12400-20000
+OPT talqin=1 wasl=1 sard=1
+PLAN talqin:0-0x1@500-4100;talqin:1-1x1@4300-9800;wasl:0-1x1@500-9800;talqin:2-2x1@10050-12000;wasl:0-2x1@500-12000;talqin:3-3x1@12400-20000;wasl:0-3x1@500-20000;sard:0-3x1@500-20000
+TOTAL 156900
+REMAIN 0/0=156900,6/0=78000
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@500-4100|wait:3600|play:1/0@4300-9800|wait:5500|play:2/0@500-9800|wait:9300|play:3/0@10050-12000|wait:1950|play:4/0@500-12000|wait:11500|play:5/0@12400-20000|wait:7600|play:6/0@500-20000|wait:19500|play:7/0@500-20000|wait:19500|done|done|done
+LOCATE 0=-1,499=-1,500=0,4099=0,4100=-1,4200=-1,4300=1,12399=-1,19999=3,20000=-1
+END
+
+CASE controls
+UNITS 0-4000,4000-9000,9000-15000
+OPT talqin=2 wasl=2 sard=2
+PLAN talqin:0-0x2@0-4000;talqin:1-1x2@4000-9000;wasl:0-1x2@0-9000;talqin:2-2x2@9000-15000;wasl:0-2x2@0-15000;sard:0-2x2@0-15000
+TOTAL 216000
+REMAIN 0/0=216000
+EVENTS next,start,next,next,previous,restart,ended,next,ended,restart,goto:99,next,goto:-4,previous,goto:3,ended,resume,ended,resume,ended
+ACTIONS none|play:0/0@0-4000|play:1/0@4000-9000|play:2/0@0-9000|play:1/0@4000-9000|play:1/0@4000-9000|wait:5000|play:2/0@0-9000|wait:9000|play:2/0@0-9000|play:5/0@0-15000|play:5/0@0-15000|play:0/0@0-4000|play:0/0@0-4000|play:3/0@9000-15000|wait:6000|play:3/1@9000-15000|wait:6000|play:4/0@0-15000|wait:15000
+LOCATE -
+END
+
+CASE controls-after-done
+UNITS 0-2000,2000-4000
+OPT talqin=1 wasl=0 sard=0 mode=listen
+PLAN talqin:0-0x1@0-2000;talqin:1-1x1@2000-4000
+TOTAL 4000
+REMAIN 0/0=4000
+EVENTS start,ended,ended,ended,next,previous,restart,goto:0,start,ended
+ACTIONS play:0/0@0-2000|play:1/0@2000-4000|done|done|done|done|done|done|play:0/0@0-2000|play:1/0@2000-4000
+LOCATE -
+END
+
+CASE bad-options-fall-back
+UNITS 0-4000,4000-9000
+OPT talqin=-3 wasl=x sard=2.9 link=sideways mode=sing gap=-1 speed=0
+PLAN wasl:0-1x5@0-9000;sard:0-1x2@0-9000
+TOTAL 126000
+REMAIN 0/0=126000
+EVENTS start,ended,resume,ended,resume,ended,resume
+ACTIONS play:0/0@0-9000|wait:9000|play:0/1@0-9000|wait:9000|play:0/2@0-9000|wait:9000|play:0/3@0-9000
+LOCATE -
+END
+
+CASE long-passage
+UNITS 0-5000,5000-10137,10137-15274,15274-20411,20411-25548,25548-30685,30685-35822,35822-40959,40959-46096,46096-51233,51233-56370,56370-61507
+OPT talqin=3 wasl=2 sard=2 link=cumulative gap=1 speed=1
+PLAN talqin:0-0x3@0-5000;talqin:1-1x3@5000-10137;wasl:0-1x2@0-10137;talqin:2-2x3@10137-15274;wasl:0-2x2@0-15274;talqin:3-3x3@15274-20411;wasl:0-3x2@0-20411;talqin:4-4x3@20411-25548;wasl:0-4x2@0-25548;talqin:5-5x3@25548-30685;wasl:0-5x2@0-30685;talqin:6-6x3@30685-35822;wasl:0-6x2@0-35822;talqin:7-7x3@35822-40959;wasl:0-7x2@0-40959;talqin:8-8x3@40959-46096;wasl:0-8x2@0-46096;talqin:9-9x3@46096-51233;wasl:0-9x2@0-51233;talqin:10-10x3@51233-56370;wasl:0-10x2@0-56370;talqin:11-11x3@56370-61507;wasl:0-11x2@0-61507;sard:0-11x2@0-61507
+TOTAL 2191238
+REMAIN 0/0=2191238,10/1=1660278,22/0=492056,23/1=123014
+EVENTS start,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,ended,resume,goto:20,ended,resume,ended,resume,ended,resume,next,ended
+ACTIONS play:0/0@0-5000|wait:5000|play:0/1@0-5000|wait:5000|play:0/2@0-5000|wait:5000|play:1/0@5000-10137|wait:5137|play:1/1@5000-10137|wait:5137|play:1/2@5000-10137|wait:5137|play:2/0@0-10137|wait:10137|play:2/1@0-10137|wait:10137|play:3/0@10137-15274|play:20/0@0-56370|wait:56370|play:20/1@0-56370|wait:56370|play:21/0@56370-61507|wait:5137|play:21/1@56370-61507|play:22/0@0-61507|wait:61507
+LOCATE 61000=11
+END
