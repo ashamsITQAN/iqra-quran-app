@@ -209,8 +209,8 @@ body[data-tpi="3"]{--tpo:52%}
 .hz fieldset{border:1px solid var(--line);border-radius:10px;margin:0;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
 .hz legend{font-size:12px;color:var(--muted);padding:0 6px}
 .hz label{font-size:14px}
-.hz select,.hz input[type=number]{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:210px}
-.hz input[type=number]{width:76px;text-align:center}
+.hz select,.hz input.num{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:210px}
+.hz input.num{width:76px;text-align:center}
 .hz input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);justify-self:end}
 .hz .inl{display:flex;align-items:center;gap:6px}.hz small{color:var(--muted);font-size:12px}
 .hz select:disabled,.hz input:disabled{opacity:.45}
@@ -647,15 +647,15 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <div class="sh-body hz">
     <fieldset><legend>المقطع</legend>
       <label for="hz-surah">السورة</label><select id="hz-surah"></select>
-      <label for="hz-from">من الآية</label><input id="hz-from" type="number" inputmode="numeric" min="1">
-      <label for="hz-to">إلى الآية</label><span class="inl"><input id="hz-to" type="number" inputmode="numeric" min="1"><small id="hz-max"></small></span>
+      <label for="hz-from">من الآية</label><input id="hz-from" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1">
+      <label for="hz-to">إلى الآية</label><span class="inl"><input id="hz-to" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1"><small id="hz-max"></small></span>
       <label for="hz-unit">مقدار ما يُلقَّن كل مرة</label><select id="hz-unit"><option value="1">آية</option><option value="2">آيتان</option><option value="3">ثلاث آيات</option><option value="5">خمس آيات</option><option value="g" disabled>جملة</option></select>
       <label for="hz-reciter">القارئ</label><select id="hz-reciter"><option value="">…</option></select>
     </fieldset>
     <fieldset><legend>عدد المرات</legend>
-      <label for="hz-r1">تلقين المقطع منفردًا</label><input id="hz-r1" type="number" inputmode="numeric" min="0" max="50">
-      <label for="hz-r2">وصله بما قبله</label><input id="hz-r2" type="number" inputmode="numeric" min="0" max="50">
-      <label for="hz-r3">سرد الكل في الختام</label><input id="hz-r3" type="number" inputmode="numeric" min="0" max="50">
+      <label for="hz-r1">تلقين المقطع منفردًا</label><input id="hz-r1" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="0" max="50">
+      <label for="hz-r2">وصله بما قبله</label><input id="hz-r2" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="0" max="50">
+      <label for="hz-r3">سرد الكل في الختام</label><input id="hz-r3" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="0" max="50">
       <label for="hz-link">طريقة الوصل</label><select id="hz-link"><option value="cum">تراكمي: من أول المقطع إلى الجديد</option><option value="prev">بالمقطع السابق فقط</option></select>
     </fieldset>
     <fieldset><legend>الترديد</legend>
@@ -671,7 +671,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 <section id="index" class="modal" role="dialog" aria-label="الفهرس" aria-hidden="true">
   <div class="sh-top">
     <div class="sh-title"><p class="big plain">الفهرس</p></div>
-    <form id="idx-page" class="pagejump"><label for="idx-num">صفحة</label><input id="idx-num" type="number" inputmode="numeric" min="1" max="604"><button type="submit" class="btn">انتقال</button></form>
+    <form id="idx-page" class="pagejump"><label for="idx-num">صفحة</label><input id="idx-num" type="text" inputmode="numeric" pattern="[0-9٠-٩۰-۹]*" autocomplete="off" class="num" dir="ltr" min="1" max="604"><button type="submit" class="btn">انتقال</button></form>
     <button class="sh-close" id="idx-close" type="button" aria-label="إغلاق الفهرس">×</button>
   </div>
   <div class="tabs" id="idx-tabs" role="tablist">
@@ -798,6 +798,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 (() => {
 const RATIO = 345 / 550, FURN = 32 + 38 + 4;
 const $ = (s, r = document) => r.querySelector(s);
+// a number as typed, whichever digits the keyboard gives (0-9, ٠-٩, ۰-۹)
+const num = (v) => +String(v).replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 0x660).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 0x6f0).replace(/[^0-9]/g, "");
 const ar = (v) => String(v).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
 const pad = (n) => String(n).padStart(3, "0");
 const LEVELS = { word: "الكلمة", ayah: "الآية", surah: "السورة", page: "الصفحة" };
@@ -1946,7 +1948,7 @@ const rangeLabel = (a, b) => (a === b ? `الآية ${ar(a)}` : `الآيات ${
 /* ----- setup window ----- */
 const F = (id) => $("#hz-" + id);
 function readForm() {
-  const max = meta.surahs[F("surah").value].ayahs, n = (id, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+F(id).value) || lo));
+  const max = meta.surahs[F("surah").value].ayahs, n = (id, lo, hi) => Math.max(lo, Math.min(hi, Math.round(num(F(id).value)) || lo));
   hz.surah = +F("surah").value; hz.from = n("from", 1, max); hz.to = Math.max(hz.from, n("to", 1, max));
   hz.reciter = F("reciter").value; hz.unit = F("unit").value === "g" ? "g" : +F("unit").value; hz.r1 = n("r1", 0, 50); hz.r2 = n("r2", 0, 50); hz.r3 = n("r3", 0, 50);
   hz.link = F("link").value; hz.mode = F("mode").value; hz.gap = F("gap").value; hz.speed = F("speed").value; hz.hide = F("hide").checked;
@@ -2002,9 +2004,9 @@ async function openHifz(preset) {
 }
 hifzBox.addEventListener("input", (e) => { if (!e.target.id || !e.target.id.startsWith("hz-")) return; if (e.target.id === "hz-surah") { hz.surah = +e.target.value; hz.from = 1; hz.to = meta.surahs[hz.surah].ayahs; F("from").value = 1; F("to").value = hz.to; }
   // a number being typed is left as the reader types it (it may be empty for a moment); it is put within its bounds on leaving the box
-  readForm(); if (e.target.type !== "number") writeForm(); estimate(); });
-hifzBox.addEventListener("change", (e) => { if (e.target.type === "number" && e.target.id.startsWith("hz-")) { readForm(); writeForm(); estimate(); } });
-hifzBox.addEventListener("focusin", (e) => { if (e.target.type === "number") { try { e.target.select(); } catch (err) {} } });   // typing replaces the old number
+  readForm(); if (!e.target.classList.contains("num")) writeForm(); estimate(); });
+hifzBox.addEventListener("change", (e) => { if (e.target.classList.contains("num") && e.target.id.startsWith("hz-")) { readForm(); writeForm(); estimate(); } });
+hifzBox.addEventListener("focusin", (e) => { if (e.target.classList.contains("num")) { try { e.target.select(); } catch (err) {} } });   // typing replaces the old number
 $("#hifz-open").addEventListener("click", () => { openHifz(); if (store.get("hzguide", "0") !== "1" && !navigator.webdriver /* not under an automated test */) { store.set("hzguide", "1"); show($("#hzguide"), true); } });
 $("#hz-help").addEventListener("click", () => show($("#hzguide"), true));
 ["#hzg-close", "#hzg-ok"].forEach((s) => $(s).addEventListener("click", () => show($("#hzguide"), false)));
@@ -2328,7 +2330,7 @@ function paintIndex() {
 $("#idx-open").addEventListener("click", () => { ctx = null; show(sheet, false); show(settings, false); applySelection(); show(indexBox, true); $("#idx-num").value = cur; paintIndex(); });
 $("#idx-close").addEventListener("click", close);
 $("#idx-tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-v]"); if (!b) return; if (b.dataset.v === "act") return openActivity(); idxTab = b.dataset.v; paintIndex(); });
-$("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(+$("#idx-num").value); if (n >= meta.first && n <= meta.last) jump(n); });
+$("#idx-page").addEventListener("submit", (e) => { e.preventDefault(); const n = Math.round(num($("#idx-num").value)); if (n >= meta.first && n <= meta.last) jump(n); });
 
 /* ---------- my bookmarks (one place each for memorising, reading and revising) and my notes ----------
    Kept on this device; a removed item stays as a dated tombstone so that syncing does not bring it back. */
