@@ -595,6 +595,12 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
         <button type="button" data-v="ayah">بالآية</button><button type="button" data-v="word">بالكلمة</button>
       </div></div>
     <p class="note" id="touch-hint"></p>
+    <div class="opt"><h3><label for="set-awake">إبقاء الشاشة مفتوحة أثناء القراءة</label></h3><input id="set-awake" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <p class="note" id="awake-note" style="margin:-4px 0 10px"></p>
+    <div class="opt"><h3>التلميحات</h3>
+      <div class="seg"><button type="button" id="tour-app" class="btn">تلميحات التطبيق</button><button type="button" id="tour-ts" class="btn">تلميحات التسميع</button></div>
+    </div>
+    <p class="note" style="margin:-4px 0 0">تعيد عرض جولة التعريف بخدمات التطبيق، أو بأدوات شريط التسميع.</p>
   </div>
   <div class="sh-body" id="set-look" hidden>
     <div class="opt"><h3>المظهر</h3>
@@ -3129,7 +3135,7 @@ async function offSync() {   // on start and when the connection returns: bring 
 window.addEventListener("online", offSync);
 setTimeout(() => { if (Array.isArray(projects)) offSync(); }, 6000);
 // The first visit: a short round of the app's services, once the first page is drawn.
-(function appTour(tries) {
+function appTour(tries) {
   if (store.get("apptour", "0") === "1") return;
   if (!spread.querySelector(".art svg g.word") || document.querySelector(".modal.open")) { if (tries < 40) setTimeout(() => appTour(tries + 1), 500); return; }
   const finger = matchMedia("(pointer:coarse)").matches;
@@ -3144,7 +3150,20 @@ setTimeout(() => { if (Array.isArray(projects)) offSync(); }, 6000);
     ["#full-open", "ملء الشاشة للقراءة."],
     ["[data-pnum]", "رقم الصفحة: اضغطه لمحتوى الصفحة كلها، واسم السورة أعلى الصفحة لمحتوى السورة."],
   ]);
-})(0);
+}
+appTour(0);
+$("#tour-app").addEventListener("click", () => { store.set("apptour", "0"); close(); appTour(0); });
+$("#tour-ts").addEventListener("click", () => { store.set("tstour", "0"); close(); if (FOL.on) folStop(); folStart(); });
+// Keep the screen on while reading: asked of the system while the app is in view, and again each time it comes back into view.
+let awake = store.get("awake", "0") === "1", wakeLock = null;
+async function keepAwake() {
+  try {
+    if (awake && !wakeLock && "wakeLock" in navigator && document.visibilityState === "visible") { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => { wakeLock = null; }); }
+    else if (!awake && wakeLock) { const w = wakeLock; wakeLock = null; await w.release(); }
+  } catch (e) { wakeLock = null; }
+}
+document.addEventListener("visibilitychange", keepAwake); keepAwake();
+$("#set-awake").addEventListener("change", (e) => { awake = e.target.checked; store.set("awake", awake ? "1" : "0"); keepAwake(); });
 
 /* ---------- my activity: what was recited and when. A record of reading only: it holds no marks or scores of a recitation. ---------- */
 const ranges = (set) => { const a = [...set].sort((x, y) => x - y), out = []; a.forEach((g) => { const l = out[out.length - 1]; if (l && g <= l[1] + 1) l[1] = Math.max(l[1], g); else out.push([g, g]); }); return out; };
@@ -3398,6 +3417,7 @@ function paintSettings() {
   $("#touch-hint").textContent = touch === "word" ? "لمس الكلمة يفتح ما يخصها، ولمس رأس الآية يفتح ما يخص الآية." : "لمس أي موضع في الآية يفتح ما يخصها كلها، ومعاني كلماتها تظهر مجتمعة في تبويب داخل نافذة الآية.";
   $("#set-tsfb").checked = tsFb; $("#set-tsrec").checked = tsRec;
   $("#set-tshide").checked = tsHide; $("#set-tsmark").checked = tsNoMark;
+  { const ok = "wakeLock" in navigator; $("#set-awake").checked = awake && ok; $("#set-awake").disabled = !ok; $("#awake-note").textContent = ok ? "لا تنطفئ الشاشة ما دام التطبيق ظاهرًا أمامك. قد يزيد استهلاك البطارية." : "متصفحك لا يدعم هذه الخاصية."; }
   $("#set-topics").checked = showTopics; $("#set-ayat").checked = showAyat; press("seg-wmark", wmark);
   $("#wmark-help").textContent = { "": "لا تُميَّز كلمات.", gharib: "كلمات الغريب بالأحمر.", mut: "العبارات المتشابهة بالأزرق؛ ولمسها يعرض مواضعها الأخرى.", qir: "كلمات الخلاف بين القراءات بالبنفسجي؛ ولمسها يعرض أوجه الخلاف." }[wmark];
   document.querySelectorAll("#set-tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.v === setSec));
