@@ -945,6 +945,7 @@ async function render() {
   $("#prev").disabled = start <= meta.first;
   $("#next").disabled = want[want.length - 1] >= meta.last;
   try { history.replaceState(null, "", "#p" + cur); } catch (e) {}
+  store.set("page", String(cur));   // the app opens next time where the reading was
   await Promise.all(want.filter((n) => n <= meta.last).map(fillPage));
   applySelection();
   paintNow();
@@ -2550,8 +2551,14 @@ function saveMine(fromSync) {
 function setMark(k, v) { rawMarks[k] = v ? { ...v, t: Date.now() } : { del: true, t: Date.now() }; saveMine(); }
 function setNote(id, v) { const old = notes[id]; rawNotes[id] = v ? { ...v, u: Date.now(), c: (old && (old.c || old.u)) || Date.now() } : { del: true, u: Date.now() }; saveMine(); }
 // Takes in another copy (a backup file, or the Drive copy): the newer version of each item wins. Returns how many changed here.
-function mergeMine(d) {
+function mergeMine(d, fromFile) {
   let n = 0;
+  if (d && d.prefs && typeof d.prefs === "object") {
+    // the named sets of memorisation settings are joined by name, from a file or from Drive alike
+    try { const theirs = JSON.parse(d.prefs.hzsets || "[]"); let ch = false; theirs.forEach((x) => { if (x && x.name && !hzSets.some((y) => y.name === x.name)) { hzSets.push(x); ch = true; } }); if (ch) { store.set("hzsets", JSON.stringify(hzSets)); n += 1; } } catch (e) {}
+    // the other settings are taken only from a file the reader chose to restore (each device keeps its own look otherwise)
+    if (fromFile) { let ch = 0; Object.entries(d.prefs).forEach(([k, v]) => { if (k !== "hzsets" && !PREF_SKIP.test(k) && typeof v === "string" && store.get(k, null) !== v) { store.set(k, v); ch += 1; } }); if (ch) { n += ch; mergeMine.prefs = ch; } }
+  }
   if (!d || typeof d.notes !== "object" || typeof d.marks !== "object") throw new Error("shape");
   Object.entries(d.notes || {}).forEach(([k, v]) => { if (v && (v.del || typeof v.t === "string") && (v.u || 0) > ((rawNotes[k] || {}).u || 0)) { rawNotes[k] = v; n += 1; } });
   Object.entries(d.marks || {}).forEach(([k, v]) => { if (v && (v.del || v.key) && KINDS.some((x) => x[0] === k) && (v.t || 0) > ((rawMarks[k] || {}).t || 0)) { rawMarks[k] = v; n += 1; } });
@@ -2564,7 +2571,10 @@ function mergeMine(d) {
   }
   return n;
 }
-const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct });
+// The settings go into the copy too (not sign-ins, keys, caches or what belongs to one device's link with Drive).
+const PREF_SKIP = /^(marks|notes|activity|api|drive.*|fanar-token|gcid|qlkey|reciters2|recbk-sig|recentq|surah-api|page|apptour|tstour|hzguide|presshint)$/;
+function prefsOut() { const o = {}; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("iqra-") && !PREF_SKIP.test(k.slice(5))) o[k.slice(5)] = localStorage.getItem(k); } } catch (e) {} return o; }
+const exportObj = () => ({ app: "iqra-quran-app", version: 1, exported: new Date().toISOString(), marks: rawMarks, notes: rawNotes, activity: rawAct, prefs: prefsOut() });
 function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 
 function paintMarks() {
@@ -3618,8 +3628,9 @@ async function backupLoad(file, note) {
   try {
     const d = JSON.parse(await file.text());
     if (d.app !== "iqra-quran-app") throw new Error("shape");
-    const n = mergeMine(d); saveMine();
+    mergeMine.prefs = 0; const n = mergeMine(d, true); saveMine();
     note.textContent = n ? `استُرجع ${ar(n)} عنصرًا من الملف.` : "الملف لا يحوي شيئًا أحدث مما على هذا الجهاز.";
+    if (mergeMine.prefs) { note.textContent += " استُرجعت الإعدادات، ويُعاد فتح التطبيق الآن لتظهر."; setTimeout(() => location.reload(), 1800); }
   } catch (err) { note.textContent = "تعذّرت قراءة الملف. اختر ملف نسخة احتياطية من هذا التطبيق."; }
 }
 $("#bk-save").addEventListener("click", () => backupSave($("#bk-note")));
@@ -3660,7 +3671,7 @@ async function syncNow(interactive) {
     if (driveFile) { try { remote = await driveCall("GET", `${GAPI}/drive/v3/files/${driveFile}?alt=media`); } catch (e) { if (e.status === 404) driveFile = ""; else throw e; } }
     const got = remote ? mergeMine(remote) : 0;
     if (got) { saveMine(true); if (settings.classList.contains("open")) paintSettings(); }
-    const same = remote && JSON.stringify([remote.marks, remote.notes]) === JSON.stringify([rawMarks, rawNotes]);
+    const same = remote && JSON.stringify([remote.marks, remote.notes, remote.activity, (remote.prefs || {}).hzsets || "[]"]) === JSON.stringify([rawMarks, rawNotes, rawAct, store.get("hzsets", "[]")]);
     if (!same) {
       const body = JSON.stringify(exportObj());
       if (driveFile) await driveCall("PATCH", `${GAPI}/upload/drive/v3/files/${driveFile}?uploadType=media`, body, { "Content-Type": "application/json" });
@@ -4044,8 +4055,8 @@ window.addEventListener("hashchange", () => { const n = +location.hash.replace("
   catch (e) { spread.textContent = "تعذّر تحميل بيانات التطبيق. أعد تحميل الصفحة."; return; }
   $("#slider").min = meta.first; $("#slider").max = meta.last;
   $("#idx-num").max = meta.last;
-  const h = +location.hash.replace("#p", "");
-  if (h) cur = h;
+  const h = +location.hash.replace("#p", ""), was = +store.get("page", "0");
+  if (h) cur = h; else if (was) cur = was;   // a link to a page wins; else the page read last
   render();
 })();
 })();
