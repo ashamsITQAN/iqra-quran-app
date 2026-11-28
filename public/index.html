@@ -321,6 +321,7 @@ body.ts-on:not(.ts-hide) .art svg g.ayah-fragment.rda g.word .hit,body.ts-on:not
 body.ts-on:not(.ts-hide) .art svg g.word.rdnow .hit{fill:var(--tint-strong)}
 body.ts-on .art svg g.word.fb path{fill:var(--gharib)}body.ts-on .art svg g.word.fb .hit{fill:var(--tint-strong)}   /* a place to look at again */
 #fb-list small{display:block;margin-top:2px}
+.ac-fl{margin-top:6px}.ac-fl summary{cursor:pointer;font-size:13px;color:var(--accent)}.ac-fl ol{margin:6px 0;padding-inline-start:22px;display:flex;flex-direction:column;gap:4px}.ac-fl li{border:0;padding:0;background:none}.ac-fl .btn{padding:1px 8px}
 .ac-list audio{width:100%;margin-top:6px;height:34px}
 /* ayah and tafsir */
 #tv-row[hidden],#zoom-row[hidden],#mode-row[hidden]{display:none}
@@ -422,6 +423,7 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
 .mynote .row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
 #idx-backup{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-top:1px solid var(--line);flex:none}
 #idx-backup[hidden]{display:none}
+#ql-share-box{margin-top:8px;--ql-accent:var(--accent);--ql-accent-fg:var(--paper);--ql-bg:var(--panel);--ql-fg:var(--ink);--ql-muted:var(--muted);--ql-radius:10px;--ql-font:inherit;--ql-title-font:inherit}
 .idx-list li.empty{color:var(--muted);padding:14px 8px;font-size:14px}
 .gh-word{color:var(--gharib);font-family:var(--quran);font-size:1.12em}
 .ayah-block .hit{fill:transparent;pointer-events:none}
@@ -571,7 +573,10 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <fieldset class="mine"><legend>المزامنة عبر Google Drive</legend>
       <p class="note" id="dr-status" role="status"></p>
       <div class="acts"><button type="button" class="btn main" id="dr-link">ربط Google Drive</button><button type="button" class="btn main" id="dr-sync" hidden>مزامنة الآن</button><button type="button" class="btn" id="dr-unlink" hidden>إلغاء الربط</button></div>
-      <p class="note">تُحفظ علاماتك وتعليقاتك في مجلد خاص بالتطبيق داخل حسابك، ولا يطّلع التطبيق على بقية ملفاتك.</p>
+      <p class="note">تُحفظ علاماتك وتعليقاتك ونشاطك في مجلد خاص بالتطبيق داخل حسابك، ولا يطّلع التطبيق على بقية ملفاتك.</p>
+      <div class="opt"><h3><label for="set-recbk">حفظ تسجيلات تلاوتي في النسخة الاحتياطية على Drive</label></h3><input id="set-recbk" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+      <p class="note">تنبيه: رفع التسجيلات وتنزيلها يستغرق وقتًا ويستهلك من باقة الإنترنت (نحو ٠٫٧ ميغابايت لكل دقيقة تلاوة)، فالأفضل أن تكون المزامنة على شبكة واي فاي. والنسخة الاحتياطية في ملف لا تشمل التسجيلات.</p>
+      <p class="note" id="rec-status" role="status"></p>
     </fieldset>
     <fieldset class="mine"><legend>النسخ الاحتياطي والتصدير</legend>
       <div class="acts"><button type="button" class="btn" id="mine-save">حفظ نسخة احتياطية</button><button type="button" class="btn" id="mine-load">استرجاع من ملف</button><button type="button" class="btn" id="mine-text">تصدير نصي</button><button type="button" class="btn" id="mine-copy">نسخ الكل</button><input type="file" id="mine-file" accept="application/json,.json" hidden></div>
@@ -635,6 +640,13 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
     <div class="opt"><h3><label for="set-tshint">تلقين الكلمة التالية عند التوقف أو الخطأ (تظهر لحظة ثم تختفي)</label></h3><input id="set-tshint" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsfb">بيان مواضع تحتاج مراجعة بعد كل آية</label></h3><input id="set-tsfb" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
     <div class="opt"><h3><label for="set-tsrec">الاحتفاظ بتسجيل صوتي لجلساتي على هذا الجهاز</label></h3><input id="set-tsrec" type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);flex:none"></div>
+    <p class="note">التسجيل ملف m4a بجودة ٩٦ كيلوبت في الثانية (نحو ٠٫٧ ميغابايت للدقيقة)؛ وفي المتصفحات التي لا تكتب m4a يُحفظ بصيغة webm أو ogg بالجودة نفسها. ولحفظ التسجيلات في نسختك الاحتياطية على Google Drive فعّل خيارها في قسم «بياناتي».</p>
+    <fieldset class="mine" id="ql-share"><legend>التصدّق بتلاوتي لتحسين نموذج التسميع</legend>
+      <p class="note">تستطيع أن تسمح لـ Quran Lab بأخذ نسخة من تلاوتك لتدريب نموذجها المفتوح. القرار لك وحدك، وتديره مكتبة Quran Lab نفسها: تفعّله أو توقفه، وترى ما شاركته، وتحذفه متى شئت. لا يُرسل شيء قبل موافقتك.</p>
+      <div class="acts"><button type="button" class="btn main" id="ql-share-go">خيارات مشاركة التلاوة</button></div>
+      <p class="note" id="ql-share-note" role="status"></p>
+      <div id="ql-share-box" hidden></div>
+    </fieldset>
     <p class="note">سجل جلساتك وختمتك في «نشاطي» من الفهرس. وإعدادات التلقين والقرّاء في نافذة «الحفظ».</p>
   </div>
   <div class="sh-body" id="set-content" hidden>
@@ -2802,6 +2814,7 @@ $("#sh-share").addEventListener("click", () => openShare(docShown()));
 const QL_KEY = window.QURANLAB_KEY || store.get("qlkey", "");   // the web key comes from quranlab-key.js, written at deploy time and kept out of the repository
 const tsDev = new URLSearchParams(location.search).has("quranlab-sample");   // for checks: a sample clip of the model in place of the microphone
 let qlClient = null, qlModel = null, qlSession = null;
+const REC_TYPES = ["audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus"], REC_RATE = 96000;
 function qlLoader() {
   return qlLoader.p || (qlLoader.p = new Promise((res, rej) => {
     const sc = document.createElement("script"); sc.src = "https://web.quranlab.ai/4/loader.js"; sc.crossOrigin = "anonymous";
@@ -2845,7 +2858,9 @@ async function folIndex(model) {
   start[rows.length] = n;
   const idx = new Map(), K = FOL.K;
   for (let p = 0; p + K <= n; p++) { let key = 0; for (let k = 0; k < K; k++) key = key * 38 + U[p + k]; const l = idx.get(key); if (l) l.push(p); else idx.set(key, [p]); }
-  Object.assign(FOL, { U, ug, uw, start, n, idx, rows, blank: model.tokens.blank, bar });
+  // the isti'adha is not an ayah: its sounds are put together from words of the mushaf that hold them (113:1 and the end of 16:98)
+  const wordU = (s, a, w1, w2) => { const g = rows.findIndex((r) => r[0] === s && r[1] === a), o = []; for (let p = start[g]; p < start[g + 1]; p++) if (uw[p] >= w1 - 1 && uw[p] <= w2 - 1) o.push(U[p]); return o; };
+  Object.assign(FOL, { U, ug, uw, start, n, idx, rows, blank: model.tokens.blank, bar, ist: Uint8Array.from([...wordU(113, 1, 2, 2), ...wordU(16, 98, 5, 8)]) });
 }
 // Where is this being read? The last heard units vote, six at a time, for the places of the mushaf that hold the same run.
 function folLocate(H, force) {
@@ -2863,9 +2878,12 @@ function folLocate(H, force) {
   // the same words occur in many places: wait for more of the reading, then take the place nearest the open page
   const shown = [...spread.querySelectorAll(".page[data-page]")].map((x) => +x.dataset.page), p1 = Math.min(...shown, cur), p2 = Math.max(...shown, cur);
   const i1 = FOL.rows.findIndex((r) => r[2] >= p1), i2 = FOL.rows.findIndex((r) => r[2] > p2), lo = FOL.start[Math.max(0, i1)], hi = i2 < 0 ? n : FOL.start[i2];
-  const here = top.filter((c) => c[0] + L > lo && c[0] < hi);   // a place on the open pages is taken at once
+  // The reading is expected on the open pages: a place there is taken at once, even when another place matches somewhat
+  // better. A place elsewhere is taken only once the reader has gone on long enough for it to be clear.
+  let here = cands.filter((c) => c[0] + L > lo && c[0] < hi && c[1] >= best * (H.length >= 44 ? 0.8 : 0.5));
+  if (here.length) { const hb = Math.max(...here.map((c) => c[1])); here = here.filter((c) => c[1] >= hb * 0.8); }
   const far = top.some((c) => Math.abs(c[0] - top[0][0]) > 40);
-  if (!here.length && far && H.length < 44 && !force) return null;
+  if (!here.length && !force && (H.length < 30 || (far && H.length < 44))) return null;
   const pick = here.length ? here : top;
   pick.sort((a, b) => Math.abs(a[0] - lo) - Math.abs(b[0] - lo));
   const d = pick[0][0];
@@ -2874,7 +2892,9 @@ function folLocate(H, force) {
 // Follow on from a known place: the latest heard units are laid along the text around it, allowing for sounds the model
 // missed, added or heard differently; where they end is the new place.
 function folTrack(H, fresh, tail, limit) {
-  const { U, n } = FOL, T = tail || H.slice(-28), a = Math.max(0, FOL.pos - 26), b = Math.min(n, FOL.pos + 52), m = b - a, N = T.length;
+  // (the text looked at goes back no further than the start of the ayah before the one being read: words of earlier
+  //  ayat that sound like these are not where the reading is)
+  const { U, n } = FOL, a = Math.max(0, FOL.pos - 26, folFloor()), T = tail || H.slice(-Math.min(28, Math.max(10, FOL.pos - a + fresh + 4))), b = Math.min(n, FOL.pos + 52), m = b - a, N = T.length;
   let prev = new Float32Array(m + 1), row = new Float32Array(m + 1);
   for (let i = 1; i <= N; i++) {
     row[0] = i; const x = T[i - 1];
@@ -2895,11 +2915,11 @@ function folTrack(H, fresh, tail, limit) {
 //   "wait"  they read as a basmala still being said: the place stays where it is;
 //   n > 0   the basmala was said in full within the first n of them: following goes on from what comes after;
 //   0       it is not a basmala.
-function folBasmala(S) {
-  const { U, start } = FOL, B = U.subarray(start[0], start[1]), nb = B.length;
+function folBasmala(S, B, lead) {   // (B: another opening formula in place of the basmala; lead: how many stray sounds may come first)
+  const { U, start } = FOL; B = B || U.subarray(start[0], start[1]); const nb = B.length;
   if (S.length < 5) return "wait";
   let best = null;
-  for (let off = 0; off <= Math.min(8, S.length - 5); off++) {   // a few last sounds of the surah just ended may come first
+  for (let off = 0; off <= Math.min(lead == null ? 8 : lead, S.length - 5); off++) {   // a few last sounds of the surah just ended may come first
     const X = S.slice(off, off + nb + 8), N = X.length;
     let prev = new Float32Array(nb + 1), row = new Float32Array(nb + 1);
     for (let j = 0; j <= nb; j++) prev[j] = j;
@@ -2917,6 +2937,8 @@ function folBasmala(S) {
 }
 // The start of a surah that the place has reached, or is within a few sounds of (the last sounds of a surah are often
 // still on their way when the basmala begins); -1 when there is none.
+// The start of the ayah before the one being read: the following never goes back past it by itself.
+function folFloor() { const { pos, n, start, ug } = FOL; return pos == null ? 0 : start[Math.max(0, ug[Math.min(n - 1, pos)] - 1)]; }
 function folSurahEdge() {
   const { pos, n, start, ug, rows } = FOL; if (pos == null || pos <= 0 || pos >= n) return -1;
   const g = ug[pos];
@@ -2928,6 +2950,20 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
   if (d.isFinal) for (let i = d.settled; i < d.tokens.length; i++) { const id = d.tokens[i].id; if (id !== FOL.blank && id !== FOL.bar && id < 37) H.push(id); }
   const fresh = H.length - (FOL.seen || 0); if (fresh <= 0) return; FOL.seen = H.length;
   if (FOL.pos == null) {
+    // A sitting opens with the isti'adha and the basmala, which say nothing of where the reading is: they are let pass,
+    // and the place is looked for only in what is read after them.
+    const o = FOL.open;
+    if (o && !o.done) {
+      for (const step of ["ist", "bsm"]) {
+        if (o[step] != null) continue;
+        if (step === "bsm" && cur === 1) { o.bsm = 0; continue; }   // on the first page the basmala is the first ayah of al-Fatiha
+        const r = folBasmala(H.slice(FOL.cut || 0), step === "ist" ? FOL.ist : null, 3);
+        if (r === "wait") { if (d.isFinal) continue; return; }
+        o[step] = r;
+        if (r > 0) { FOL.cut = (FOL.cut || 0) + r; o.said = true; o.take = FOL.take; if (FOL.take) FOL.take.extra = true; tsSay("أكمل القراءة… أتابعك من أول ما تقرؤه بعد الاستعاذة والبسملة."); }
+      }
+      if (o.ist != null && o.bsm != null) o.done = true;
+    }
     const hit = folLocate(H.slice(FOL.cut || 0), d.isFinal); if (!hit) return;
     // the basmala opens every surah: away from the first page it does not say where the reading is, so the place is taken from what follows it
     if (FOL.ug[hit.pos - 1] === 0 && cur !== 1) { FOL.cut = H.length; return; }
@@ -2941,7 +2977,10 @@ function folHeard(d) {   // one chunk of the take: the settled units so far
     if (back.length >= 9 && folTrack(H, fresh, back, 0.3)) { folAway(null); FOL.bad = 0; }
     else {
       const hit = folLocate(since, d.isFinal);
-      if (hit && hit.pos > FOL.pos - 500 && hit.pos < FOL.pos + 70) { FOL.pos = hit.pos; FOL.from = hit.from; folAway(null); FOL.bad = 0; }   // the same passage: a repeat, or a little further on
+      // the same passage: a little further on, or back within the ayah before; further back (a repeat from earlier ayat)
+      // only when the reader has gone on with it long enough for it to be clear
+      if (hit && hit.pos < FOL.pos + 70 && (hit.pos > folFloor() || (hit.pos > FOL.pos - 500 && (since.length >= 40 || d.isFinal)))) { FOL.pos = hit.pos; FOL.from = hit.from; folAway(null); FOL.bad = 0; }
+      else if (hit && hit.pos > FOL.pos - 500 && hit.pos < FOL.pos + 70) return;
       else { if (hit && FOL.ug[hit.pos - 1] !== 0 && (!FOL.away.hit || FOL.ug[FOL.away.hit.pos - 1] !== FOL.ug[hit.pos - 1])) folAway(hit); return; }
     }
     folReveal(); return;
@@ -2984,7 +3023,7 @@ function folHint() {
   el.classList.add("hint"); setTimeout(() => el.classList.remove("hint"), 1800);
 }
 setInterval(() => { if (FOL.on && mic && FOL.pos != null && !FOL.away && mic.loudAt && performance.now() - mic.loudAt >= 3000) folHint(); }, 500);
-if (navigator.webdriver) window.__iqra = { FOL, folHeard: (d) => folHeard(d), folHint: () => folHint() };   // for the automated tests only
+if (navigator.webdriver) window.__iqra = { FOL, folHeard: (d) => folHeard(d), folHint: () => folHint(), drive: (t) => { gToken = t; gExp = Date.now() + 3e6; }, recPut: (id, b) => recPut(id, b), recKeys: () => recKeys(), act: () => rawAct, sync: () => syncNow(true) };   // for the automated tests only
 const folName = (g) => `${surahName(FOL.rows[g][0])}، الآية ${ar(FOL.rows[g][1])}`;
 function folAway(hit) {   // null: back on track; undefined: off the place, the other place not known yet; else the other place
   const bar = $("#ts-bar"), jump = $("#ts-jump");
@@ -3046,7 +3085,7 @@ async function micOpen() {
     if (rms < Math.max(0.004, m.level * 0.1)) m.quietMs += (b.length / m.rate) * 1000; else { m.quietMs = 0; m.spoke = true; m.loudAt = performance.now(); }
     if (m.sink) m.sink.push(b); else if (m.queue.length < 400) m.queue.push(b);
   };
-  if (tsRec && window.MediaRecorder) { try { m.rec = new MediaRecorder(stream); m.rec.ondataavailable = (e) => { if (e.data && e.data.size) m.parts.push(e.data); }; m.rec.start(1000); } catch (e) { m.rec = null; } }
+  if (tsRec && window.MediaRecorder) { try { const ty = REC_TYPES.find((t) => MediaRecorder.isTypeSupported(t)); m.rec = new MediaRecorder(stream, { ...(ty ? { mimeType: ty } : {}), audioBitsPerSecond: REC_RATE }); m.rec.ondataavailable = (e) => { if (e.data && e.data.size) m.parts.push(e.data); }; m.rec.start(1000); } catch (e) { m.rec = null; } }
   return m;
 }
 async function micClose(id) {
@@ -3054,7 +3093,8 @@ async function micClose(id) {
   if (m.rec) { await new Promise((res) => { m.rec.onstop = res; try { m.rec.stop(); } catch (e) { res(); } }); if (id && m.parts.length) recPut(id, new Blob(m.parts, { type: m.rec.mimeType || "audio/webm" })).catch(() => {}); }
   try { m.node.disconnect(); m.stream.getTracks().forEach((t) => t.stop()); await m.ctx.close(); } catch (e) {}
 }
-// recordings live in the browser's own database on this device, one per session
+// recordings live in the browser's own database on this device, one per session: an m4a file (AAC) where the browser can
+// write one, else what it can write (Firefox: ogg or webm), at 96 kbit/s
 function recDb() { return new Promise((res, rej) => { const r = indexedDB.open("iqra-recordings", 1); r.onupgradeneeded = () => r.result.createObjectStore("rec"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function recDo(mode, fn) { const db = await recDb(); return new Promise((res, rej) => { const tx = db.transaction("rec", mode), q = fn(tx.objectStore("rec")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }); }
 const recPut = (id, blob) => recDo("readwrite", (st) => st.put(blob, id)), recGet = (id) => recDo("readonly", (st) => st.get(id)), recKeys = () => recDo("readonly", (st) => st.getAllKeys()).catch(() => []), recDel = (id) => recDo("readwrite", (st) => st.delete(id)).catch(() => {});
@@ -3071,6 +3111,7 @@ function folCut() {
   const tk = FOL.take; if (!tk || tk.fin || !mic) return;
   const atEnd = FOL.pos != null && !FOL.away && FOL.pos > 0 && (FOL.pos >= FOL.n || FOL.ug[FOL.pos] !== FOL.ug[FOL.pos - 1]);
   if (FOL.edge && FOL.edge.said && FOL.edge.take === tk && FOL.pos === FOL.edge.pos && mic.quietMs >= 350) takeEnd(false);   // a pause after the basmala: the surah begins a take of its own
+  else if (FOL.open && FOL.open.said && FOL.open.take === tk && FOL.pos == null && FOL.seen - (FOL.cut || 0) < 5 && mic.quietMs >= 350) takeEnd(false);   // a pause after the opening isti'adha or basmala: the ayat begin a take of their own
   else if (atEnd && FOL.pos !== tk.startPos && mic.quietMs >= 450) takeEnd(true);
   else if (mic.spoke && FOL.seen > 0 && mic.quietMs >= 5000) takeEnd(false);   // a long silence in the middle: begin afresh
 }
@@ -3113,19 +3154,20 @@ function fbPaint() {
   b.hidden = !n; b.textContent = n ? `للمراجعة: ${ar(n)}` : "";
   spread.querySelectorAll(".art svg g.word").forEach((w) => w.classList.toggle("fb", !!FOL.fb && FOL.fb.has(w.dataset.wordKey)));
 }
+const fbWhy = (cls, has, heard) => (cls === "word" ? "قد تحتاج هذه الكلمة مراجعة: ما سُمع لا يوافقها تمامًا." : `قد يحتاج مراجعة · ${FB_NAMES[cls] || cls}: سُمع «${heard}» وفي الآية «${has}».`);
 function fbOpen() {
   const ul = $("#fb-list"); ul.replaceChildren();
   FOL.fb.forEach((list, key) => list.forEach((f) => {
     const li = acEl("li"), top = acEl("div", "top"), go = acEl("button", "btn", "اذهب إلى الموضع"); go.type = "button";
     top.append(acEl("strong", "", f.text || ""), acEl("small", "", f.where));
-    li.append(top, acEl("small", "", f.cls === "word" ? "قد تحتاج هذه الكلمة مراجعة: ما سُمع لا يوافقها تمامًا." : `قد يحتاج مراجعة · ${FB_NAMES[f.cls]}: سُمع «${f.heard}» وفي الآية «${f.has}».`));
+    li.append(top, acEl("small", "", fbWhy(f.cls, f.has, f.heard)));
     const acts = acEl("div", "acts"); go.addEventListener("click", () => { const [s, a] = key.split(":"), row = FOL.rows.find((x) => x[0] === +s && x[1] === +a); show($("#fb"), false); if (row && !spread.querySelector(`g.word[data-word-key="${key}"]`)) { cur = row[2]; render(); } }); acts.append(go); li.append(acts); ul.append(li);
   }));
   show($("#fb"), true);
 }
 async function folTake() {   // one sitting: the microphone until the reader ends it, as a run of takes
   const model = qlModel; tsBegin("");
-  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, judged: 0, full: new Set(), gs: new Set(), fb: new Map(), take: null, kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true; fbPaint();
+  Object.assign(FOL, { pos: null, seen: 0, cut: 0, bad: 0, walked: 0, away: null, t0: Date.now(), notes: 0, judged: 0, full: new Set(), gs: new Set(), fb: new Map(), take: null, open: {}, edge: null, hints: 0, kind: tsHide ? "h" : "r" }); $("#ts-bar").classList.remove("away"); $("#ts-jump").hidden = true; fbPaint();
   const id = String(FOL.t0);
   try {
     const context = (await qlClient.diagnose()).context || model.defaultContext;
@@ -3308,7 +3350,9 @@ const spanCount = (rs) => rs.reduce((t, r) => t + r[1] - r[0] + 1, 0);
 function actSave() {   // called when a take ends: one session, if at least one whole ayah was read
   if (!FOL.gs || !FOL.gs.size) return;
   const r = ranges(FOL.gs), id = String(FOL.t0);
-  rawAct.s[id] = { t: FOL.t0, d: Math.max(1, Math.round((Date.now() - FOL.t0) / 1000)), k: FOL.kind, r, w: FOL.notes || 0, j: FOL.judged || 0, f: FOL.fb ? [...FOL.fb.keys()] : [] };
+  rawAct.s[id] = { t: FOL.t0, d: Math.max(1, Math.round((Date.now() - FOL.t0) / 1000)), k: FOL.kind, r, w: FOL.notes || 0, j: FOL.judged || 0, f: FOL.fb ? [...FOL.fb.keys()] : [], h: FOL.hints || 0,
+    // each place to look at again, with why the engine pointed at it: [word key, kind, what the ayah has, what was heard, the word]
+    fl: FOL.fb ? [...FOL.fb].flatMap(([k, l]) => l.map((f) => [k, f.cls, f.has || "", f.heard || "", f.text || ""])).slice(0, 300) : [] };
   const kh = rawAct.kh, all = new Set(); (kh.done || []).forEach(([a, b]) => { for (let g = a; g <= b; g++) all.add(g); }); FOL.gs.forEach((g) => all.add(g));
   kh.last = r[r.length - 1][1]; kh.t = Date.now();
   if (all.size >= FOL.rows.length) { kh.n = (kh.n || 0) + 1; kh.done = []; } else kh.done = ranges(all);
@@ -3380,7 +3424,14 @@ async function paintActivity() {
       open.type = del.type = "button"; open.addEventListener("click", () => jump(rows[x.r[0][0]][2], rows[x.r[0][0]][0] + ":" + rows[x.r[0][0]][1]));
       del.addEventListener("click", () => { rawAct.s[String(x.t)] = { del: true, t: x.t }; recDel(String(x.t)); saveMine(); paintActivity(); });
       acts.append(open, del);
-      li.append(top, acEl("small", "", `${ar(n)} ${n > 10 ? "آية" : n > 2 ? "آيات" : n === 2 ? "آيتان" : "آية"} · ${acDur(x.d)} · ${when}` + (x.w ? ` · ${ar(x.w)} تنبيه خروج عن الموضع` : "") + (x.j ? ` · فُحصت ${ar(x.j)} آية، ومواضع للمراجعة: ${ar((x.f || []).length)}` : "")), acts);
+      li.append(top, acEl("small", "", `${ar(n)} ${n > 10 ? "آية" : n > 2 ? "آيات" : n === 2 ? "آيتان" : "آية"} · ${acDur(x.d)} · ${when}` + (x.w ? ` · ${ar(x.w)} تنبيه خروج عن الموضع` : "") + (x.h ? ` · لُقّنت ${ar(x.h)} مرة` : "") + (x.j ? ` · فُحصت ${ar(x.j)} آية، ومواضع للمراجعة: ${ar((x.f || []).length)}` : "")), acts);
+      if (x.fl && x.fl.length) {   // what was pointed at in this session, and why
+        const det = acEl("details", "ac-fl"), ol = acEl("ol"); det.append(acEl("summary", "", `مواضع المراجعة في هذه الجلسة وسبب كل موضع (${ar(x.fl.length)})`));
+        x.fl.forEach(([k, cls, has, heard, text]) => { const q = k.split(":"), it = acEl("li"), go = acEl("button", "btn", "اذهب"); go.type = "button";
+          go.addEventListener("click", () => { const row = rows.find((r) => r[0] === +q[0] && r[1] === +q[1]); if (row) { show($("#activity"), false); jump(row[2], q[0] + ":" + q[1]); } });
+          it.append(acEl("strong", "", text), acEl("small", "", ` ${surahName(+q[0])} ${ar(q[1])} · الكلمة ${ar(q[2])} — ${fbWhy(cls, has, heard)} `), go); ol.append(it); });
+        det.append(ol, acEl("small", "", "هذه مواضع يشير إليها النموذج الآلي للمراجعة، وليست حكمًا على التلاوة؛ والمرجع فيها شيخك.")); li.append(det);
+      }
       if (recs.includes(String(x.t))) { const play = acEl("button", "btn", "تشغيل التسجيل"), dl = acEl("button", "btn", "تنزيل"); play.type = dl.type = "button";
         play.addEventListener("click", async () => { const b = await recGet(String(x.t)); if (!b) return; const au = acEl("audio"); au.controls = true; au.src = URL.createObjectURL(b); li.append(au); play.remove(); au.play().catch(() => {}); });
         dl.addEventListener("click", async () => { const b = await recGet(String(x.t)); if (!b) return; const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `iqra-recitation-${new Date(x.t).toISOString().slice(0, 16).replace(/[:T]/g, "-")}.${/ogg/.test(b.type) ? "ogg" : /mp4/.test(b.type) ? "m4a" : "webm"}`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); });
@@ -3488,6 +3539,7 @@ async function syncNow(interactive) {
     }
     store.set("drive", "1"); store.set("drive-file", driveFile); store.set("drive-at", String(Date.now()));
     setSync("آخر مزامنة: الآن" + (got ? ` · وصل ${ar(got)} عنصرًا من أجهزتك الأخرى` : ""));
+    await recSync(interactive || got > 0);
   } catch (e) {
     const quiet = !interactive && /popup|interaction|login|consent|access_denied|token/.test(e.message);
     setSync(quiet ? "للمزامنة اضغط «مزامنة الآن» أو علامة ⟳ في الشريط العلوي." : e.message === "gis" ? "تعذّر الاتصال بـ Google. تحقق من الاتصال." : "لم تتم المزامنة (" + e.message + ").", true);
@@ -3496,6 +3548,56 @@ async function syncNow(interactive) {
   syncing = false;
   if (driveLinked() && gToken) $("#sync-chip").hidden = true;
   if (settings.classList.contains("open") && setSec === "mine") paintMine();
+}
+/* Recordings in the Drive copy (only when the reader chose it): one file for each session beside the data file. What is
+   missing there is sent, what is missing here is fetched, and the recording of a removed session is removed there too. */
+let recBk = store.get("recbk", "0") === "1";
+const REC_PRE = "iqra-rec-", recExt = (t) => (/ogg/.test(t) ? "ogg" : /mp4/.test(t) ? "m4a" : "webm"), recMime = { m4a: "audio/mp4", ogg: "audio/ogg", webm: "audio/webm" };
+const mb = (n) => (n >= 1048576 ? ar((n / 1048576).toFixed(1)) + " م.ب" : ar(Math.max(1, Math.round(n / 1024))) + " ك.ب");
+const recSay = (t) => { const el = $("#rec-status"); if (el) el.textContent = t; };
+async function recSizes() { let n = 0, size = 0; for (const id of await recKeys()) { const b = await recGet(id); if (b) { n += 1; size += b.size; } } return { n, size }; }
+async function driveRaw(method, url, body, headers) {
+  const r = await fetch(url, { method, headers: { Authorization: "Bearer " + gToken, ...(headers || {}) }, body });
+  if (r.status === 401) gToken = "";
+  if (!r.ok) { const e = new Error("drive " + r.status); e.status = r.status; throw e; }
+  return r;
+}
+async function driveUpload(name, blob) {
+  const type = (blob.type || "audio/webm").split(";")[0], meta = JSON.stringify({ name, parents: ["appDataFolder"] });
+  if (blob.size < 4e6) {   // small: in one request
+    const b = "iqra" + Date.now(), body = new Blob([`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\nContent-Type: ${type}\r\n\r\n`, blob, `\r\n--${b}--`]);
+    await driveRaw("POST", `${GAPI}/upload/drive/v3/files?uploadType=multipart&fields=id`, body, { "Content-Type": "multipart/related; boundary=" + b }); return;
+  }
+  const r = await driveRaw("POST", `${GAPI}/upload/drive/v3/files?uploadType=resumable`, meta, { "Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": type }), to = r.headers.get("Location");
+  if (!to) throw new Error("upload");
+  await driveRaw("PUT", to, blob, { "Content-Type": type });
+}
+async function recSync(always) {
+  if (!recBk) return;
+  const local = (await recKeys()).map(String), sess = rawAct.s || {}, gone = (id) => !!(sess[id] && sess[id].del);
+  const sig = local.join(",") + "|" + Object.keys(sess).filter(gone).length;
+  if (!always && sig === store.get("recbk-sig", "")) return;
+  try {
+    const remote = new Map(); let tok = "";
+    do {
+      const r = await driveCall("GET", `${GAPI}/drive/v3/files?spaces=appDataFolder&pageSize=1000&fields=nextPageToken,files(id,name,size)&q=${encodeURIComponent(`name contains '${REC_PRE}'`)}${tok ? "&pageToken=" + encodeURIComponent(tok) : ""}`);
+      (r.files || []).forEach((f) => { const m = /^iqra-rec-(\d+)\.(\w+)$/.exec(f.name); if (m) remote.set(m[1], f); }); tok = r.nextPageToken || "";
+    } while (tok);
+    for (const [id, f] of [...remote]) if (gone(id)) { await driveRaw("DELETE", `${GAPI}/drive/v3/files/${f.id}`); remote.delete(id); }
+    const up = local.filter((id) => !remote.has(id) && !gone(id)), down = [...remote.keys()].filter((id) => !local.includes(id) && sess[id]);
+    let sent = 0, got = 0, bytes = 0;
+    for (const id of up) { const bl = await recGet(id); if (!bl) continue; recSay(`جارٍ رفع التسجيلات: ${ar(sent + 1)} من ${ar(up.length)} (${mb(bl.size)})… لا تغلق التطبيق.`); await driveUpload(`${REC_PRE}${id}.${recExt(bl.type)}`, bl); sent += 1; bytes += bl.size; }
+    for (const id of down) { const f = remote.get(id); recSay(`جارٍ تنزيل التسجيلات: ${ar(got + 1)} من ${ar(down.length)}${f.size ? " (" + mb(+f.size) + ")" : ""}…`); const bl = await (await driveRaw("GET", `${GAPI}/drive/v3/files/${f.id}?alt=media`)).blob(); await recPut(id, new Blob([bl], { type: recMime[f.name.split(".").pop()] || bl.type })); got += 1; bytes += bl.size; }
+    const now = (await recKeys()).map(String);
+    store.set("recbk-sig", now.join(",") + "|" + Object.keys(sess).filter(gone).length);
+    recSay(sent || got ? `التسجيلات: رُفع ${ar(sent)} ونُزّل ${ar(got)} (${mb(bytes)}). عدد التسجيلات في Drive الآن: ${ar(remote.size + sent)}.` : `التسجيلات محفوظة في Drive، وعددها: ${ar(remote.size)}.`);
+  } catch (e) { recSay("لم يكتمل حفظ التسجيلات (" + e.message + "). يُعاد عند المزامنة التالية."); }
+}
+async function recBkPaint() {
+  $("#set-recbk").checked = recBk;
+  if (!recBk) { recSay(""); return; }
+  const { n, size } = await recSizes();
+  if (!/جارٍ|رُفع|لم يكتمل/.test($("#rec-status").textContent)) recSay(!driveLinked() ? "اربط Google Drive أولًا لتُحفظ التسجيلات فيه." : n ? `عدد التسجيلات على هذا الجهاز: ${ar(n)}، وحجمها ${mb(size)}. تُرفع عند المزامنة.` : "لا تسجيلات على هذا الجهاز بعد. فعّل «الاحتفاظ بتسجيل صوتي» من قسم التسميع.");
 }
 function queueSync() { if (!GOOGLE_CLIENT_ID || !driveLinked()) return; clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(false), 2500); }
 function driveUnlink() { store.set("drive", ""); store.set("drive-file", ""); driveFile = ""; if (gToken && window.google) { try { google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} } gToken = ""; $("#sync-chip").hidden = true; setSync("أُلغي الربط. بياناتك باقية على هذا الجهاز، ونسختها في Drive لم تُحذف."); paintMine(); }
@@ -3506,7 +3608,7 @@ if (GOOGLE_CLIENT_ID && driveLinked()) setTimeout(() => syncNow(false), 1500);
 /* The settings tab for all of this: sync, backup, export, and the dated list of every bookmark and note. */
 function paintMine() {
   const linked = driveLinked(), at = +store.get("drive-at", "0");
-  $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked;
+  $("#dr-link").hidden = linked; $("#dr-sync").hidden = !linked; $("#dr-unlink").hidden = !linked; recBkPaint();
   $("#dr-link").disabled = !GOOGLE_CLIENT_ID;
   setSync(syncMsg && (syncing || syncBad || linked) ? syncMsg : !GOOGLE_CLIENT_ID ? "المزامنة غير مفعّلة بعد: ينقص التطبيقَ معرّفُ Google الخاص به." : linked ? (at ? "آخر مزامنة: " + fmtDate(at) : "مربوط.") : "غير مربوط. بياناتك على هذا الجهاز فقط.", syncBad);
   const list = $("#mine-list"), mk = (badge, cls, title, sub, text, onOpen, onShare, onCopy) => {
@@ -3529,6 +3631,21 @@ function paintMine() {
 $("#dr-link").addEventListener("click", () => syncNow(true));
 $("#dr-sync").addEventListener("click", () => syncNow(true));
 $("#dr-unlink").addEventListener("click", driveUnlink);
+$("#set-recbk").addEventListener("change", async (e) => { recBk = e.target.checked; store.set("recbk", recBk ? "1" : "0"); store.set("recbk-sig", ""); $("#rec-status").textContent = ""; await recBkPaint(); if (recBk && driveLinked() && gToken) syncNow(false); });
+// Sharing recitations with Quran Lab is the SDK's own switch and sheet: the app only gives it a place in the settings.
+$("#ql-share-go").addEventListener("click", async () => {
+  const note = $("#ql-share-note"), box = $("#ql-share-box");
+  note.textContent = "جارٍ الاتصال بـ Quran Lab…";
+  try {
+    if (!QL_KEY) throw Object.assign(new Error("no key"), { code: "invalid_key" });
+    await qlLoader();
+    if (!qlClient) qlClient = await QuranLab.TajweedClient.create({ key: QL_KEY });
+    const sh = qlClient.sharing;
+    if (!sh || !sh.isAvailable || !customElements.get("quranlab-sharing-settings")) { note.textContent = "مشاركة التسجيلات غير متاحة الآن في هذا المتصفح. قد تعرضها عليك المكتبة بعد إحدى جلسات التسميع."; return; }
+    if (!box.firstChild) { const el = document.createElement("quranlab-sharing-settings"); el.client = qlClient; box.append(el); }
+    box.hidden = false; note.textContent = ""; reveal(box);
+  } catch (e) { note.textContent = qlSay(e); }
+});
 $("#mine-save").addEventListener("click", () => backupSave($("#mine-note")));
 $("#mine-load").addEventListener("click", () => $("#mine-file").click());
 $("#mine-file").addEventListener("change", async (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) { await backupLoad(f, $("#mine-note")); paintMine(); } });
