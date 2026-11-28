@@ -280,25 +280,35 @@ body[data-tpi="3"]{--tpo:52%}
 .sh-body[hidden],.opt[hidden]{display:none}
 #set-lang{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:170px}
 /* Recitation following: the page's words are faint until they are recited */
-#ts-bar{order:1;flex:none;margin:4px auto 6px;width:min(560px,calc(100% - 16px));box-sizing:border-box;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:8px 12px;box-shadow:0 4px 18px rgba(0,0,0,.2);font-size:14.5px}
+#ts-bar{order:1;flex:none;margin:4px auto 6px;width:min(560px,calc(100% - 16px));box-sizing:border-box;position:relative;overflow:hidden;display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:5px 8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-size:13px}
 #ts-bar[hidden]{display:none}
 #ts-bar.away{border-color:var(--gharib);border-width:2px}
 .pager{order:2}
-#ts-status{flex:1 1 100%;min-height:2.9em}
+#ts-status{flex:1 1 0;min-width:0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#ts-bar .tsi{flex:none;width:36px;height:36px;padding:0;display:inline-grid;place-items:center}
+#ts-bar .tsi svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#ts-bar #ts-fb,#ts-bar #ts-jump{flex:none;padding:5px 8px;font-size:12.5px}
+#ts-eye .e-open,#ts-eye.show .e-shut{display:none}#ts-eye.show .e-open{display:inline}
+/* the hints shown the first time: a ring round the thing spoken of, and a few words beside it */
+#tour{position:fixed;inset:0;z-index:9999}#tour[hidden]{display:none}
+#tour-ring{position:fixed;border-radius:12px;box-shadow:0 0 0 3px var(--accent),0 0 0 9999px rgba(0,0,0,.5);pointer-events:none;transition:all .18s}
+#tour-box{position:fixed;width:min(300px,calc(100vw - 24px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:15px;line-height:1.7}
+#tour-text{margin:0 0 10px}.tour-nav{display:flex;align-items:center;gap:8px}#tour-n{margin-inline-end:auto;color:var(--muted);font-size:13px}
 #ts-bar.live #ts-status::before{content:"";display:inline-block;width:.7em;height:.7em;border-radius:50%;background:#c62828;margin-inline-end:.45em;animation:tsPulse 1.2s ease-in-out infinite}
 @keyframes tsPulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){#ts-bar.live #ts-status::before{animation:none}}
 /* the record button: red, with the round sign of recording and a microphone; a square for stopping */
-#ts-begin{display:inline-flex;align-items:center;gap:6px;background:#c62828;border-color:#c62828;color:#fff;font-weight:600}
+#ts-begin{flex:none;height:36px;padding:0 10px;display:inline-flex;align-items:center;gap:5px;background:#c62828;border-color:#c62828;color:#fff;font-weight:600}
 #ts-begin[hidden]{display:none}
 #ts-begin:disabled{background:var(--paper);border-color:var(--line);color:var(--muted);cursor:progress}
 #ts-begin svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #ts-begin .dot{width:11px;height:11px;border-radius:50%;background:currentColor;box-shadow:0 0 0 2px #c62828,0 0 0 3.5px currentColor;margin-inline:3px 4px}
 #ts-begin:disabled .dot{box-shadow:none;opacity:.5}
-#ts-end{display:inline-flex;align-items:center;gap:7px}#ts-end .sq{width:10px;height:10px;background:currentColor;border-radius:2px}
-#ts-help{margin-inline-start:auto;border-radius:50%;width:32px;height:32px;padding:0;font-weight:700}
+#ts-end .sq{width:12px;height:12px;background:currentColor;border-radius:2px}
+#ts-help{border-radius:50%;font-weight:700}
+@media (max-width:520px){#ts-begin-t{display:none}}
 .tsg{margin:0;padding-inline-start:22px;line-height:1.9}.tsg li{margin-bottom:6px}
-#ts-prog{flex:1 1 100%;width:100%;height:10px;accent-color:var(--accent)}
+#ts-prog{position:absolute;inset-inline:0;bottom:0;width:100%;height:4px;accent-color:var(--accent)}
 #ts-go[aria-pressed="true"]{background:var(--accent);color:var(--panel);border-color:var(--accent)}
 body.ts-on.ts-hide .art svg g.word:not(.rd) path{opacity:0}
 body.ts-on.ts-nomark .art svg g.ayah-mark:not(.rdm){opacity:0}
@@ -540,7 +550,8 @@ body.ts-on .art svg g.word.rdnow .hit{fill:var(--tint)}
   <ol id="results"></ol>
 </section>
 
-<div id="ts-bar" role="status" hidden><span id="ts-status"></span><progress id="ts-prog" max="1" value="0" hidden></progress><button type="button" id="ts-fb" class="btn" hidden></button><button type="button" id="ts-eye" class="btn"></button><button type="button" id="ts-act" class="btn">نشاطي</button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-begin" class="btn" hidden><i class="dot" aria-hidden="true"></i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><span id="ts-begin-t">ابدأ التلاوة</span></button><button type="button" id="ts-end" class="btn"><i class="sq" aria-hidden="true"></i>إيقاف</button><button type="button" id="ts-help" class="btn" aria-label="كيف أستعمل التسميع؟ والخصوصية" title="كيف أستعمل التسميع؟ والخصوصية">؟</button></div>
+<div id="ts-bar" hidden><button type="button" id="ts-begin" class="btn" hidden aria-label="ابدأ التلاوة" title="ابدأ التلاوة"><i class="dot" aria-hidden="true"></i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><span id="ts-begin-t">ابدأ التلاوة</span></button><button type="button" id="ts-end" class="btn tsi" aria-label="إيقاف التسميع" title="إيقاف التسميع"><i class="sq" aria-hidden="true"></i></button><span id="ts-status" role="status"></span><button type="button" id="ts-fb" class="btn" hidden></button><button type="button" id="ts-jump" class="btn" hidden>انتقل إليه</button><button type="button" id="ts-eye" class="btn tsi"><svg viewBox="0 0 24 24" aria-hidden="true"><g class="e-open"><path d="M2 12s3.600-6.500 10-6.500S22 12 22 12s-3.600 6.500-10 6.500S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g><g class="e-shut"><path d="M3 10c2 3.200 5.200 5 9 5s7-1.800 9-5M12 15v3.500M7.500 14.200 6 17.200M16.500 14.200l1.500 3M4.300 11.800 2.500 14M19.700 11.800l1.800 2.200"/></g></svg></button><button type="button" id="ts-act" class="btn tsi" aria-label="نشاطي" title="نشاطي: جلساتي وختمتي وإحصاءاتي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11M10 20V4M16 20v-7M21 20H3"/></svg></button><button type="button" id="ts-help" class="btn tsi" aria-label="كيف أستعمل التسميع؟ والخصوصية" title="كيف أستعمل التسميع؟ والخصوصية">؟</button><progress id="ts-prog" max="1" value="0" hidden></progress></div>
+<div id="tour" hidden><div id="tour-ring"></div><div id="tour-box" role="dialog" aria-live="polite"><p id="tour-text"></p><div class="tour-nav"><span id="tour-n"></span><button type="button" id="tour-skip" class="btn">تخطٍّ</button><button type="button" id="tour-next" class="btn main">التالي</button></div></div></div>
 <div id="veil" hidden></div>
 
 <section id="settings" class="modal" role="dialog" aria-label="الإعدادات" aria-hidden="true">
@@ -2855,7 +2866,7 @@ function folReveal() {   // the words between where this stretch began and the p
   const g = ug[last]; FOL.now = rows[g][0] + ":" + rows[g][1] + ":" + Math.max(1, uw[last] + (endsWord ? 1 : 0));
   folPaint(true);
 }
-function tsClasses() { document.body.classList.toggle("ts-hide", tsHide); document.body.classList.toggle("ts-nomark", tsHide && tsNoMark); $("#ts-eye").textContent = tsHide ? "أظهر الآيات" : "أخفِ الآيات"; if (FOL.on) FOL.kind = tsHide ? "h" : "r"; }
+function tsClasses() { document.body.classList.toggle("ts-hide", tsHide); document.body.classList.toggle("ts-nomark", tsHide && tsNoMark); { const b = $("#ts-eye"), l = tsHide ? "أظهر الآيات" : "أخفِ الآيات"; b.classList.toggle("show", tsHide); b.setAttribute("aria-label", l); b.title = l; } if (FOL.on) FOL.kind = tsHide ? "h" : "r"; }
 tsClasses();
 function folPaint(move) {
   if (!FOL.on) return;
@@ -2997,13 +3008,43 @@ async function folTake() {   // one sitting: the microphone until the reader end
   }
   qlSession = null; FOL.take = null; const kept = FOL.gs && FOL.gs.size; await micClose(kept ? id : null); actSave();
 }
+// Hints for a first visit: each step rings one thing on the screen and says in a few words what it is for.
+function tour(key, steps) {
+  const forced = /[?&]tour\b/.test(location.search);
+  if (store.get(key, "0") === "1" || (navigator.webdriver && !forced) || !$("#tour").hidden) return;
+  store.set(key, "1");
+  steps = steps.filter(([s]) => { const el = $(s); return el && el.getClientRects().length; });
+  if (!steps.length) return;
+  let i = 0;
+  const box = $("#tour"), ring = $("#tour-ring"), card = $("#tour-box");
+  const place = () => {
+    const [sel, text] = steps[i], r = $(sel).getBoundingClientRect(), vw = innerWidth, vh = innerHeight, pad = 4;
+    const top = Math.max(2, r.top - pad), left = Math.max(2, r.left - pad), w = Math.min(vw - 4 - left, r.width + 2 * pad), h = Math.min(vh - 4 - top, r.height + 2 * pad);
+    Object.assign(ring.style, { top: top + "px", left: left + "px", width: w + "px", height: h + "px" });
+    $("#tour-text").textContent = text; $("#tour-n").textContent = `${ar(i + 1)} من ${ar(steps.length)}`; $("#tour-next").textContent = i === steps.length - 1 ? "تم" : "التالي";
+    const cw = card.offsetWidth, ch = card.offsetHeight, below = top + h + 10 + ch < vh, above = top - 10 - ch > 0;
+    card.style.top = (below ? top + h + 10 : above ? top - 10 - ch : Math.max(8, (vh - ch) / 2)) + "px";
+    card.style.left = Math.max(12, Math.min(vw - cw - 12, left + w / 2 - cw / 2)) + "px";
+  };
+  const end = () => { box.hidden = true; removeEventListener("resize", place); $("#tour-next").onclick = $("#tour-skip").onclick = null; };
+  $("#tour-next").onclick = () => { if (++i >= steps.length) end(); else place(); };
+  $("#tour-skip").onclick = end;
+  addEventListener("resize", place);
+  box.hidden = false; place(); $("#tour-next").focus();
+}
 // the record button: "wait" while the model is made ready (shown, but not yet to be pressed), "go", or "" for hidden
 function tsBegin(st) { const b = $("#ts-begin"); b.hidden = !st; b.disabled = st === "wait"; $("#ts-begin-t").textContent = st === "wait" ? "انتظر التجهيز…" : "ابدأ التلاوة"; if (st) $("#ts-bar").classList.remove("live"); }
 async function folStart() {
   if (FOL.on) return folStop();
   close(); FOL.on = true; FOL.done = new Map(); FOL.full = new Set(); FOL.gs = new Set(); FOL.now = ""; FOL.g1 = FOL.g2 = null;
   document.body.classList.add("ts-on"); $("#ts-go").setAttribute("aria-pressed", "true"); $("#ts-bar").hidden = false; tsBegin("wait"); folPaint(false);
-  if (store.get("tsguide", "0") !== "1" && !navigator.webdriver /* not under an automated test */) { store.set("tsguide", "1"); show($("#tsguide"), true); }   // the first time: how it works
+  tour("tstour", [   // the first time: what each tool of the bar is
+    ["#ts-begin", "زر التسجيل. في أول مرة انتظر حتى يكتمل تنزيل نموذج التسميع ويصير الزر أحمر، ثم اضغطه واسمح بالميكروفون واقرأ من أي موضع."],
+    ["#ts-end", "إيقاف التسميع وإنهاء الجلسة."],
+    ["#ts-eye", "العين: أخفِ الآيات لتختبر حفظك، أو أظهرها لتقرأ والتطبيق يتابعك."],
+    ["#ts-act", "نشاطي: جلساتك وختمتك وإحصاءاتك."],
+    ["#ts-help", "شرح مفصّل لطريقة التسميع، وصفحة الخصوصية."],
+  ]);
   const ready = !!(qlModel && FOL.U);
   try {
     const model = await qlReady(); await folIndex(model);
@@ -3087,6 +3128,23 @@ async function offSync() {   // on start and when the connection returns: bring 
 }
 window.addEventListener("online", offSync);
 setTimeout(() => { if (Array.isArray(projects)) offSync(); }, 6000);
+// The first visit: a short round of the app's services, once the first page is drawn.
+(function appTour(tries) {
+  if (store.get("apptour", "0") === "1") return;
+  if (!spread.querySelector(".art svg g.word") || document.querySelector(".modal.open")) { if (tries < 40) setTimeout(() => appTour(tries + 1), 500); return; }
+  const finger = matchMedia("(pointer:coarse)").matches;
+  tour("apptour", [
+    [".art", finger ? "هذا المصحف كما طُبع. اضغط مطوّلًا على آية أو كلمة لتفتح تفسيرها ومحتواها، واسحب لتقليب الصفحات." : "هذا المصحف كما طُبع. انقر آية أو كلمة لتفتح تفسيرها ومحتواها."],
+    ["#idx-open", "الفهرس: السور والأجزاء والأحزاب، وعلاماتك."],
+    ["#ts-go", "التسميع: اقرأ بصوتك والتطبيق يتابعك ويُظهر ما قرأت."],
+    ["#hifz-open", "تلقين الحفظ بالتكرار المتقاطع: يكرّر القارئ المقطع ويصله بما قبله وأنت تردّد."],
+    ["#set-open", "الإعدادات: المحتوى، طريقة عرض المصحف، التلوين، العمل دون اتصال، وبياناتك."],
+    ["#find-open", "البحث في القرآن."],
+    ["#theme-go", "الوضع الليلي والنهاري."],
+    ["#full-open", "ملء الشاشة للقراءة."],
+    ["[data-pnum]", "رقم الصفحة: اضغطه لمحتوى الصفحة كلها، واسم السورة أعلى الصفحة لمحتوى السورة."],
+  ]);
+})(0);
 
 /* ---------- my activity: what was recited and when. A record of reading only: it holds no marks or scores of a recitation. ---------- */
 const ranges = (set) => { const a = [...set].sort((x, y) => x - y), out = []; a.forEach((g) => { const l = out[out.length - 1]; if (l && g <= l[1] + 1) l[1] = Math.max(l[1], g); else out.push([g, g]); }); return out; };
